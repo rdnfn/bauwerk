@@ -5,7 +5,7 @@ Credits
 Development Lead
 ----------------
 
-* rdnfn <audreyr@example.com>
+* rdnfn
 
 Contributors
 ------------
