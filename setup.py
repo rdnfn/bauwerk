@@ -4,40 +4,43 @@
 
 from setuptools import setup, find_packages
 
-with open('README.rst') as readme_file:
+with open("README.rst", encoding="UTF-8") as readme_file:
     readme = readme_file.read()
 
-with open('HISTORY.rst') as history_file:
+with open("HISTORY.rst", encoding="UTF-8") as history_file:
     history = history_file.read()
 
-requirements = [ ]
+requirements = ["gym", "numpy"]
 
-test_requirements = ['pytest>=3', ]
+test_requirements = [
+    "pytest>=3",
+]
 
 setup(
     author="rdnfn",
-    python_requires='>=3.6',
+    python_requires=">=3.6",
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
-        'Natural Language :: English',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
+        "Development Status :: 2 - Pre-Alpha",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Natural Language :: English",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
     ],
     description="Simple building control environments.",
     install_requires=requirements,
+    extras_require={"cvxpy": ["cvxpy"]},
     license="MIT license",
-    long_description=readme + '\n\n' + history,
+    long_description=readme + "\n\n" + history,
     include_package_data=True,
-    keywords='bauwerk',
-    name='bauwerk',
-    packages=find_packages(include=['bauwerk', 'bauwerk.*']),
-    test_suite='tests',
+    keywords="bauwerk",
+    name="bauwerk",
+    packages=find_packages(include=["bauwerk", "bauwerk.*"]),
+    test_suite="tests",
     tests_require=test_requirements,
-    url='https://github.com/rdnfn/bauwerk',
-    version='0.1.0',
+    url="https://github.com/rdnfn/bauwerk",
+    version="0.1.0",
     zip_safe=False,
 )
