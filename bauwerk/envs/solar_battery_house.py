@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from bauwerk.envs.components.solar import PVModel
 
 
-class SolarBatteryEnv(gym.Env):
+class SolarBatteryHouseEnv(gym.Env):
     """A gym environment for controlling a battery in a PV installation."""
 
     def __init__(

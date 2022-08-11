@@ -4,7 +4,7 @@ from bauwerk.constants import PROJECT_PATH
 
 EXP001_SINGLE_DATA = {
     "general": {
-        "type": "solar_battery.SolarBatteryEnv",
+        "type": "solar_battery_house.SolarBatteryHouseEnv",
         "infeasible_control_penalty": True,
         "grid_charging": True,
         "logging_level": "WARNING",  # if using RLlib, set to 'RAY'
