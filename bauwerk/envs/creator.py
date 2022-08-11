@@ -7,7 +7,7 @@ import bauwerk.envs.components.solar
 import bauwerk.envs.components.load
 import bauwerk.envs.components.grid
 import bauwerk.envs.components.battery
-import bauwerk.envs.battery_control
+import bauwerk.envs.solar_battery
 from bauwerk.envs.configs import DEFAULT_ENV_CONFIG
 
 if TYPE_CHECKING:
