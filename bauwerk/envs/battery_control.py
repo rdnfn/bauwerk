@@ -1,7 +1,7 @@
 """Module with battery control environment of a photovoltaic installation."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Tuple, List
+from typing import TYPE_CHECKING, Optional, Tuple, List
 from loguru import logger
 import gym
 import numpy as np
@@ -124,6 +124,8 @@ class BatteryControlEnv(gym.Env):
         bauwerk.utils.logging.setup_log_print_options()
         self.logger.info("Environment initialised.")
 
+        self.state = None
+
         self.reset()
 
     def step(self, action: object) -> Tuple[object, float, bool, dict]:
@@ -245,12 +247,23 @@ class BatteryControlEnv(gym.Env):
         """
         return {key: state[key] for key in self.obs_keys}
 
-    def reset(self) -> object:
+    def reset(
+        self,
+        *,
+        seed: Optional[int] = None,
+        return_info: bool = False,
+        options: Optional[dict] = None,
+    ) -> object:
         """Resets environment to initial state and returns an initial observation.
 
         Returns:
             observation (object): the initial observation.
         """
+        super().reset(
+            seed=seed,
+            return_info=return_info,
+            options=options,
+        )
 
         start = np.random.randint((self.data_len // 24) - 1) * 24
 
@@ -323,7 +336,6 @@ class BatteryControlEnv(gym.Env):
         Environments will automatically close() themselves when
         garbage collected or when the program exits.
         """
-        pass
 
     def seed(self, seed: int = None) -> None:
         """Sets the seed for this env's random number generator(s).
