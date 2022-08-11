@@ -1,6 +1,5 @@
 """Module with standard environment configs."""
 
-from bauwerk.constants import PROJECT_PATH
 
 EXP001_SINGLE_DATA = {
     "general": {
@@ -18,12 +17,12 @@ EXP001_SINGLE_DATA = {
         },
         "solar": {
             "type": "DataPV",
-            "data_path": PROJECT_PATH + "/data/solar_trace_data/PV_5796.txt",
+            "data_path": None,
             "fixed_sample_num": 12,
         },
         "load": {
             "type": "DataLoad",
-            "data_path": PROJECT_PATH + "/data/solar_trace_data/load_5796.txt",
+            "data_path": None,
             "fixed_sample_num": 12,
         },
         "grid": {

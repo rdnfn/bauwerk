@@ -5,8 +5,14 @@ from typing import TYPE_CHECKING, Optional, Tuple, List
 from loguru import logger
 import gym
 import numpy as np
+import copy
 
 import bauwerk.utils.logging
+from bauwerk.envs.configs import DEFAULT_ENV_CONFIG
+import bauwerk.envs.components.solar
+import bauwerk.envs.components.load
+import bauwerk.envs.components.grid
+import bauwerk.envs.components.battery
 
 if TYPE_CHECKING:
     from bauwerk.envs.components.battery import BatteryModel
@@ -20,10 +26,10 @@ class SolarBatteryHouseEnv(gym.Env):
 
     def __init__(
         self,
-        battery: BatteryModel,
-        solar: PVModel,
-        grid: GridModel,
-        load: LoadModel,
+        battery: BatteryModel = None,
+        solar: PVModel = None,
+        grid: GridModel = None,
+        load: LoadModel = None,
         episode_len: float = 24,
         time_step_len: float = 1,
         grid_charging: bool = False,
@@ -32,23 +38,10 @@ class SolarBatteryHouseEnv(gym.Env):
     ) -> None:
         """A gym enviroment for controlling a battery in a PV installation.
 
-        This class inherits from the main OpenAI Gym class. The initial non-implemented
-        skeleton methods are copied from the original gym class:
+        This class inherits from the main OpenAI Gym class. The initial
+        non-implemented skeleton methods are copied from the original gym
+        class:
         https://github.com/openai/gym/blob/master/gym/core.py
-
-        The main API methods that users of this class need to know are:
-            step
-            reset
-            render
-            close
-            seed
-        And set the following attributes:
-            action_space: The Space object corresponding to valid actions
-            observation_space: The Space object corresponding to valid observations
-            reward_range: A tuple corresponding to the min and max possible rewards
-        Note: a default reward range set to [-inf,+inf] already exists. Set it if you
-        want a narrower range. The methods are accessed publicly as "step", "reset",
-        etc...
         """
 
         if obs_keys is None:
@@ -60,11 +53,7 @@ class SolarBatteryHouseEnv(gym.Env):
             ]
         self.obs_keys = obs_keys
 
-        self.battery = battery
-        self.solar = solar
-        self.grid = grid
-        self.load = load
-        self.components = [battery, solar, grid, load]
+        self._setup_components(battery, solar, grid, load)
 
         self.data_len = min(len(self.load.data), len(self.solar.data))
 
@@ -127,6 +116,41 @@ class SolarBatteryHouseEnv(gym.Env):
         self.state = None
 
         self.reset()
+
+    def _setup_components(self, battery, solar, grid, load) -> None:
+        """Setup components (devices) of house."""
+
+        component_input = {
+            "battery": battery,
+            "solar": solar,
+            "grid": grid,
+            "load": load,
+        }
+
+        self.components = []
+
+        for cmp_name, cmp_val in component_input.items():
+
+            # get default cmp if only None given
+            if cmp_val is None:
+                cmp_val = self._get_default_component(cmp_name)
+
+            setattr(self, cmp_name, cmp_val)
+            self.components.append(cmp_val)
+
+    def _get_default_component(self, component_name: str) -> object:
+        component_config = DEFAULT_ENV_CONFIG["components"][component_name]
+        component_config = copy.deepcopy(component_config)
+
+        # Getting class
+        class_name = component_config.pop("type")
+        component_module = getattr(bauwerk.envs.components, component_name)
+        component_class = getattr(component_module, class_name)
+
+        # Creating component instance with config
+        component_instance = component_class(**component_config)
+
+        return component_instance
 
     def step(self, action: object) -> Tuple[object, float, bool, dict]:
         """Run one timestep of the environment's dynamics.

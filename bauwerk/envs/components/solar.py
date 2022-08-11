@@ -1,6 +1,7 @@
 """This module contains photovoltaic system models."""
 
 import numpy as np
+import importlib.resources
 
 from bauwerk.envs.components.base import EnvComponent
 
@@ -47,7 +48,14 @@ class DataPV(PVModel):
         """
         super().__init__()
 
-        self.data = np.loadtxt(data_path, delimiter=",")
+        if data_path is not None:
+            self.data = np.loadtxt(data_path, delimiter=",")
+        else:
+            bw_data_path = importlib.resources.files("bauwerk.data")
+            with importlib.resources.as_file(
+                bw_data_path.joinpath("default_solar_data.txt")
+            ) as data_file:
+                self.data = np.loadtxt(data_file, delimiter=",")
         self.num_steps = num_steps
         self.time_step_len = time_step_len
         self.fix_start(fixed_sample_num)
