@@ -76,7 +76,7 @@ disable=abstract-method,
         global-statement,
         hex-method,
         idiv-method,
-        implicit-str-concat-in-sequence,
+        implicit-str-concat,
         import-error,
         import-self,
         import-star-module-level,
@@ -259,7 +259,7 @@ generated-members=
 [FORMAT]
 
 # Maximum number of characters on a single line.
-max-line-length=88
+max-line-length=80
 
 # TODO(https://github.com/PyCQA/pylint/issues/3352): Direct pylint to exempt
 # lines made too long by directives to pytype.
@@ -273,12 +273,6 @@ ignore-long-lines=(?x)(
 # else.
 single-line-if-stmt=yes
 
-# List of optional constructs for which whitespace checking is disabled. `dict-
-# separator` is used to allow tabulation in dicts, etc.: {1  : 1,\n222: 2}.
-# `trailing-comma` allows a space between comma and closing bracket: (a, ).
-# `empty-line` allows space-only lines.
-# no-space-check=
-
 # Maximum number of lines in a module
 max-module-lines=99999
 
@@ -286,6 +280,7 @@ max-module-lines=99999
 # spaces.  Google's externaly-published style guide says 4, consistent with
 # PEP 8.  Here, we use 2 spaces, for conformity with many open-sourced Google
 # projects (like TensorFlow).
+# ADAPTED TO 4
 indent-string='    '
 
 # Number of spaces of indent required inside a hanging  or continued line.
