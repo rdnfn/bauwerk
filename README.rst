@@ -1,3 +1,11 @@
+
+
+
+    **Warning**
+    
+    Bauwerk is in a very early stage of development, not stable at the moment and not recommended for general usage at this point. Use at your own risk.
+
+
 =======
 bauwerk
 =======
@@ -16,7 +24,7 @@ bauwerk
 
 
 
-Simple building control environments.
+Super simple building control environments for reinforcement learning.
 
 
 * Free software: MIT license
