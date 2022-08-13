@@ -57,7 +57,9 @@ class LithiumIonBattery(BatteryModel):
         self.set_parameters()
 
         # battery energy content
-        self.b = self.v1_bar  # pylint: disable=invalid-name
+        self.b = np.array(
+            [self.v1_bar], dtype=np.float32
+        )  # pylint: disable=invalid-name
 
     def set_parameters(self):
         """Set battery model parameters according to specified Li-Ion chemistry."""
@@ -186,7 +188,7 @@ class LithiumIonBattery(BatteryModel):
         actual_power = new_c - new_d
 
         self.logger.debug(
-            "Charged %6.4fkW (attempted %6.4f), new content %2.2fkWh",
+            "Charged {}kW (attempted {}), new content {}kWh",
             actual_power,
             power,
             self.b,
@@ -200,7 +202,9 @@ class LithiumIonBattery(BatteryModel):
 
     def reset(self) -> None:
         """Reset battery energy content."""
-        self.b = self.v1_bar
+        self.b = np.array(
+            [self.v1_bar], dtype=np.float32
+        )  # pylint: disable=invalid-name
 
     def get_contraints(
         self, power_episode: cp.Variable, battery_content_episode: cp.Variable
