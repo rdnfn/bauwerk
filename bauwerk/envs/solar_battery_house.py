@@ -244,7 +244,7 @@ class SolarBatteryHouseEnv(gym.Env):
 
         observation = self._get_obs_from_state(self.state)
 
-        terminated = self.time_step >= self.episode_len
+        terminated = bool(self.time_step >= self.episode_len)
 
         info["net_load"] = net_load
         info["charging_power"] = charging_power
