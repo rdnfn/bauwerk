@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 
 class SolarBatteryHouseEnv(gym.Env):
-    """A gym environment for controlling a battery in a PV installation."""
+    """A gym environment for controlling a house with solar installation and battery."""
 
     def __init__(
         self,
@@ -36,7 +36,7 @@ class SolarBatteryHouseEnv(gym.Env):
         infeasible_control_penalty: bool = False,
         obs_keys: List = None,
     ) -> None:
-        """A gym enviroment for controlling a battery in a PV installation.
+        """A gym environment for controlling a house with solar and battery.
 
         This class inherits from the main OpenAI Gym class. The initial
         non-implemented skeleton methods are copied from the original gym
@@ -157,15 +157,16 @@ class SolarBatteryHouseEnv(gym.Env):
 
         When end of episode is reached, you are responsible for calling `reset()`
         to reset this environment's state. Accepts an action and returns a tuple
-        (observation, reward, done, info).
+        (observation, reward, terminated, truncated, info).
 
         Args:
             action (object): an action provided by the agent
         Returns:
             observation (object): agent's observation of the current environment
             reward (float) : amount of reward returned after previous action
-            done (bool): whether the episode has ended, in which case further step()
-                calls will return undefined results
+            terminated (bool): whether the episode has ended, in which case further
+                step() calls will return undefined results.
+            truncated (bool): whether the episode was truncated.
             info (dict): contains auxiliary diagnostic information
                 (helpful for debugging, and sometimes learning)
         """
@@ -243,7 +244,7 @@ class SolarBatteryHouseEnv(gym.Env):
 
         observation = self._get_obs_from_state(self.state)
 
-        done = self.time_step >= self.episode_len
+        terminated = self.time_step >= self.episode_len
 
         info["net_load"] = net_load
         info["charging_power"] = charging_power
@@ -255,10 +256,17 @@ class SolarBatteryHouseEnv(gym.Env):
         self.logger.debug("step - info %s", info)
 
         self.logger.debug(
-            "step return: obs: %s, rew: %6.3f, done: %s", observation, reward, done
+            "step return: obs: %s, rew: %6.3f, terminated: %s",
+            observation,
+            reward,
+            terminated,
         )
 
-        return (observation, float(reward), done, info)
+        # No support for episode truncation
+        # But added to complete new gym step API
+        truncated = False
+
+        return (observation, float(reward), terminated, truncated, info)
 
     def _get_obs_from_state(self, state: dict) -> dict:
         """Get observation from state dict.
