@@ -9,5 +9,5 @@ Sphinx
 twine
 
 pytest
-black
+black==22.6
 pre-commit
