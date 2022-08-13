@@ -60,7 +60,7 @@ class DataLoad(LoadModel):
         if self.fixed_start is not None:
             start = self.fixed_start
         elif start is None:
-            start = np.random.randint((len(self.data) // 24) - 1) * 24
+            start = np.random.randint(low=0, high=(len(self.data) // 24) - 1) * 24
 
         self.start = start
 
