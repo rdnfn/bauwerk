@@ -72,7 +72,7 @@ class Game(widgets.HBox):
 
     def plot(self):
 
-        with plt.xkcd(scale=1, length=200, randomness=2):
+        with plt.xkcd(scale=1, length=20000, randomness=2):
             self.vis.clear_output(wait=True)
             with self.vis:
                 fig = plt.figure(constrained_layout=True, figsize=(8, 4))
