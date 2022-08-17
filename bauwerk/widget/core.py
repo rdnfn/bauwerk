@@ -1,27 +1,44 @@
 """Main widget module."""
 
+import sys
+import gym
+import numpy as np
 import ipywidgets as widgets
+import matplotlib.pyplot as plt
+from loguru import logger
+
 import bauwerk
 from bauwerk.constants import PROJECT_PATH
-import gym
-import matplotlib.pyplot as plt
-
-import numpy as np
 
 bauwerk.setup()
-plt.set_loglevel("error")
 
 
 class Game(widgets.HBox):
     """Bauwerk building control game widget."""
 
-    def __init__(self):
+    def __init__(self, log_level: str = "error", height: str = "400px"):
+        """Bauwerk building control game widget.
 
+        Args:
+            log_level (str, optional): Lower case logging level (e.g. "info", "debug").
+                Defaults to "error".
+            height (str, optional): height of widget in px as str ending with px.
+                Defaults to "400px".
+        """
+
+        # Setup logging
+        logger.remove()
+        logger.add(sys.stderr, level=log_level.upper())
+        plt.set_loglevel(log_level)
+
+        # Create underlying env
         self.env = gym.make(
             "bauwerk/SolarBatteryHouse-v0",
             new_step_api=True,
         )
 
+        self.height = height
+        self.height_px = int(height.replace("px", ""))
         action_high = self.env.action_space.high[0]
         action_low = self.env.action_space.low[0]
 
@@ -31,13 +48,12 @@ class Game(widgets.HBox):
             min=action_low,
             max=action_high,
             continuous_update=False,
-            layout={"height": "300px"},
+            layout={"height": height},
         )
         self.control.observe(self.step, names="value")
-        self.vis = widgets.Output(layout={"width": "600px", "height": "300px"})
+        self.vis = widgets.Output(layout={"width": "600px", "height": height})
         self.out = widgets.Output(
             layout={
-                # "border": "1px solid black",
                 "width": "100px",
                 "height": "100px",
             }
@@ -75,7 +91,14 @@ class Game(widgets.HBox):
         with plt.xkcd(scale=1, length=20000, randomness=2):
             self.vis.clear_output(wait=True)
             with self.vis:
-                fig = plt.figure(constrained_layout=True, figsize=(8, 4))
+
+                # Setting correct height in pixels
+                # Conversion following setup described in:
+                # https://matplotlib.org/stable/gallery/subplots_axes_and_figures/figure_size_units.html
+                px = 1 / plt.rcParams["figure.dpi"]
+                fig_height = self.height_px * px  # in inches
+
+                fig = plt.figure(constrained_layout=True, figsize=(8, fig_height))
                 subfigs = fig.subfigures(1, 2, wspace=0.07, width_ratios=[1, 2])
                 ax_left = subfigs[0].subplots(1)
                 ax_left.axis("off")
