@@ -179,11 +179,21 @@ class Game(widgets.VBox):
                 plt.rcParams.update({"font.size": 10})
 
                 subfigs = self.fig.subfigures(1, 2, wspace=0.07, width_ratios=[1, 2])
-                ax_left = subfigs[0].subplots(1)
-                ax_left.axis("off")
+                axs_left = subfigs[0].subplots(2)
+                axs_left[0].axis("off")
+                axs_left[1].axis("off")
 
                 self.img_house = plt.imread(PROJECT_PATH / "widget/house.png")
-                ax_left.imshow(self.img_house)
+                axs_left[0].imshow(self.img_house)
+                self.score_text = axs_left[1].text(
+                    x=0.1,
+                    y=0.7,
+                    s="Score: 0",
+                    # animated=True,
+                    fontfamily="monospace",
+                    fontsize=16,
+                )
+
                 self.obs_axs = subfigs[1].subplots(len(self.obs_values))
 
                 self.obs_lines = []
@@ -210,6 +220,8 @@ class Game(widgets.VBox):
             axs = self.obs_axs[i]
             axs.relim()
             axs.autoscale_view(True, True, True)
+
+            self.score_text.set_text(f"Score: {self.reward:.2f}")
 
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
@@ -276,9 +288,6 @@ class Game(widgets.VBox):
             self.add_obs({**observation, self.reward_label: reward})
 
             self.reward += reward
-
-            msg = f"Overall reward: {self.reward} \nNew reward: {reward}"
-            # self.out.append_display_data(widgets.Text(msg))
 
             if terminated or truncated:
                 self.game_finished = True
