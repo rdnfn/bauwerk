@@ -8,6 +8,7 @@ import numpy as np
 import traitlets
 import ipywidgets as widgets
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 from loguru import logger
 
 import bauwerk
@@ -185,6 +186,14 @@ class Game(widgets.VBox):
             axs_left[1].axis("off")
 
             self.img_house = plt.imread(PROJECT_PATH / "widget/house.png")
+            self.solar_indicator = axs_left[0].add_patch(
+                mpatches.Circle(
+                    (200, 120),
+                    radius=30,
+                    alpha=0.5,
+                    facecolor="white",
+                )
+            )
             axs_left[0].imshow(self.img_house)
             self.score_text = axs_left[1].text(
                 x=0.1,
@@ -225,6 +234,13 @@ class Game(widgets.VBox):
             self.score_text.set_text(f"Score: {self.reward:.2f}")
             if self.game_finished:
                 self.score_text.set_text(f"Game finished.\nScore: {self.reward:.2f}")
+
+            # updating figure
+            solar_strength = float(
+                self.obs_values["pv_gen"][-1]
+                / (max(self.obs_values["pv_gen"]) + 0.00001)
+            )
+            self.solar_indicator.set_alpha(solar_strength)
 
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
