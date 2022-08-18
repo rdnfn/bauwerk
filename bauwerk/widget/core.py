@@ -117,6 +117,7 @@ class Game(widgets.AppLayout):
                 self.fig.canvas.layout.min_height = self.height
                 self.fig.canvas.toolbar_visible = False
                 self.fig.canvas.resizable = False
+                self.fig.canvas.footer_visible = False
 
                 subfigs = self.fig.subfigures(1, 2, wspace=0.07, width_ratios=[1, 2])
                 ax_left = subfigs[0].subplots(1)
@@ -141,7 +142,7 @@ class Game(widgets.AppLayout):
                     ax.label_outer()
 
     def _update_figure(self):
-        for i, obs_part in enumerate(self.obs_values.values):
+        for i, obs_part in enumerate(self.obs_values.values()):
             # setting new data
             self.obs_lines[i][0].set_data(self.line_x, obs_part[-self.visible_steps :])
 
