@@ -58,6 +58,8 @@ class SolarBatteryHouseEnv(gym.Env):
         self.data_len = min(len(self.load.data), len(self.solar.data))
 
         self.episode_len = episode_len
+        self.load.num_steps = episode_len
+        self.solar.num_steps = episode_len
         self.time_step_len = time_step_len
         self.grid_charging = grid_charging
         self.infeasible_control_penalty = infeasible_control_penalty
