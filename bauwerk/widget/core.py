@@ -67,6 +67,7 @@ class Game(widgets.VBox):
             orientation="vertical",
             min=action_low,
             max=action_high,
+            step=0.05,
             continuous_update=False,
             layout={"height": height},
         )
@@ -288,6 +289,7 @@ class Game(widgets.VBox):
         }
         self.add_obs(obs)
         self.reward = 0
+        self.game_finished = False
 
     def add_obs(self, obs):
         for key in self.obs_values.keys():
