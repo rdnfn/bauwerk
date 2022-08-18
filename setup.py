@@ -16,6 +16,11 @@ test_requirements = [
     "pytest>=3",
 ]
 
+extras_require = {
+    "cvxpy": ["cvxpy"],
+    "widget": ["ipympl"],
+}
+
 setup(
     author="rdnfn",
     python_requires=">=3.6",
@@ -33,7 +38,7 @@ setup(
     ],
     description="Simple building control environments.",
     install_requires=requirements,
-    extras_require={"cvxpy": ["cvxpy"]},
+    extras_require=extras_require,
     license="MIT license",
     long_description=readme + "\n\n" + history,
     include_package_data=True,
