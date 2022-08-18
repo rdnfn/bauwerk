@@ -2,7 +2,10 @@
 
 import sys
 import gym
+import threading
+import time
 import numpy as np
+import traitlets
 import ipywidgets as widgets
 import matplotlib.pyplot as plt
 from loguru import logger
@@ -17,7 +20,11 @@ class Game(widgets.AppLayout):
     """Bauwerk building control game widget."""
 
     def __init__(
-        self, log_level: str = "error", height: str = "400px", visible_steps=24
+        self,
+        log_level: str = "error",
+        height: str = "400px",
+        step_time=None,
+        visible_steps=24,
     ):
         """Bauwerk building control game widget.
 
@@ -56,7 +63,6 @@ class Game(widgets.AppLayout):
             continuous_update=False,
             layout={"height": height},
         )
-        self.control.observe(self.step, names="value")
 
         # Setting up main figure
 
@@ -86,6 +92,18 @@ class Game(widgets.AppLayout):
         )
 
         self.game_finished = False
+
+        # Setup automatic stepping
+        self.step_time = step_time
+        if self.step_time:
+            self.add_traits(step_requested=traitlets.Bool().tag(sync=True))
+            self.step_requested = False
+            self.observe(
+                self._process_step_request, names="step_requested", type="change"
+            )
+            self._launch_update_requesting_thread()
+        else:
+            self.control.observe(self.step, names="value")
 
     def reset(self):
 
@@ -155,7 +173,30 @@ class Game(widgets.AppLayout):
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
-    def step(self, change):
+    def _launch_update_requesting_thread(self):
+        def work(widget):
+            max_steps = 25
+            for _ in range(max_steps):
+                if widget.game_finished:
+                    break
+                time.sleep(self.step_time)
+                widget.step_requested = True
+
+        thread = threading.Thread(target=work, args=(self,))
+        thread.start()
+        logger.info("Started thread.")
+
+    def _process_step_request(self, change):
+        # pylint: disable=unused-argument
+        if self.step_requested:
+            logger.info("Step requested.")
+            self.step()
+            self.step_requested = False
+        else:
+            logger.info("widget.step_requested is false.")
+            pass
+
+    def step(self, change=None):
         # pylint: disable=unused-argument
 
         if not self.game_finished:
