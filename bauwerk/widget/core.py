@@ -16,7 +16,7 @@ from bauwerk.constants import PROJECT_PATH
 bauwerk.setup()
 
 
-class Game(widgets.AppLayout):
+class Game(widgets.VBox):
     """Bauwerk building control game widget."""
 
     def __init__(
@@ -87,13 +87,13 @@ class Game(widgets.AppLayout):
             print("Get ready!")
 
         # children = [self.control, self.vis, self.out]
-        super().__init__(
-            header=self.menu_buttons,
+        self.main_app = widgets.AppLayout(
             left_sidebar=self.control,
             center=self.fig.canvas,
             footer=self.out,
             pane_widths=[1, 9, 0],
         )
+        super().__init__(children=[self.menu_buttons, self.main_app])
 
         self.game_finished = False
 
@@ -120,17 +120,27 @@ class Game(widgets.AppLayout):
         )
         self.start_button.on_click(self._process_start_request)
 
-        # Setting up menu
         self.stop_button = widgets.Button(
             description="Stop",
             disabled=False,
             button_style="",  # 'success', 'info', 'warning', 'danger' or ''
-            tooltip="Start game",
+            tooltip="Stop game",
             icon="stop",  # (FontAwesome names without the `fa-` prefix)
         )
         self.stop_button.on_click(self._process_stop_request)
 
-        return widgets.GridBox(children=[self.start_button, self.stop_button])
+        self.reset_button = widgets.Button(
+            description="Reset",
+            disabled=False,
+            button_style="",  # 'success', 'info', 'warning', 'danger' or ''
+            tooltip="Reset game.",
+            icon="restart",  # (FontAwesome names without the `fa-` prefix)
+        )
+        self.reset_button.on_click(self._process_reset_request)
+
+        return widgets.HBox(
+            children=[self.start_button, self.stop_button, self.reset_button]
+        )
 
     def reset(self):
 
@@ -155,14 +165,15 @@ class Game(widgets.AppLayout):
                 # Conversion following setup described in:
                 # https://matplotlib.org/stable/gallery/subplots_axes_and_figures/figure_size_units.html
                 px = 1 / plt.rcParams["figure.dpi"]
-                fig_height = self.height_px * px * 0.8  # in inches
+                fig_height = self.height_px * px * 1  # in inches
 
-                self.fig = plt.figure(constrained_layout=True, figsize=(8, fig_height))
+                self.fig = plt.figure(constrained_layout=True, figsize=(7, fig_height))
                 self.fig.canvas.header_visible = False
-                self.fig.canvas.layout.min_height = self.height
                 self.fig.canvas.toolbar_visible = False
                 self.fig.canvas.resizable = False
                 self.fig.canvas.footer_visible = False
+                # self.fig.canvas.layout.height = "200px"
+                # self.fig.canvas.layout.width = "400px"
 
                 subfigs = self.fig.subfigures(1, 2, wspace=0.07, width_ratios=[1, 2])
                 ax_left = subfigs[0].subplots(1)
@@ -235,6 +246,7 @@ class Game(widgets.AppLayout):
         # pylint: disable=unused-argument
         self._process_stop_request()
         self.reset()
+        self._update_figure()
 
     def _process_step_request(self, change):
         # pylint: disable=unused-argument
