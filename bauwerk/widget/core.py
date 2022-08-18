@@ -68,7 +68,7 @@ class Game(widgets.VBox):
             min=action_low,
             max=action_high,
             step=0.05,
-            continuous_update=False,
+            continuous_update=True,
             layout={"height": height},
         )
         self.menu_buttons = self._setup_menu_buttons()
@@ -96,7 +96,16 @@ class Game(widgets.VBox):
             footer=self.out,
             pane_widths=[1, 9, 0],
         )
-        super().__init__(children=[self.menu_buttons, self.main_app])
+        self.heading = widgets.HTML(
+            value=(
+                "<code style='color: black'><h1 style='display: inline'>Bauwerk Game"
+                "</h1>&nbsp;&nbsp;&nbsp;<h3 style='display: inline'>Level: "
+                "SolarBatteryHouse-v0</h3></code>"
+            ),
+        )
+        super().__init__(
+            children=[widgets.VBox([self.heading, self.menu_buttons]), self.main_app]
+        )
 
         self.game_finished = False
 
@@ -274,7 +283,6 @@ class Game(widgets.VBox):
             if terminated or truncated:
                 self.game_finished = True
                 self.control.set_trait("disabled", True)
-                # self.out.append_display_data(widgets.Text("Game over"))
 
             self._update_figure()
 
@@ -290,6 +298,7 @@ class Game(widgets.VBox):
         self.add_obs(obs)
         self.reward = 0
         self.game_finished = False
+        self.control.set_trait("disabled", False)
 
     def add_obs(self, obs):
         for key in self.obs_values.keys():
