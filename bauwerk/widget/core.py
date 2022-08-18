@@ -52,7 +52,7 @@ class Game(widgets.VBox):
         self.visible_steps = visible_steps
 
         self.active_thread = None
-        self.stop_requested = False
+        self.pause_requested = False
 
         # Setting up controller
         action_high = self.env.action_space.high[0]
@@ -120,26 +120,26 @@ class Game(widgets.VBox):
         )
         self.start_button.on_click(self._process_start_request)
 
-        self.stop_button = widgets.Button(
-            description="Stop",
+        self.pause_button = widgets.Button(
+            description="Pause",
             disabled=False,
             button_style="",  # 'success', 'info', 'warning', 'danger' or ''
-            tooltip="Stop game",
-            icon="stop",  # (FontAwesome names without the `fa-` prefix)
+            tooltip="Pause game",
+            icon="pause",  # (FontAwesome names without the `fa-` prefix)
         )
-        self.stop_button.on_click(self._process_stop_request)
+        self.pause_button.on_click(self._process_pause_request)
 
         self.reset_button = widgets.Button(
             description="Reset",
             disabled=False,
             button_style="",  # 'success', 'info', 'warning', 'danger' or ''
             tooltip="Reset game.",
-            icon="restart",  # (FontAwesome names without the `fa-` prefix)
+            icon="refresh",  # (FontAwesome names without the `fa-` prefix)
         )
         self.reset_button.on_click(self._process_reset_request)
 
         return widgets.HBox(
-            children=[self.start_button, self.stop_button, self.reset_button]
+            children=[self.start_button, self.pause_button, self.reset_button]
         )
 
     def reset(self):
@@ -167,13 +167,18 @@ class Game(widgets.VBox):
                 px = 1 / plt.rcParams["figure.dpi"]
                 fig_height = self.height_px * px * 1  # in inches
 
-                self.fig = plt.figure(constrained_layout=True, figsize=(7, fig_height))
+                self.fig = plt.figure(
+                    constrained_layout=True,
+                    figsize=(7, fig_height),  # dpi=50
+                )
                 self.fig.canvas.header_visible = False
                 self.fig.canvas.toolbar_visible = False
                 self.fig.canvas.resizable = False
                 self.fig.canvas.footer_visible = False
                 # self.fig.canvas.layout.height = "200px"
                 # self.fig.canvas.layout.width = "400px"
+
+                plt.rcParams.update({"font.size": 10})
 
                 subfigs = self.fig.subfigures(1, 2, wspace=0.07, width_ratios=[1, 2])
                 ax_left = subfigs[0].subplots(1)
@@ -216,7 +221,7 @@ class Game(widgets.VBox):
         def work(widget):
             max_steps = 25
             for _ in range(max_steps):
-                if widget.game_finished or widget.stop_requested:
+                if widget.game_finished or widget.pause_requested:
                     break
                 time.sleep(self.step_time)
                 widget.step_requested = True
@@ -229,22 +234,22 @@ class Game(widgets.VBox):
     def _process_start_request(self, change=None):
         # pylint: disable=unused-argument
         if self.active_thread:
-            self.stop_requested = True
+            self.pause_requested = True
             self.active_thread.join()
-            self.stop_requested = False
+            self.pause_requested = False
 
         self.active_thread = self._launch_update_requesting_thread()
 
-    def _process_stop_request(self, change=None):
+    def _process_pause_request(self, change=None):
         # pylint: disable=unused-argument
         if self.active_thread:
-            self.stop_requested = True
+            self.pause_requested = True
             self.active_thread.join()
-            self.stop_requested = False
+            self.pause_requested = False
 
     def _process_reset_request(self, change=None):
         # pylint: disable=unused-argument
-        self._process_stop_request()
+        self._process_pause_request()
         self.reset()
         self._update_figure()
 
