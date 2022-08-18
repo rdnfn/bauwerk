@@ -13,10 +13,12 @@ from bauwerk.constants import PROJECT_PATH
 bauwerk.setup()
 
 
-class Game(widgets.HBox):
+class Game(widgets.AppLayout):
     """Bauwerk building control game widget."""
 
-    def __init__(self, log_level: str = "error", height: str = "400px"):
+    def __init__(
+        self, log_level: str = "error", height: str = "400px", visible_steps=24
+    ):
         """Bauwerk building control game widget.
 
         Args:
@@ -39,6 +41,10 @@ class Game(widgets.HBox):
 
         self.height = height
         self.height_px = int(height.replace("px", ""))
+
+        self.visible_steps = visible_steps
+
+        # Setting up controller
         action_high = self.env.action_space.high[0]
         action_low = self.env.action_space.low[0]
 
@@ -51,7 +57,15 @@ class Game(widgets.HBox):
             layout={"height": height},
         )
         self.control.observe(self.step, names="value")
-        self.vis = widgets.Output(layout={"width": "600px", "height": height})
+
+        # Setting up main figure
+
+        # This sets the first observations
+
+        self.reset()
+
+        self._setup_figure()
+
         self.out = widgets.Output(
             layout={
                 "width": "100px",
@@ -63,53 +77,82 @@ class Game(widgets.HBox):
         with self.out:
             print("Get ready!")
 
-        children = [self.control, self.vis, self.out]
-        super().__init__(children=children)
-
-        self.img_house = plt.imread(PROJECT_PATH / "widget/house.png")
+        # children = [self.control, self.vis, self.out]
+        super().__init__(
+            left_sidebar=self.control,
+            center=self.fig.canvas,
+            footer=self.out,
+            pane_widths=[1, 9, 0],
+        )
 
         self.game_finished = False
-        self.reset()
 
     def reset(self):
 
         obs = self.env.reset()
         self.obs_values = {
-            key: [np.array([0], dtype=np.float32)]
+            key: [np.array([0], dtype=np.float32)] * self.visible_steps
             for key in obs.keys()
             if key != "time_step"
         }
         self.add_obs(obs)
-        self.plot()
 
     def add_obs(self, obs):
         for key in self.obs_values.keys():
             self.obs_values[key].append(obs[key])
 
-    def plot(self):
+    def _setup_figure(self):
 
-        with plt.xkcd(scale=1, length=20000, randomness=2):
-            self.vis.clear_output(wait=True)
-            with self.vis:
-
+        # Setting up figure
+        with plt.ioff():
+            with plt.xkcd(scale=1, length=20000, randomness=2):
                 # Setting correct height in pixels
                 # Conversion following setup described in:
                 # https://matplotlib.org/stable/gallery/subplots_axes_and_figures/figure_size_units.html
                 px = 1 / plt.rcParams["figure.dpi"]
-                fig_height = self.height_px * px  # in inches
+                fig_height = self.height_px * px * 0.8  # in inches
 
-                fig = plt.figure(constrained_layout=True, figsize=(8, fig_height))
-                subfigs = fig.subfigures(1, 2, wspace=0.07, width_ratios=[1, 2])
+                self.fig = plt.figure(constrained_layout=True, figsize=(8, fig_height))
+                self.fig.canvas.header_visible = False
+                self.fig.canvas.layout.min_height = self.height
+                self.fig.canvas.toolbar_visible = False
+                self.fig.canvas.resizable = False
+
+                subfigs = self.fig.subfigures(1, 2, wspace=0.07, width_ratios=[1, 2])
                 ax_left = subfigs[0].subplots(1)
                 ax_left.axis("off")
+
+                self.img_house = plt.imread(PROJECT_PATH / "widget/house.png")
                 ax_left.imshow(self.img_house)
-                axs = subfigs[1].subplots(len(self.obs_values))
+                self.obs_axs = subfigs[1].subplots(len(self.obs_values))
+
+                self.obs_lines = []
+                self.line_x = np.linspace(0, self.visible_steps, self.visible_steps)
+
                 for i, (obs_name, obs_part) in enumerate(self.obs_values.items()):
-                    axs[i].plot(obs_part)
-                    axs[i].set_title(obs_name.replace("_", " "))
-                for ax in axs:
+                    self.obs_lines.append(
+                        self.obs_axs[i].plot(
+                            self.line_x,
+                            obs_part[-self.visible_steps :],
+                        )
+                    )
+                    self.obs_axs[i].set_title(obs_name.replace("_", " "))
+                for ax in self.obs_axs:
                     ax.label_outer()
-                plt.show()
+
+    def _update_figure(self):
+        for i, obs_part in enumerate(self.obs_values.values):
+            # setting new data
+            self.obs_lines[i][0].set_data(self.line_x, obs_part[-self.visible_steps :])
+
+            # rescaling y axis
+            # based on https://stackoverflow.com/a/7198623
+            axs = self.obs_axs[i]
+            axs.relim()
+            axs.autoscale_view(True, True, True)
+
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
     def step(self, change):
         # pylint: disable=unused-argument
@@ -135,4 +178,4 @@ class Game(widgets.HBox):
                     self.control.set_trait("disabled", True)
                     print("Game over.")
 
-            self.plot()
+            self._update_figure()
