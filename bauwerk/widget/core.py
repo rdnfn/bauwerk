@@ -51,6 +51,8 @@ class Game(widgets.VBox):
 
         self.visible_steps = visible_steps
 
+        self.reward_label = "reward (payment)"
+
         self.active_thread = None
         self.pause_requested = False
 
@@ -145,6 +147,7 @@ class Game(widgets.VBox):
     def reset(self):
 
         obs = self.env.reset()
+        obs = {**obs, self.reward_label: np.array([0], dtype=np.float32)}
         self.obs_values = {
             key: [np.array([0], dtype=np.float32)] * self.visible_steps
             for key in obs.keys()
@@ -277,10 +280,9 @@ class Game(widgets.VBox):
             # pylint: disable=unused-variable
             observation, reward, terminated, truncated, info = self.env.step(action)
 
-            self.add_obs(observation)
+            self.add_obs({**observation, self.reward_label: reward})
 
             with self.out:
-                # print(observation)
 
                 if terminated or truncated:
                     self.game_finished = True
