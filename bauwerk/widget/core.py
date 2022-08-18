@@ -25,6 +25,7 @@ class Game(widgets.VBox):
         height: str = "400px",
         step_time=None,
         visible_steps=24,
+        episode_len=168,
     ):
         """Bauwerk building control game widget.
 
@@ -42,9 +43,10 @@ class Game(widgets.VBox):
 
         # Create underlying env
         self.env = gym.make(
-            "bauwerk/SolarBatteryHouse-v0",
-            new_step_api=True,
+            "bauwerk/SolarBatteryHouse-v0", new_step_api=True, episode_len=episode_len
         )
+
+        self.episode_len = episode_len
 
         self.height = height
         self.height_px = int(height.replace("px", ""))
@@ -222,7 +224,7 @@ class Game(widgets.VBox):
     def _launch_update_requesting_thread(self, change=None):
         # pylint: disable=unused-argument
         def work(widget):
-            max_steps = 25
+            max_steps = widget.episode_len
             for _ in range(max_steps):
                 if widget.game_finished or widget.pause_requested:
                     break
