@@ -32,7 +32,7 @@ class SolarBatteryHouseEnv(gym.Env):
         load: LoadModel = None,
         episode_len: float = 24,
         time_step_len: float = 1,
-        grid_charging: bool = False,
+        grid_charging: bool = True,
         infeasible_control_penalty: bool = False,
         obs_keys: List = None,
     ) -> None:
