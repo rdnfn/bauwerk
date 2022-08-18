@@ -11,3 +11,5 @@ twine
 pytest
 black==22.6
 pre-commit
+
+ipympl
