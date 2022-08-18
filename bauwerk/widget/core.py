@@ -158,57 +158,58 @@ class Game(widgets.VBox):
 
         # Setting up figure
         with plt.ioff():
-            with plt.xkcd(scale=1, length=20000, randomness=2):
-                # Setting correct height in pixels
-                # Conversion following setup described in:
-                # https://matplotlib.org/stable/gallery/subplots_axes_and_figures/figure_size_units.html
-                px = 1 / plt.rcParams["figure.dpi"]
-                fig_height = self.height_px * px * 1  # in inches
+            # with plt.xkcd(scale=1, length=20000, randomness=2):
 
-                self.fig = plt.figure(
-                    constrained_layout=True,
-                    figsize=(7, fig_height),  # dpi=50
-                )
-                self.fig.canvas.header_visible = False
-                self.fig.canvas.toolbar_visible = False
-                self.fig.canvas.resizable = False
-                self.fig.canvas.footer_visible = False
-                # self.fig.canvas.layout.height = "200px"
-                # self.fig.canvas.layout.width = "400px"
+            # Setting correct height in pixels
+            # Conversion following setup described in:
+            # https://matplotlib.org/stable/gallery/subplots_axes_and_figures/figure_size_units.html
+            px = 1 / plt.rcParams["figure.dpi"]
+            fig_height = self.height_px * px * 1  # in inches
 
-                plt.rcParams.update({"font.size": 10})
+            self.fig = plt.figure(
+                constrained_layout=True,
+                figsize=(7, fig_height),  # dpi=50
+            )
+            self.fig.canvas.header_visible = False
+            self.fig.canvas.toolbar_visible = False
+            self.fig.canvas.resizable = False
+            self.fig.canvas.footer_visible = False
+            # self.fig.canvas.layout.height = "200px"
+            # self.fig.canvas.layout.width = "400px"
 
-                subfigs = self.fig.subfigures(1, 2, wspace=0.07, width_ratios=[1, 2])
-                axs_left = subfigs[0].subplots(2)
-                axs_left[0].axis("off")
-                axs_left[1].axis("off")
+            plt.rcParams.update({"font.size": 10})
 
-                self.img_house = plt.imread(PROJECT_PATH / "widget/house.png")
-                axs_left[0].imshow(self.img_house)
-                self.score_text = axs_left[1].text(
-                    x=0.1,
-                    y=0.7,
-                    s="Score: 0",
-                    # animated=True,
-                    fontfamily="monospace",
-                    fontsize=16,
-                )
+            subfigs = self.fig.subfigures(1, 2, wspace=0.07, width_ratios=[1, 2])
+            axs_left = subfigs[0].subplots(2)
+            axs_left[0].axis("off")
+            axs_left[1].axis("off")
 
-                self.obs_axs = subfigs[1].subplots(len(self.obs_values))
+            self.img_house = plt.imread(PROJECT_PATH / "widget/house.png")
+            axs_left[0].imshow(self.img_house)
+            self.score_text = axs_left[1].text(
+                x=0.1,
+                y=0.7,
+                s="Score: 0",
+                # animated=True,
+                fontfamily="monospace",
+                fontsize=16,
+            )
 
-                self.obs_lines = []
-                self.line_x = np.linspace(0, self.visible_steps, self.visible_steps)
+            self.obs_axs = subfigs[1].subplots(len(self.obs_values))
 
-                for i, (obs_name, obs_part) in enumerate(self.obs_values.items()):
-                    self.obs_lines.append(
-                        self.obs_axs[i].plot(
-                            self.line_x,
-                            obs_part[-self.visible_steps :],
-                        )
+            self.obs_lines = []
+            self.line_x = np.linspace(0, self.visible_steps, self.visible_steps)
+
+            for i, (obs_name, obs_part) in enumerate(self.obs_values.items()):
+                self.obs_lines.append(
+                    self.obs_axs[i].plot(
+                        self.line_x,
+                        obs_part[-self.visible_steps :],
                     )
-                    self.obs_axs[i].set_title(obs_name.replace("_", " "))
-                for ax in self.obs_axs:
-                    ax.label_outer()
+                )
+                self.obs_axs[i].set_title(obs_name.replace("_", " "))
+            for ax in self.obs_axs:
+                ax.label_outer()
 
     def _update_figure(self):
         for i, obs_part in enumerate(self.obs_values.values()):
@@ -222,6 +223,8 @@ class Game(widgets.VBox):
             axs.autoscale_view(True, True, True)
 
             self.score_text.set_text(f"Score: {self.reward:.2f}")
+            if self.game_finished:
+                self.score_text.set_text(f"Game finished.\nScore: {self.reward:.2f}")
 
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
