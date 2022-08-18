@@ -81,16 +81,14 @@ class Game(widgets.VBox):
 
         self.out = widgets.Output(
             layout={
-                "width": "100px",
-                "height": "100px",
+                "width": "400px",
+                "height": "200px",
             }
         )
-        self.hidden_out = widgets.Output()
 
         with self.out:
             print("Get ready!")
 
-        # children = [self.control, self.vis, self.out]
         self.main_app = widgets.AppLayout(
             left_sidebar=self.control,
             center=self.fig.canvas,
@@ -145,21 +143,6 @@ class Game(widgets.VBox):
         return widgets.HBox(
             children=[self.start_button, self.pause_button, self.reset_button]
         )
-
-    def reset(self):
-
-        obs = self.env.reset()
-        obs = {**obs, self.reward_label: np.array([0], dtype=np.float32)}
-        self.obs_values = {
-            key: [np.array([0], dtype=np.float32)] * self.visible_steps
-            for key in obs.keys()
-            if key != "time_step"
-        }
-        self.add_obs(obs)
-
-    def add_obs(self, obs):
-        for key in self.obs_values.keys():
-            self.obs_values[key].append(obs[key])
 
     def _setup_figure(self):
 
@@ -273,22 +256,39 @@ class Game(widgets.VBox):
 
         if not self.game_finished:
 
-            self.out.clear_output()
+            self.out.clear_output(wait=True)
 
             action = self.control.value
-            # with self.out:
-            # print("Action", action)
             action = np.array([action], dtype=np.float32)
+
             # pylint: disable=unused-variable
             observation, reward, terminated, truncated, info = self.env.step(action)
-
             self.add_obs({**observation, self.reward_label: reward})
 
-            with self.out:
+            self.reward += reward
 
-                if terminated or truncated:
-                    self.game_finished = True
-                    self.control.set_trait("disabled", True)
-                    print("Game over.")
+            msg = f"Overall reward: {self.reward} \nNew reward: {reward}"
+            # self.out.append_display_data(widgets.Text(msg))
+
+            if terminated or truncated:
+                self.game_finished = True
+                self.control.set_trait("disabled", True)
+                # self.out.append_display_data(widgets.Text("Game over"))
 
             self._update_figure()
+
+    def reset(self):
+
+        obs = self.env.reset()
+        obs = {**obs, self.reward_label: np.array([0], dtype=np.float32)}
+        self.obs_values = {
+            key: [np.array([0], dtype=np.float32)] * self.visible_steps
+            for key in obs.keys()
+            if key != "time_step"
+        }
+        self.add_obs(obs)
+        self.reward = 0
+
+    def add_obs(self, obs):
+        for key in self.obs_values.keys():
+            self.obs_values[key].append(obs[key])
