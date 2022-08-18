@@ -51,6 +51,9 @@ class Game(widgets.AppLayout):
 
         self.visible_steps = visible_steps
 
+        self.active_thread = None
+        self.stop_requested = False
+
         # Setting up controller
         action_high = self.env.action_space.high[0]
         action_low = self.env.action_space.low[0]
@@ -63,11 +66,11 @@ class Game(widgets.AppLayout):
             continuous_update=False,
             layout={"height": height},
         )
+        self.menu_buttons = self._setup_menu_buttons()
 
         # Setting up main figure
 
         # This sets the first observations
-
         self.reset()
 
         self._setup_figure()
@@ -85,6 +88,7 @@ class Game(widgets.AppLayout):
 
         # children = [self.control, self.vis, self.out]
         super().__init__(
+            header=self.menu_buttons,
             left_sidebar=self.control,
             center=self.fig.canvas,
             footer=self.out,
@@ -101,9 +105,32 @@ class Game(widgets.AppLayout):
             self.observe(
                 self._process_step_request, names="step_requested", type="change"
             )
-            self._launch_update_requesting_thread()
+            # self._launch_update_requesting_thread()
         else:
             self.control.observe(self.step, names="value")
+
+    def _setup_menu_buttons(self):
+        # Setting up menu
+        self.start_button = widgets.Button(
+            description="Start",
+            disabled=False,
+            button_style="",  # 'success', 'info', 'warning', 'danger' or ''
+            tooltip="Start game",
+            icon="play",  # (FontAwesome names without the `fa-` prefix)
+        )
+        self.start_button.on_click(self._process_start_request)
+
+        # Setting up menu
+        self.stop_button = widgets.Button(
+            description="Stop",
+            disabled=False,
+            button_style="",  # 'success', 'info', 'warning', 'danger' or ''
+            tooltip="Start game",
+            icon="stop",  # (FontAwesome names without the `fa-` prefix)
+        )
+        self.stop_button.on_click(self._process_stop_request)
+
+        return widgets.GridBox(children=[self.start_button, self.stop_button])
 
     def reset(self):
 
@@ -173,11 +200,12 @@ class Game(widgets.AppLayout):
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
-    def _launch_update_requesting_thread(self):
+    def _launch_update_requesting_thread(self, change=None):
+        # pylint: disable=unused-argument
         def work(widget):
             max_steps = 25
             for _ in range(max_steps):
-                if widget.game_finished:
+                if widget.game_finished or widget.stop_requested:
                     break
                 time.sleep(self.step_time)
                 widget.step_requested = True
@@ -185,6 +213,28 @@ class Game(widgets.AppLayout):
         thread = threading.Thread(target=work, args=(self,))
         thread.start()
         logger.info("Started thread.")
+        return thread
+
+    def _process_start_request(self, change=None):
+        # pylint: disable=unused-argument
+        if self.active_thread:
+            self.stop_requested = True
+            self.active_thread.join()
+            self.stop_requested = False
+
+        self.active_thread = self._launch_update_requesting_thread()
+
+    def _process_stop_request(self, change=None):
+        # pylint: disable=unused-argument
+        if self.active_thread:
+            self.stop_requested = True
+            self.active_thread.join()
+            self.stop_requested = False
+
+    def _process_reset_request(self, change=None):
+        # pylint: disable=unused-argument
+        self._process_stop_request()
+        self.reset()
 
     def _process_step_request(self, change):
         # pylint: disable=unused-argument
