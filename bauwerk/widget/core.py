@@ -174,27 +174,20 @@ class Game(widgets.VBox):
             self.fig.canvas.header_visible = False
             self.fig.canvas.toolbar_visible = False
             self.fig.canvas.resizable = False
-            self.fig.canvas.footer_visible = False
+            # self.fig.canvas.footer_visible = False
             # self.fig.canvas.layout.height = "200px"
             # self.fig.canvas.layout.width = "400px"
 
             plt.rcParams.update({"font.size": 10})
 
             subfigs = self.fig.subfigures(1, 2, wspace=0.07, width_ratios=[1, 2])
-            axs_left = subfigs[0].subplots(2)
-            axs_left[0].axis("off")
-            axs_left[1].axis("off")
 
-            self.img_house = plt.imread(PROJECT_PATH / "widget/house.png")
-            self.solar_indicator = axs_left[0].add_patch(
-                mpatches.Circle(
-                    (200, 120),
-                    radius=30,
-                    alpha=0.5,
-                    facecolor="white",
-                )
-            )
-            axs_left[0].imshow(self.img_house)
+            # Left handside of plt animation
+            axs_left = subfigs[0].subplots(2)
+            self._create_house_figure(axs_left[0])
+
+            # Draw text
+            axs_left[1].axis("off")
             self.score_text = axs_left[1].text(
                 x=0.1,
                 y=0.7,
@@ -204,6 +197,8 @@ class Game(widgets.VBox):
                 fontsize=16,
             )
 
+            # Right handside of plt animation
+            # Create observation data plots
             self.obs_axs = subfigs[1].subplots(len(self.obs_values))
 
             self.obs_lines = []
@@ -220,6 +215,36 @@ class Game(widgets.VBox):
             for ax in self.obs_axs:
                 ax.label_outer()
 
+    def _create_house_figure(self, img_ax):
+        img_ax.axis("off")
+        self.img_house = plt.imread(PROJECT_PATH / "widget/house.png")
+        self.indicator_solar = img_ax.add_patch(
+            mpatches.Circle(
+                (200, 120),
+                radius=30,
+                alpha=0.5,
+                facecolor="white",
+            )
+        )
+        self.indicator_load = img_ax.add_patch(
+            mpatches.Rectangle(
+                (147, 234), width=99, height=90, facecolor="black", alpha=0.5
+            )
+        )
+        img_ax.imshow(self.img_house)
+
+    def _update_house_figure(self):
+        # updating figure
+        solar_strength = float(
+            self.obs_values["pv_gen"][-1] / (max(self.obs_values["pv_gen"]) + 0.00001)
+        )
+        self.indicator_solar.set_alpha(solar_strength)
+
+        load_strength = 0.5 - 0.5 * float(
+            self.obs_values["load"][-1] / (max(self.obs_values["load"]) + 0.00001)
+        )
+        self.indicator_load.set_alpha(load_strength)
+
     def _update_figure(self):
         for i, obs_part in enumerate(self.obs_values.values()):
             # setting new data
@@ -235,12 +260,7 @@ class Game(widgets.VBox):
             if self.game_finished:
                 self.score_text.set_text(f"Game finished.\nScore: {self.reward:.2f}")
 
-            # updating figure
-            solar_strength = float(
-                self.obs_values["pv_gen"][-1]
-                / (max(self.obs_values["pv_gen"]) + 0.00001)
-            )
-            self.solar_indicator.set_alpha(solar_strength)
+            self._update_house_figure()
 
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
