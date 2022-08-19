@@ -231,6 +231,11 @@ class Game(widgets.VBox):
                 (147, 234), width=99, height=90, facecolor="black", alpha=0.5
             )
         )
+        self.indicator_battery = img_ax.add_patch(
+            mpatches.Rectangle(
+                (348, 218), width=30, height=82, facecolor="white", alpha=0.7
+            )
+        )
         img_ax.imshow(self.img_house)
 
     def _update_house_figure(self):
@@ -244,6 +249,16 @@ class Game(widgets.VBox):
             self.obs_values["load"][-1] / (max(self.obs_values["load"]) + 0.00001)
         )
         self.indicator_load.set_alpha(load_strength)
+
+        battery_cont = float(
+            self.obs_values["battery_cont"][-1] / self.env.battery.size
+        )
+
+        ba_height = 82 * battery_cont
+        ba_y = 218 + 82 - ba_height
+
+        self.indicator_battery.set_height(ba_height)
+        self.indicator_battery.set_y(ba_y)
 
     def _update_figure(self):
         for i, obs_part in enumerate(self.obs_values.values()):
