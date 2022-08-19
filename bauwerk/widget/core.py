@@ -47,6 +47,9 @@ class Game(widgets.VBox):
             "bauwerk/SolarBatteryHouse-v0", new_step_api=True, episode_len=episode_len
         )
 
+        logo_file = open(PROJECT_PATH / "widget/bauwerk_game_logo.png", "rb")
+        self.game_logo_img = logo_file.read()
+
         self.episode_len = episode_len
 
         self.fig_height = height - 120
@@ -87,13 +90,22 @@ class Game(widgets.VBox):
         )
         self.heading = widgets.HTML(
             value=(
-                "<code style='color: black'><h1 style='display: inline'>Bauwerk Game"
-                "</h1>&nbsp;&nbsp;&nbsp;<h3 style='display: inline'>Level: "
+                # "<code style='color: black'><h1 style='display: inline'>Bauwerk Game"
+                # "</h1>&nbsp;&nbsp;&nbsp;"
+                "<h3 style='display: inline'>Level: "
                 "SolarBatteryHouse-v0</h3></code>"
             ),
         )
         self.main_app = widgets.VBox(
-            [widgets.VBox([self.heading, self.menu_buttons]), self.game_lower_part]
+            [
+                widgets.VBox(
+                    [
+                        self.menu_buttons,
+                        # self.heading,
+                    ]
+                ),
+                self.game_lower_part,
+            ]
         )
         self.main_app.layout.display = "none"
 
@@ -101,7 +113,10 @@ class Game(widgets.VBox):
 
         super().__init__(
             children=[self.start_screen, self.main_app],
-            layout={"height": f"{height}px"},
+            layout={
+                "height": f"{height}px",
+                "align_items": "center",
+            },
         )
 
         self.game_finished = False
@@ -156,8 +171,16 @@ class Game(widgets.VBox):
         )
         self.back_to_menu_button.on_click(self._go_to_start_screen)
 
+        self.game_logo_small = widgets.Image(
+            value=self.game_logo_img,
+            format="png",
+            width=70,
+            layout={"margin": "10px"},
+        )
+
         return widgets.HBox(
             children=[
+                self.game_logo_small,
                 self.start_button,
                 self.pause_button,
                 self.reset_button,
@@ -419,18 +442,34 @@ class Game(widgets.VBox):
 
     def _go_to_game(self, change=None):
         # pylint: disable=unused-argument
+        # Note: Confusingly "none" does not show the widget,
+        # None does show the widget.
         self.start_screen.layout.display = "none"
-        self.main_app.layout.display = "block"
+        self.main_app.layout.display = None
 
     def _go_to_start_screen(self, change=None):
         # pylint: disable=unused-argument
         self.pause_button.click()
-        self.start_screen.layout.display = "block"
+        self.start_screen.layout.display = None
         self.main_app.layout.display = "none"
 
     def _setup_start_screen(self):
         self.begin_button = widgets.Button(
             description="Start game",
         )
+        self.game_logo = widgets.Image(
+            value=self.game_logo_img,
+            format="png",
+            width=150,
+            layout={"margin": "30px"},
+        )
         self.begin_button.on_click(self._go_to_game)
-        self.start_screen = widgets.VBox(children=[self.begin_button])
+        self.start_screen = widgets.VBox(
+            children=[
+                self.game_logo,
+                self.begin_button,
+            ],
+            layout={
+                "align_items": "center",
+            },
+        )
