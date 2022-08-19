@@ -23,7 +23,7 @@ class Game(widgets.VBox):
     def __init__(
         self,
         log_level: str = "error",
-        height: str = "400px",
+        height: int = 400,
         step_time=None,
         visible_steps=24,
         episode_len=168,
@@ -33,8 +33,8 @@ class Game(widgets.VBox):
         Args:
             log_level (str, optional): Lower case logging level (e.g. "info", "debug").
                 Defaults to "error".
-            height (str, optional): height of widget in px as str ending with px.
-                Defaults to "400px".
+            height (int, optional): height of widget in px.
+                Defaults to 400 px.
         """
 
         # Setup logging
@@ -49,8 +49,7 @@ class Game(widgets.VBox):
 
         self.episode_len = episode_len
 
-        self.height = height
-        self.height_px = int(height.replace("px", ""))
+        self.fig_height = height - 120
 
         self.visible_steps = visible_steps
 
@@ -70,7 +69,7 @@ class Game(widgets.VBox):
             max=action_high,
             step=0.05,
             continuous_update=True,
-            layout={"height": height},
+            layout={"height": f"{self.fig_height}px"},
         )
         self.menu_buttons = self._setup_menu_buttons()
 
@@ -81,7 +80,7 @@ class Game(widgets.VBox):
 
         self._setup_figure()
 
-        self.main_app = widgets.AppLayout(
+        self.game_lower_part = widgets.AppLayout(
             left_sidebar=self.control,
             center=self.fig.canvas,
             pane_widths=[1, 9, 0],
@@ -93,8 +92,16 @@ class Game(widgets.VBox):
                 "SolarBatteryHouse-v0</h3></code>"
             ),
         )
+        self.main_app = widgets.VBox(
+            [widgets.VBox([self.heading, self.menu_buttons]), self.game_lower_part]
+        )
+        self.main_app.layout.display = "none"
+
+        self._setup_start_screen()
+
         super().__init__(
-            children=[widgets.VBox([self.heading, self.menu_buttons]), self.main_app]
+            children=[self.start_screen, self.main_app],
+            layout={"height": f"{height}px"},
         )
 
         self.game_finished = False
@@ -140,8 +147,22 @@ class Game(widgets.VBox):
         )
         self.reset_button.on_click(self._process_reset_request)
 
+        self.back_to_menu_button = widgets.Button(
+            description="Menu",
+            disabled=False,
+            button_style="",  # 'success', 'info', 'warning', 'danger' or ''
+            tooltip="Back to main menu.",
+            icon="bars",  # (FontAwesome names without the `fa-` prefix)
+        )
+        self.back_to_menu_button.on_click(self._go_to_start_screen)
+
         return widgets.HBox(
-            children=[self.start_button, self.pause_button, self.reset_button]
+            children=[
+                self.start_button,
+                self.pause_button,
+                self.reset_button,
+                self.back_to_menu_button,
+            ]
         )
 
     def _setup_figure(self):
@@ -154,7 +175,7 @@ class Game(widgets.VBox):
             # Conversion following setup described in:
             # https://matplotlib.org/stable/gallery/subplots_axes_and_figures/figure_size_units.html
             px = 1 / plt.rcParams["figure.dpi"]
-            fig_height = self.height_px * px * 1  # in inches
+            fig_height = self.fig_height * px * 1  # in inches
 
             self.fig = plt.figure(
                 constrained_layout=True,
@@ -172,7 +193,7 @@ class Game(widgets.VBox):
             subfigs = self.fig.subfigures(1, 2, wspace=0.07, width_ratios=[1, 2])
 
             # Left handside of plt animation
-            axs_left = subfigs[0].subplots(2)
+            axs_left = subfigs[0].subplots(2, gridspec_kw={"height_ratios": [2, 1]})
             self._create_house_figure(axs_left[0])
 
             # Draw text
@@ -228,7 +249,7 @@ class Game(widgets.VBox):
 
         self.indicator_load = img_ax.add_patch(
             mpatches.Rectangle(
-                (143, 349), width=99, height=90, facecolor="black", alpha=0.5
+                (143, 347), width=99, height=92, facecolor="black", alpha=0.5
             )
         )
         self.indicator_battery = img_ax.add_patch(
@@ -236,8 +257,8 @@ class Game(widgets.VBox):
                 (344, 331), width=29, height=80, facecolor="white", alpha=0.7
             )
         )
-        # Parallelogram
-        x = [384, 420, 420, 384]
+        # Parallelogram of battery
+        x = [384, 421, 421, 384]
         y = [328, 300, 380, 408]
         self.indicator_battery_side_xy = np.array(list(zip(x, y)))
         self.indicator_battery_side = mpatches.Polygon(
@@ -395,3 +416,21 @@ class Game(widgets.VBox):
     def add_obs(self, obs):
         for key in self.obs_values.keys():
             self.obs_values[key].append(obs[key])
+
+    def _go_to_game(self, change=None):
+        # pylint: disable=unused-argument
+        self.start_screen.layout.display = "none"
+        self.main_app.layout.display = "block"
+
+    def _go_to_start_screen(self, change=None):
+        # pylint: disable=unused-argument
+        self.pause_button.click()
+        self.start_screen.layout.display = "block"
+        self.main_app.layout.display = "none"
+
+    def _setup_start_screen(self):
+        self.begin_button = widgets.Button(
+            description="Start game",
+        )
+        self.begin_button.on_click(self._go_to_game)
+        self.start_screen = widgets.VBox(children=[self.begin_button])
