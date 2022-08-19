@@ -215,6 +215,17 @@ class Game(widgets.VBox):
                 facecolor="white",
             )
         )
+        # Parallelogram of sun rays
+        x = [133, 273, 304, 208, 110]
+        y = [274, 274, 198, 120, 166]
+        self.indicator_solar_ray_xy = np.array(list(zip(x, y)))
+        self.indicator_solar_ray = mpatches.Polygon(
+            xy=self.indicator_solar_ray_xy,
+            facecolor="white",
+            alpha=0.7,
+        )
+        img_ax.add_patch(self.indicator_solar_ray)
+
         self.indicator_load = img_ax.add_patch(
             mpatches.Rectangle(
                 (143, 349), width=99, height=90, facecolor="black", alpha=0.5
@@ -222,11 +233,11 @@ class Game(widgets.VBox):
         )
         self.indicator_battery = img_ax.add_patch(
             mpatches.Rectangle(
-                (343, 331), width=30, height=80, facecolor="white", alpha=0.7
+                (344, 331), width=29, height=80, facecolor="white", alpha=0.7
             )
         )
         # Parallelogram
-        x = [384, 422, 422, 384]
+        x = [384, 420, 420, 384]
         y = [328, 300, 380, 408]
         self.indicator_battery_side_xy = np.array(list(zip(x, y)))
         self.indicator_battery_side = mpatches.Polygon(
@@ -239,21 +250,27 @@ class Game(widgets.VBox):
         img_ax.imshow(self.img_house)
 
     def _update_house_figure(self):
-        def get_alpha_value(obs_val, data_source, min_alpha=0.1):
-            return 1 - float(
-                (obs_val - data_source.min_value + min_alpha)
-                / (data_source.max_value - data_source.min_value + min_alpha)
-            )
+        def get_alpha_value(obs_val, data_source, min_alpha=0.1, max_alpha=0.9):
+            val_range = data_source.max_value - data_source.min_value
+            alpha = float((obs_val - data_source.min_value) / val_range)
+            alpha = min_alpha + alpha * (max_alpha - min_alpha)
+            return alpha
 
         # updating figure
         solar_strength = get_alpha_value(
-            self.obs_values["pv_gen"][-1], self.env.solar, 0.1
+            self.obs_values["pv_gen"][-1], self.env.solar, 0.2
         )
-        self.indicator_solar.set_alpha(solar_strength)
+        solar_ray_strength = get_alpha_value(
+            self.obs_values["pv_gen"][-1], self.env.solar, 0.0, 0.5
+        )
+        self.indicator_solar.set_alpha(1 - solar_strength)
+        self.indicator_solar_ray.set_alpha(solar_ray_strength)
 
-        load_strength = get_alpha_value(self.obs_values["load"][-1], self.env.load, 0.7)
+        load_strength = get_alpha_value(
+            self.obs_values["load"][-1], self.env.load, 0.4, 1
+        )
 
-        self.indicator_load.set_alpha(load_strength)
+        self.indicator_load.set_alpha(1 - load_strength)
 
         battery_cont = float(
             self.obs_values["battery_cont"][-1] / self.env.battery.size
