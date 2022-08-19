@@ -222,7 +222,7 @@ class Game(widgets.VBox):
         self.indicator_solar_ray = mpatches.Polygon(
             xy=self.indicator_solar_ray_xy,
             facecolor="white",
-            alpha=0.7,
+            alpha=0.3,
         )
         img_ax.add_patch(self.indicator_solar_ray)
 
@@ -258,7 +258,7 @@ class Game(widgets.VBox):
 
         # updating figure
         solar_strength = get_alpha_value(
-            self.obs_values["pv_gen"][-1], self.env.solar, 0.2
+            self.obs_values["pv_gen"][-1], self.env.solar, 0.2, 0.9
         )
         solar_ray_strength = get_alpha_value(
             self.obs_values["pv_gen"][-1], self.env.solar, 0.0, 0.5
