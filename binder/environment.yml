@@ -5,6 +5,7 @@ channels:
   - defaults
 dependencies:
   - python=3.9
+  - scipy
   - pip
   - pip:
     - -r requirements_binder.txt
