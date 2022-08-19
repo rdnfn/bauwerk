@@ -23,7 +23,7 @@ class Game(widgets.VBox):
     def __init__(
         self,
         log_level: str = "error",
-        height: int = 400,
+        height: int = 500,
         step_time=None,
         visible_steps=24,
         episode_len=168,
@@ -52,7 +52,7 @@ class Game(widgets.VBox):
 
         self.episode_len = episode_len
 
-        self.fig_height = height - 120
+        self.fig_height = height - 150
 
         self.visible_steps = visible_steps
 
@@ -174,8 +174,8 @@ class Game(widgets.VBox):
         self.game_logo_small = widgets.Image(
             value=self.game_logo_img,
             format="png",
-            width=70,
-            layout={"margin": "10px"},
+            width=50,
+            layout={"margin": "0px 10px 0px 0px"},
         )
 
         return widgets.HBox(
@@ -185,7 +185,8 @@ class Game(widgets.VBox):
                 self.pause_button,
                 self.reset_button,
                 self.back_to_menu_button,
-            ]
+            ],
+            # layout={"align_items": "center"},
         )
 
     def _setup_figure(self):
