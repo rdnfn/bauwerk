@@ -1,0 +1,4 @@
+matplotlib==3.5.1
+ipympl==9.1
+cvxpy==1.1.13
+jupyterlab==3.3.2
