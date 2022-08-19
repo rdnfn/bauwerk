@@ -81,20 +81,9 @@ class Game(widgets.VBox):
 
         self._setup_figure()
 
-        self.out = widgets.Output(
-            layout={
-                "width": "400px",
-                "height": "200px",
-            }
-        )
-
-        with self.out:
-            print("Get ready!")
-
         self.main_app = widgets.AppLayout(
             left_sidebar=self.control,
             center=self.fig.canvas,
-            footer=self.out,
             pane_widths=[1, 9, 0],
         )
         self.heading = widgets.HTML(
@@ -356,8 +345,6 @@ class Game(widgets.VBox):
         # pylint: disable=unused-argument
 
         if not self.game_finished:
-
-            self.out.clear_output(wait=True)
 
             action = self.control.value
             action = np.array([action], dtype=np.float32)
