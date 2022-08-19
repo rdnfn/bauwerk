@@ -217,48 +217,73 @@ class Game(widgets.VBox):
 
     def _create_house_figure(self, img_ax):
         img_ax.axis("off")
-        self.img_house = plt.imread(PROJECT_PATH / "widget/house.png")
+        self.img_house = plt.imread(PROJECT_PATH / "widget/house_v2.png")
         self.indicator_solar = img_ax.add_patch(
             mpatches.Circle(
-                (200, 120),
-                radius=30,
-                alpha=0.5,
+                (111, 72),
+                radius=75,
+                alpha=0.0,
                 facecolor="white",
             )
         )
         self.indicator_load = img_ax.add_patch(
             mpatches.Rectangle(
-                (147, 234), width=99, height=90, facecolor="black", alpha=0.5
+                (143, 349), width=99, height=90, facecolor="black", alpha=0.5
             )
         )
         self.indicator_battery = img_ax.add_patch(
             mpatches.Rectangle(
-                (348, 218), width=30, height=82, facecolor="white", alpha=0.7
+                (343, 331), width=30, height=80, facecolor="white", alpha=0.7
             )
         )
+        # Parallelogram
+        x = [384, 422, 422, 384]
+        y = [328, 300, 380, 408]
+        self.indicator_battery_side_xy = np.array(list(zip(x, y)))
+        self.indicator_battery_side = mpatches.Polygon(
+            xy=self.indicator_battery_side_xy,
+            facecolor="white",
+            alpha=0.7,
+        )
+        img_ax.add_patch(self.indicator_battery_side)
+
         img_ax.imshow(self.img_house)
 
     def _update_house_figure(self):
+        def get_alpha_value(obs_val, data_source, min_alpha=0.1):
+            return 1 - float(
+                (obs_val - data_source.min_value + min_alpha)
+                / (data_source.max_value - data_source.min_value + min_alpha)
+            )
+
         # updating figure
-        solar_strength = float(
-            self.obs_values["pv_gen"][-1] / (max(self.obs_values["pv_gen"]) + 0.00001)
+        solar_strength = get_alpha_value(
+            self.obs_values["pv_gen"][-1], self.env.solar, 0.1
         )
         self.indicator_solar.set_alpha(solar_strength)
 
-        load_strength = 0.5 - 0.5 * float(
-            self.obs_values["load"][-1] / (max(self.obs_values["load"]) + 0.00001)
-        )
+        load_strength = get_alpha_value(self.obs_values["load"][-1], self.env.load, 0.7)
+
         self.indicator_load.set_alpha(load_strength)
 
         battery_cont = float(
             self.obs_values["battery_cont"][-1] / self.env.battery.size
         )
 
-        ba_height = 82 * battery_cont
-        ba_y = 218 + 82 - ba_height
+        ba_height = 80 * battery_cont
+        ba_y = 330 + 80 - ba_height
 
         self.indicator_battery.set_height(ba_height)
         self.indicator_battery.set_y(ba_y)
+
+        y_update = [(80 - ba_height)] * 2 + [0] * 2
+        new_xy = (
+            np.array(
+                list(zip([0] * 4, y_update)),
+            )
+            + self.indicator_battery_side_xy
+        )
+        self.indicator_battery_side.set_xy(new_xy)
 
     def _update_figure(self):
         for i, obs_part in enumerate(self.obs_values.values()):

@@ -67,6 +67,8 @@ class DataLoad(LoadModel):
         end = start + self.num_steps + 1
 
         self.episode_values = self.data[start:end]
+        self.max_value = max(self.episode_values)
+        self.min_value = min(self.episode_values)
 
     def step(self) -> None:
         """Step in time."""
