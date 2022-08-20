@@ -8,5 +8,5 @@ dependencies:
   - scipy
   - pip
   - pip:
-    - -r requirements_binder.txt
+    - -r requirements_binder_frozen.txt
     - -e ./..
