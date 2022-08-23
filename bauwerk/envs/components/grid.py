@@ -15,6 +15,8 @@ class PeakGrid(GridModel):
         peak_threshold: float = 1.6,
         base_price: float = 0.14,
         peak_price: float = 1.0,
+        sell_price: float = 0.08,
+        selling_allowed: bool = True,
         time_step_len: float = 1.0,
     ) -> None:
         """Grid model with peak-demand pricing.
@@ -31,6 +33,8 @@ class PeakGrid(GridModel):
         self.peak_threshold = peak_threshold
         self.peak_price = peak_price
         self.base_price = base_price
+        self.sell_price = sell_price
+        self.selling_allowed = selling_allowed
         self.time_step_len = time_step_len
 
     def draw_power(self, power: float) -> float:
@@ -41,13 +45,17 @@ class PeakGrid(GridModel):
 
         Args:
             power (float): power to transfer (kW)
-            time (float): time of transfer
 
         Returns:
             float: price paid (can be positive or negative)
         """
         if power < 0:
-            raise ValueError("Peak grid model can't accept incoming power (power<0).")
+            if not self.selling_allowed:
+                raise ValueError(
+                    "Peak grid model can't accept incoming power (power<0)."
+                )
+            else:
+                return power * self.sell_price * self.time_step_len
 
         if power > self.peak_threshold:
             return (

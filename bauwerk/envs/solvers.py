@@ -29,8 +29,10 @@ def solve_solar_battery_house(env: SolarBatteryHouseEnv) -> np.array:
     # with power demand exceeding Γ($/kWh)
     gamma = env.grid.peak_threshold  # np.percentile(load_data, 80) # Threshold above
     # which the demand price is paid (kW)
-    p_bar = 0  # 0.12  # Price per unit of energy sold at time t ($/kWh)
-    # TODO: add ability to sell energy
+    if env.grid.selling_allowed:
+        p_bar = env.grid.sell_price  # Price per unit of energy sold at time t ($/kWh)
+    else:
+        p_bar = 0
 
     ### Battery variables
     size = env.battery.size
@@ -98,8 +100,10 @@ def solve_solar_battery_house(env: SolarBatteryHouseEnv) -> np.array:
     grid_constraints = [
         0 <= power_over_thres,
         power_grid - gamma <= power_over_thres,  # Eq (24)
-        power_sell == 0,  # stopping selling to the grid
     ]
+
+    if not env.grid.selling_allowed:
+        grid_constraints += [power_sell == 0]  # stopping selling to the grid
 
     battery_constraints = [
         energy_battery[0] == 0,

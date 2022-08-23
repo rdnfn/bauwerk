@@ -201,7 +201,9 @@ class SolarBatteryHouseEnv(gym.Env):
 
         # Get the net load after accounting for power stream of battery and PV
         net_load = load + charging_power - pv_generation
-        net_load = np.maximum(net_load, 0)
+
+        if not self.grid.selling_allowed:
+            net_load = np.maximum(net_load, 0)
 
         self.logger.debug("step - net load: %s", net_load)
 
