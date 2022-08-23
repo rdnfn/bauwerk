@@ -9,4 +9,5 @@ def test_solar_battery_house():
     env = gym.make("bauwerk/SolarBatteryHouse-v0", new_step_api=True)
 
     env.reset()
-    env.step(env.action_space.sample())
+    for _ in range(10):
+        env.step(env.action_space.sample())
