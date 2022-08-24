@@ -24,6 +24,7 @@ class DataComponent(EnvComponent):
         time_step_len: float = 1,
         num_steps: int = 24,
         fixed_sample_num: int = None,
+        scaling_factor: float = 1.0,
     ) -> None:
         """Photovoltaic model that samples from data.
 
@@ -42,6 +43,9 @@ class DataComponent(EnvComponent):
                 bw_data_path.joinpath("default_solar_data.txt")
             ) as data_file:
                 self.data = np.loadtxt(data_file, delimiter=",")
+
+        if scaling_factor != 1.0:
+            self.data *= scaling_factor
         self.num_steps = num_steps
         self.time_step_len = time_step_len
         self.fix_start(fixed_sample_num)

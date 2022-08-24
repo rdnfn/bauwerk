@@ -38,7 +38,9 @@ class EnvConfig:
     battery_size: float = 10
     battery_chemistry: str = "NMC"
     solar_data: Union[str, pathlib.Path] = None
+    solar_scaling_factor: float = 1.0
     load_data: Union[str, pathlib.Path] = None
+    load_scaling_factor: float = 1.0
     fixed_sample_num: int = 12
     grid_peak_threshold: float = 1.0
 
@@ -175,11 +177,13 @@ class SolarBatteryHouseEnv(gym.Env):
                 data_path=self.cfg.solar_data,
                 fixed_sample_num=self.cfg.fixed_sample_num,
                 num_steps=self.cfg.episode_len,
+                scaling_factor=self.cfg.solar_scaling_factor,
             ),
             "load": lambda: bauwerk.envs.components.load.DataLoad(
                 data_path=self.cfg.load_data,
                 fixed_sample_num=self.cfg.fixed_sample_num,
                 num_steps=self.cfg.episode_len,
+                scaling_factor=self.cfg.load_scaling_factor,
             ),
             "grid": lambda: bauwerk.envs.components.grid.PeakGrid(
                 peak_threshold=self.cfg.grid_peak_threshold
