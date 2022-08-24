@@ -44,7 +44,9 @@ class Game(widgets.VBox):
 
         # Create underlying env
         self.env = gym.make(
-            "bauwerk/SolarBatteryHouse-v0", new_step_api=True, episode_len=episode_len
+            "bauwerk/SolarBatteryHouse-v0",
+            new_step_api=True,
+            cfg={"episode_len": episode_len},
         )
 
         logo_file = open(PROJECT_PATH / "widget/bauwerk_game_logo.png", "rb")
