@@ -56,7 +56,7 @@ class SolarBatteryHouseEnv(gym.Env):
 
     def __init__(
         self,
-        cfg: EnvConfig = None,
+        cfg: Union[EnvConfig, dict] = None,
     ) -> None:
         """A gym environment for controlling a house with solar and battery.
 
@@ -68,6 +68,8 @@ class SolarBatteryHouseEnv(gym.Env):
 
         if cfg is None:
             cfg = EnvConfig()
+        elif isinstance(cfg, dict):
+            cfg = EnvConfig(**cfg)
         self.cfg = cfg
 
         self._setup_components()
