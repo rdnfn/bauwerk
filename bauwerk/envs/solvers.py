@@ -20,8 +20,10 @@ def solve_solar_battery_house(env: SolarBatteryHouseEnv) -> np.array:
     ## Given variables
 
     ### Basic
-    T_u = env.time_step_len  # Time slot duration #pylint: disable=invalid-name
-    T_h = env.episode_len  # 24  # Time horizon (hours) #pylint: disable=invalid-name
+    T_u = env.cfg.time_step_len  # Time slot duration #pylint: disable=invalid-name
+    T_h = (  # pylint: disable=invalid-name
+        env.cfg.episode_len
+    )  # 24  # Time horizon (hours)
 
     ### Grid
     pi_b = env.grid.base_price  # 0.14 # Base price per unit of energy purchased ($/kWh)

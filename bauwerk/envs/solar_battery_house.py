@@ -1,14 +1,14 @@
 """Module with battery control environment of a photovoltaic installation."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Tuple, List
+from dataclasses import dataclass, field
+import pathlib
+from typing import TYPE_CHECKING, Optional, Tuple, Union
 from loguru import logger
 import gym
 import numpy as np
-import copy
 
 import bauwerk.utils.logging
-from bauwerk.envs.configs import DEFAULT_ENV_CONFIG
 import bauwerk.envs.components.solar
 import bauwerk.envs.components.load
 import bauwerk.envs.components.grid
@@ -21,20 +21,42 @@ if TYPE_CHECKING:
     from bauwerk.envs.components.solar import PVModel
 
 
+@dataclass
+class EnvConfig:
+    """Configuration for solar battery house environment."""
+
+    # general config params
+    time_step_len: float = 1.0  # in hours
+    episode_len: float = 24
+    grid_charging: bool = True
+    infeasible_control_penalty: bool = False
+    obs_keys: list = field(
+        default_factory=lambda: ["load", "pv_gen", "battery_cont", "time_step"]
+    )
+
+    # component params
+    battery_size: float = 10
+    battery_chemistry: str = "NMC"
+    solar_data: Union[str, pathlib.Path] = None
+    load_data: Union[str, pathlib.Path] = None
+    fixed_sample_num: int = 12
+    grid_peak_threshold: float = 1.0
+
+    # optional custom component models
+    # (if these are set, component params above will
+    # be ignored for the custom components set)
+    solar: PVModel = None
+    battery: BatteryModel = None
+    load: LoadModel = None
+    grid: GridModel = None
+
+
 class SolarBatteryHouseEnv(gym.Env):
     """A gym environment for controlling a house with solar installation and battery."""
 
     def __init__(
         self,
-        battery: BatteryModel = None,
-        solar: PVModel = None,
-        grid: GridModel = None,
-        load: LoadModel = None,
-        episode_len: float = 24,
-        time_step_len: float = 1,
-        grid_charging: bool = True,
-        infeasible_control_penalty: bool = False,
-        obs_keys: List = None,
+        cfg: EnvConfig = None,
     ) -> None:
         """A gym environment for controlling a house with solar and battery.
 
@@ -44,30 +66,21 @@ class SolarBatteryHouseEnv(gym.Env):
         https://github.com/openai/gym/blob/master/gym/core.py
         """
 
-        if obs_keys is None:
-            obs_keys = [
-                "load",
-                "pv_gen",
-                "battery_cont",
-                "time_step",
-            ]
-        self.obs_keys = obs_keys
+        if cfg is None:
+            cfg = EnvConfig()
+        self.cfg = cfg
 
-        self._setup_components(battery, solar, grid, load)
+        self._setup_components()
 
         self.data_len = min(len(self.load.data), len(self.solar.data))
 
-        self.episode_len = episode_len
-        self.load.num_steps = episode_len
-        self.solar.num_steps = episode_len
-        self.time_step_len = time_step_len
-        self.grid_charging = grid_charging
-        self.infeasible_control_penalty = infeasible_control_penalty
-
         # Setting up action and observation space
-
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
-
+        self.action_space = gym.spaces.Box(
+            low=-1,
+            high=1,
+            shape=(1,),
+            dtype=np.float32,
+        )
         obs_spaces = {
             "load": gym.spaces.Box(
                 low=0, high=np.finfo(np.float32).max, shape=(1,), dtype=np.float32
@@ -78,9 +91,9 @@ class SolarBatteryHouseEnv(gym.Env):
             "battery_cont": gym.spaces.Box(
                 low=0, high=self.battery.size, shape=(1,), dtype=np.float32
             ),
-            "time_step": gym.spaces.Discrete(self.episode_len + 1),
+            "time_step": gym.spaces.Discrete(self.cfg.episode_len + 1),
             "time_step_cont": gym.spaces.Box(
-                low=0, high=self.episode_len + 1, shape=(1,), dtype=np.float32
+                low=0, high=self.cfg.episode_len + 1, shape=(1,), dtype=np.float32
             ),
             "cum_load": gym.spaces.Box(
                 low=0, high=np.finfo(np.float32).max, shape=(1,), dtype=np.float32
@@ -103,7 +116,7 @@ class SolarBatteryHouseEnv(gym.Env):
         }
 
         # Selecting the subset of obs spaces selected
-        obs_spaces = {key: obs_spaces[key] for key in self.obs_keys}
+        obs_spaces = {key: obs_spaces[key] for key in self.cfg.obs_keys}
         self.observation_space = gym.spaces.Dict(obs_spaces)
 
         (
@@ -119,40 +132,58 @@ class SolarBatteryHouseEnv(gym.Env):
 
         self.reset()
 
-    def _setup_components(self, battery, solar, grid, load) -> None:
+    def _setup_components(self) -> None:
         """Setup components (devices) of house."""
 
         component_input = {
-            "battery": battery,
-            "solar": solar,
-            "grid": grid,
-            "load": load,
+            "battery": self.cfg.battery,
+            "solar": self.cfg.solar,
+            "grid": self.cfg.grid,
+            "load": self.cfg.load,
         }
 
+        comps_factory = self._get_default_component_factory()
         self.components = []
 
         for cmp_name, cmp_val in component_input.items():
 
             # get default cmp if only None given
             if cmp_val is None:
-                cmp_val = self._get_default_component(cmp_name)
+                cmp_val = comps_factory[cmp_name]()
 
             setattr(self, cmp_name, cmp_val)
             self.components.append(cmp_val)
 
-    def _get_default_component(self, component_name: str) -> object:
-        component_config = DEFAULT_ENV_CONFIG["components"][component_name]
-        component_config = copy.deepcopy(component_config)
+    def _get_default_component_factory(self) -> object:
+        """Get default components with params set in env.cfg.
 
-        # Getting class
-        class_name = component_config.pop("type")
-        component_module = getattr(bauwerk.envs.components, component_name)
-        component_class = getattr(component_module, class_name)
+        Args:
+            component_name (str): name of component (e.g. 'solar')
 
-        # Creating component instance with config
-        component_instance = component_class(**component_config)
-
-        return component_instance
+        Returns:
+            object: component instance
+        """
+        comps_factory = {
+            "battery": lambda: bauwerk.envs.components.battery.LithiumIonBattery(
+                size=self.cfg.battery_size,
+                chemistry=self.cfg.battery_chemistry,
+                time_step_len=self.cfg.time_step_len,
+            ),
+            "solar": lambda: bauwerk.envs.components.solar.DataPV(
+                data_path=self.cfg.solar_data,
+                fixed_sample_num=self.cfg.fixed_sample_num,
+                num_steps=self.cfg.episode_len,
+            ),
+            "load": lambda: bauwerk.envs.components.load.DataLoad(
+                data_path=self.cfg.load_data,
+                fixed_sample_num=self.cfg.fixed_sample_num,
+                num_steps=self.cfg.episode_len,
+            ),
+            "grid": lambda: bauwerk.envs.components.grid.PeakGrid(
+                peak_threshold=self.cfg.grid_peak_threshold
+            ),
+        }
+        return comps_factory
 
     def step(self, action: object) -> Tuple[object, float, bool, dict]:
         """Run one timestep of the environment's dynamics.
@@ -193,7 +224,7 @@ class SolarBatteryHouseEnv(gym.Env):
 
         attempted_action = action
 
-        if not self.grid_charging:
+        if not self.cfg.grid_charging:
             # If charging from grid not enabled, limit charging to solar generation
             action = np.minimum(action, pv_generation)
 
@@ -213,7 +244,7 @@ class SolarBatteryHouseEnv(gym.Env):
         reward = -cost
 
         # Add impossible control penalty to cost
-        if self.infeasible_control_penalty:
+        if self.cfg.infeasible_control_penalty:
             power_diff = np.abs(charging_power - float(attempted_action))
             reward -= power_diff
             self.logger.debug("step - cost: %6.3f, power_diff: %6.3f", cost, power_diff)
@@ -248,7 +279,7 @@ class SolarBatteryHouseEnv(gym.Env):
 
         observation = self._get_obs_from_state(self.state)
 
-        terminated = bool(self.time_step >= self.episode_len)
+        terminated = bool(self.time_step >= self.cfg.episode_len)
 
         info["net_load"] = net_load
         info["charging_power"] = charging_power
@@ -281,7 +312,7 @@ class SolarBatteryHouseEnv(gym.Env):
         Returns:
             dict: observation dictionary
         """
-        return {key: state[key] for key in self.obs_keys}
+        return {key: state[key] for key in self.cfg.obs_keys}
 
     def reset(
         self,
