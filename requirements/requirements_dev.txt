@@ -16,5 +16,7 @@ pre-commit
 ipympl
 
 # RL tools and tracking
-stable-baselines3[extra]
+numpy >= 1.22
+stable-baselines3
 wandb
+tensorboard
