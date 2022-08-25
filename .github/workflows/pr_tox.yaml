@@ -1,10 +1,10 @@
-name: Tox tests
+name: tox-pytest
 
 on: [pull_request]
 
 jobs:
 
-  python-tests:
+  python:
 
     runs-on: ubuntu-latest
     strategy:
@@ -25,7 +25,7 @@ jobs:
         # Run tox using the version of Python in `PATH`
         run: tox -e py
 
-  gym-tests:
+  gym:
     runs-on: ubuntu-latest
     strategy:
       matrix:
