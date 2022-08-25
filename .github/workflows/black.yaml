@@ -11,4 +11,4 @@ jobs:
           submodules: recursive
       - uses: psf/black@stable
         with:
-          version: 22.3
+          version: 22.6
