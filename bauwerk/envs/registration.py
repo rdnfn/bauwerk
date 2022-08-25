@@ -23,3 +23,9 @@ def register_all() -> None:
         entry_point="bauwerk.envs.distributions:sample_build_dist_a",
         **kwargs,
     )
+
+    gym.envs.registration.register(
+        id="bauwerk/BuildDistB-v0",
+        entry_point="bauwerk.envs.distributions:sample_build_dist_b",
+        **kwargs,
+    )
