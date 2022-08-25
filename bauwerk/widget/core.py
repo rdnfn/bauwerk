@@ -45,7 +45,6 @@ class Game(widgets.VBox):
         # Create underlying env
         self.env = gym.make(
             "bauwerk/SolarBatteryHouse-v0",
-            new_step_api=True,
             cfg={"episode_len": episode_len},
         )
 
@@ -414,12 +413,13 @@ class Game(widgets.VBox):
             action = np.array([action], dtype=np.float32)
 
             # pylint: disable=unused-variable
-            observation, reward, terminated, truncated, info = self.env.step(action)
+            # Note: using old step API to ensure compatibility
+            observation, reward, terminated, info = self.env.step(action)
             self.add_obs({**observation, self.reward_label: reward})
 
             self.reward += reward
 
-            if terminated or truncated:
+            if terminated:
                 self.game_finished = True
                 self.control.set_trait("disabled", True)
 
