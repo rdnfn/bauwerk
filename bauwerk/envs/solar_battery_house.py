@@ -13,6 +13,7 @@ import bauwerk.envs.components.solar
 import bauwerk.envs.components.load
 import bauwerk.envs.components.grid
 import bauwerk.envs.components.battery
+from bauwerk.constants import NEW_RESET_API_ACTIVE, NEW_STEP_API_ACTIVE
 
 if TYPE_CHECKING:
     from bauwerk.envs.components.battery import BatteryModel
@@ -307,7 +308,12 @@ class SolarBatteryHouseEnv(gym.Env):
         # But added to complete new gym step API
         truncated = False
 
-        return (observation, float(reward), terminated, truncated, info)
+        if NEW_STEP_API_ACTIVE:
+            return_val = (observation, float(reward), terminated, truncated, info)
+        else:
+            return_val = (observation, float(reward), terminated, info)
+
+        return return_val
 
     def _get_obs_from_state(self, state: dict) -> dict:
         """Get observation from state dict.
@@ -332,11 +338,15 @@ class SolarBatteryHouseEnv(gym.Env):
         Returns:
             observation (object): the initial observation.
         """
-        super().reset(
-            seed=seed,
-            return_info=return_info,
-            options=options,
-        )
+        if NEW_RESET_API_ACTIVE:
+            # Note that calling super().reset in gym < 0.22 will throw
+            # not implemented error.
+            # pylint: disable=unexpected-keyword-arg
+            super().reset(
+                seed=seed,
+                return_info=return_info,
+                options=options,
+            )
 
         start = np.random.randint((self.data_len // 24) - 1) * 24
 
