@@ -12,7 +12,8 @@ import matplotlib.patches as mpatches
 from loguru import logger
 
 import bauwerk
-from bauwerk.constants import PROJECT_PATH
+import bauwerk.utils.data
+
 
 bauwerk.setup()
 
@@ -52,8 +53,9 @@ class Game(widgets.VBox):
         else:
             self.env = env
 
-        logo_file = open(PROJECT_PATH / "widget/bauwerk_game_logo.png", "rb")
-        self.game_logo_img = logo_file.read()
+        self.game_logo_img = bauwerk.utils.data.access_package_data(
+            "assets/bauwerk_game_logo.png", None
+        )
 
         self.episode_len = episode_len
 
@@ -256,7 +258,11 @@ class Game(widgets.VBox):
 
     def _create_house_figure(self, img_ax):
         img_ax.axis("off")
-        self.img_house = plt.imread(PROJECT_PATH / "widget/house_v2.png")
+        # "assets/house_v2.png"
+        self.img_house = bauwerk.utils.data.access_package_data(
+            "assets/house_v2.png",
+            plt.imread,
+        )
         self.indicator_solar = img_ax.add_patch(
             mpatches.Circle(
                 (111, 72),
