@@ -1,15 +1,20 @@
 pip>=21.1
 bump2version
 wheel
-watchdog
+
+# Dev tools
 flake8
 tox
 coverage
 Sphinx
 twine
-
 pytest
 black==22.6
 pre-commit
 
+# Visualisation
 ipympl
+
+# RL tools and tracking
+stable-baselines3[extra]
+wandb
