@@ -22,6 +22,7 @@ class Game(widgets.VBox):
 
     def __init__(
         self,
+        env: gym.Env = None,
         log_level: str = "error",
         height: int = 500,
         step_time=None,
@@ -42,11 +43,14 @@ class Game(widgets.VBox):
         logger.add(sys.stderr, level=log_level.upper())
         plt.set_loglevel(log_level)
 
-        # Create underlying env
-        self.env = gym.make(
-            "bauwerk/SolarBatteryHouse-v0",
-            cfg={"episode_len": episode_len},
-        )
+        if env is None:
+            # Create underlying env if None given
+            self.env = gym.make(
+                "bauwerk/SolarBatteryHouse-v0",
+                cfg={"episode_len": episode_len},
+            )
+        else:
+            self.env = env
 
         logo_file = open(PROJECT_PATH / "widget/bauwerk_game_logo.png", "rb")
         self.game_logo_img = logo_file.read()
