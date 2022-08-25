@@ -106,7 +106,9 @@ class NotationCollection:
 
         for variable in self.notation_list:
 
-            out += row_str.format(*self._get_table_var_info(variable),)
+            out += row_str.format(
+                *self._get_table_var_info(variable),
+            )
             out += "\n"
 
         out += r"\end{tabular}" + "\n"
