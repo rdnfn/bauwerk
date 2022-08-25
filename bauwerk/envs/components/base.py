@@ -2,7 +2,9 @@
 
 from loguru import logger
 import numpy as np
-import importlib.resources
+import bauwerk.utils.compat
+
+importlib_resources = bauwerk.utils.compat.get_importlib_resources()
 
 
 class EnvComponent:
@@ -38,8 +40,8 @@ class DataComponent(EnvComponent):
         if data_path is not None:
             self.data = np.loadtxt(data_path, delimiter=",")
         else:
-            bw_data_path = importlib.resources.files("bauwerk.data")
-            with importlib.resources.as_file(
+            bw_data_path = importlib_resources.files("bauwerk.data")
+            with importlib_resources.as_file(
                 bw_data_path.joinpath("default_solar_data.txt")
             ) as data_file:
                 self.data = np.loadtxt(data_file, delimiter=",")
