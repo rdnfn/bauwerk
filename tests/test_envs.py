@@ -50,9 +50,9 @@ def test_solar_battery_house_dict_config():
 def test_env_seed():
     """Test of seed in distribution."""
 
-    env1 = gym.make("bauwerk/BuildDistA-v0", seed=1)
-    env2 = gym.make("bauwerk/BuildDistA-v0", seed=2)
-    env3 = gym.make("bauwerk/BuildDistA-v0", seed=2)
+    env1 = gym.make("bauwerk/BuildDistB-v0", seed=1)
+    env2 = gym.make("bauwerk/BuildDistB-v0", seed=2)
+    env3 = gym.make("bauwerk/BuildDistB-v0", seed=2)
     assert env1.battery.size != env2.battery.size
     assert env2.battery.size == env3.battery.size
 
