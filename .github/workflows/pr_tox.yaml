@@ -43,4 +43,5 @@ jobs:
         run: pip install tox pytest
       - name: Run tox
         # Run tox using the version of Python in `PATH`
+        # Note: gym also need to be set as dep in tox.ini for the force arg to work
         run: tox -e py --force-dep gym==${{ matrix.gym }}
