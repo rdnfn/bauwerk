@@ -140,6 +140,15 @@ class Game(widgets.VBox):
         else:
             self.control.observe(self.step, names="value")
 
+            # disable start and pause buttons
+            tooltip = (
+                "DEACTIVATED because you are in manual mode."
+                " Change control value to step forward."
+            )
+            for button in [self.start_button, self.pause_button]:
+                button.disabled = True
+                button.tooltip = tooltip
+
     def _setup_menu_buttons(self):
         # Setting up menu
         self.start_button = widgets.Button(
