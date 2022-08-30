@@ -13,6 +13,7 @@ from loguru import logger
 
 import bauwerk
 import bauwerk.utils.data
+import bauwerk.envs.solar_battery_house
 
 
 bauwerk.setup()
@@ -59,12 +60,12 @@ class Game(widgets.VBox):
         self._setup_start_screen()
         self._setup_settings_screen()
 
-        self.cfg = {"episode_len": episode_len}
+        self.cfg = bauwerk.envs.solar_battery_house.EnvConfig(episode_len=episode_len)
         if env is not None:
             self.custom_env = env
         else:
             self.custom_env = None
-        self._reset_env()
+        self._set_env()
 
         self.active_thread = None
         self.pause_requested = False
@@ -459,7 +460,9 @@ class Game(widgets.VBox):
         self.add_obs(obs)
         self.reward = 0
         self.game_finished = False
-        self.control.set_trait("disabled", False)
+
+        if hasattr(self, "control"):
+            self.control.set_trait("disabled", False)
 
     def add_obs(self, obs):
         for key in self.obs_values.keys():
@@ -533,12 +536,12 @@ class Game(widgets.VBox):
             description="Back",
             disabled=False,
             button_style="",  # 'success', 'info', 'warning', 'danger' or ''
-            tooltip="Back to main menu.",
+            tooltip="Save changes and go back.",
         )
 
         def go_back(change=None):
             # pylint: disable=unused-argument
-            self._reset_env()
+            self._set_env()
             self._go_to_start_screen()
 
         self.buttons["back_to_menu_from_settings"].on_click(go_back)
@@ -547,18 +550,20 @@ class Game(widgets.VBox):
             children=[
                 self.game_logo,
                 *self.settings.values(),
-                self.buttons["back_to_menu"],
+                self.buttons["back_to_menu_from_settings"],
             ],
             layout={
                 "align_items": "center",
             },
         )
 
-    def _reset_env(self):
-        self.cfg["battery_size"] = self.settings["battery_size"].value
+    def _set_env(self):
+        self.cfg.battery_size = self.settings["battery_size"].value
 
         if self.custom_env is None:
             # Create underlying env if None given
             self.env = gym.make("bauwerk/SolarBatteryHouse-v0", cfg=self.cfg)
         else:
             self.env = self.custom_env
+
+        self.reset()
