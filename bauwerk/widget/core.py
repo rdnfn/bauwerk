@@ -506,6 +506,12 @@ class Game(widgets.VBox):
         )
 
     def _setup_settings_screen(self):
+        self.settings_heading = widgets.HTML(
+            value=(
+                "<code style='color: black'>"
+                "<h3 style='display: inline'>Settings</h3></code>"
+            ),
+        )
         self.settings = {}
         self.settings["battery_size"] = widgets.FloatSlider(
             description="Battery",
@@ -516,11 +522,11 @@ class Game(widgets.VBox):
             continuous_update=False,
             layout={"height": f"{self.fig_height}px"},
         )
-        self.game_logo = widgets.Image(
+        self.game_logo_settings = widgets.Image(
             value=self.game_logo_img,
             format="png",
             width=50,
-            layout={"margin": "30px"},
+            layout={"margin": "10px 0px 0px 0px"},
         )
 
         self.buttons["back_to_menu_from_settings"] = widgets.Button(
@@ -539,7 +545,8 @@ class Game(widgets.VBox):
 
         self.settings_screen = widgets.VBox(
             children=[
-                self.game_logo,
+                self.game_logo_settings,
+                self.settings_heading,
                 *self.settings.values(),
                 self.buttons["back_to_menu_from_settings"],
             ],
