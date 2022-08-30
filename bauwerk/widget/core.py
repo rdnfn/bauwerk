@@ -46,10 +46,11 @@ class Game(widgets.VBox):
         plt.set_loglevel(log_level)
 
         # Set params
-        self.episode_len = episode_len
+        self.step_time = step_time
         self.fig_height = height - 150
         self.visible_steps = visible_steps
         self.reward_label = "reward (payment)"
+        self.cfg = bauwerk.envs.solar_battery_house.EnvConfig(episode_len=episode_len)
 
         # Set up menu screens
         self.game_logo_img = bauwerk.utils.data.access_package_data(
@@ -60,7 +61,6 @@ class Game(widgets.VBox):
         self._setup_start_screen()
         self._setup_settings_screen()
 
-        self.cfg = bauwerk.envs.solar_battery_house.EnvConfig(episode_len=episode_len)
         if env is not None:
             self.custom_env = env
         else:
@@ -124,7 +124,6 @@ class Game(widgets.VBox):
         self.game_finished = False
 
         # Setup automatic stepping
-        self.step_time = step_time
         if self.step_time:
             self.add_traits(step_requested=traitlets.Bool().tag(sync=True))
             self.step_requested = False
@@ -374,7 +373,7 @@ class Game(widgets.VBox):
     def _launch_update_requesting_thread(self, change=None):
         # pylint: disable=unused-argument
         def work(widget):
-            max_steps = widget.episode_len
+            max_steps = widget.cfg.episode_len
             for _ in range(max_steps):
                 if widget.game_finished or widget.pause_requested:
                     break
@@ -514,13 +513,32 @@ class Game(widgets.VBox):
         )
         self.settings = {}
         self.settings["battery_size"] = widgets.FloatSlider(
-            description="Battery",
+            description="Battery size (kWh)",
             orientation="horizontal",
+            value=self.cfg.battery_size,
             min=0.1,
             max=30,
             step=0.1,
             continuous_update=False,
-            layout={"height": f"{self.fig_height}px"},
+        )
+        self.settings["episode_len"] = widgets.IntSlider(
+            description="Episode length",
+            orientation="horizontal",
+            value=self.cfg.episode_len,
+            min=1,
+            max=24 * 365,
+            step=1,
+            continuous_update=False,
+        )
+        self.settings["step_time"] = widgets.FloatSlider(
+            description="Step time (sec)",
+            orientation="horizontal",
+            value=self.step_time,
+            min=0.001,
+            max=5,
+            step=0.001,
+            continuous_update=False,
+            tooltip="The higher, the slower the game.",
         )
         self.game_logo_settings = widgets.Image(
             value=self.game_logo_img,
@@ -555,8 +573,15 @@ class Game(widgets.VBox):
             },
         )
 
+        for setting_slider in self.settings.values():
+            setting_slider.layout.width = "500px"
+            setting_slider.style.description_width = "200px"
+
     def _set_env(self):
+        # Get cfg values from widgets
         self.cfg.battery_size = self.settings["battery_size"].value
+        self.cfg.episode_len = self.settings["episode_len"].value
+        self.step_time = self.settings["step_time"].value
 
         if self.custom_env is None:
             # Create underlying env if None given
