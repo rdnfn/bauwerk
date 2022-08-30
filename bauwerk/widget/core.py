@@ -95,20 +95,11 @@ class Game(widgets.VBox):
             center=self.fig.canvas,
             pane_widths=[1, 9, 0],
         )
-        self.heading = widgets.HTML(
-            value=(
-                # "<code style='color: black'><h1 style='display: inline'>Bauwerk Game"
-                # "</h1>&nbsp;&nbsp;&nbsp;"
-                "<h3 style='display: inline'>Level: "
-                "SolarBatteryHouse-v0</h3></code>"
-            ),
-        )
         self.main_app = widgets.VBox(
             [
                 widgets.VBox(
                     [
                         self.menu_buttons,
-                        # self.heading,
                     ]
                 ),
                 self.game_lower_part,
