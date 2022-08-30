@@ -44,26 +44,27 @@ class Game(widgets.VBox):
         logger.add(sys.stderr, level=log_level.upper())
         plt.set_loglevel(log_level)
 
-        if env is None:
-            # Create underlying env if None given
-            self.env = gym.make(
-                "bauwerk/SolarBatteryHouse-v0",
-                cfg={"episode_len": episode_len},
-            )
-        else:
-            self.env = env
+        # Set params
+        self.episode_len = episode_len
+        self.fig_height = height - 150
+        self.visible_steps = visible_steps
+        self.reward_label = "reward (payment)"
 
+        # Set up menu screens
         self.game_logo_img = bauwerk.utils.data.access_package_data(
             "assets/bauwerk_game_logo.png", None
         )
+        self.buttons = {}
+        self.menu_buttons = self._setup_menu_buttons()
+        self._setup_start_screen()
+        self._setup_settings_screen()
 
-        self.episode_len = episode_len
-
-        self.fig_height = height - 150
-
-        self.visible_steps = visible_steps
-
-        self.reward_label = "reward (payment)"
+        self.cfg = {"episode_len": episode_len}
+        if env is not None:
+            self.custom_env = env
+        else:
+            self.custom_env = None
+        self._reset_env()
 
         self.active_thread = None
         self.pause_requested = False
@@ -81,13 +82,11 @@ class Game(widgets.VBox):
             continuous_update=True,
             layout={"height": f"{self.fig_height}px"},
         )
-        self.menu_buttons = self._setup_menu_buttons()
 
         # Setting up main figure
 
         # This sets the first observations
         self.reset()
-
         self._setup_figure()
 
         self.game_lower_part = widgets.AppLayout(
@@ -114,12 +113,16 @@ class Game(widgets.VBox):
                 self.game_lower_part,
             ]
         )
-        self.main_app.layout.display = "none"
 
-        self._setup_start_screen()
+        self.main_app.layout.display = "none"
+        self.settings_screen.layout.display = "none"
 
         super().__init__(
-            children=[self.start_screen, self.main_app],
+            children=[
+                self.start_screen,
+                self.main_app,
+                self.settings_screen,
+            ],
             layout={
                 "height": f"{height}px",
                 "align_items": "center",
@@ -145,47 +148,47 @@ class Game(widgets.VBox):
                 "DEACTIVATED because you are in manual mode."
                 " Change control value to step forward."
             )
-            for button in [self.start_button, self.pause_button]:
+            for button in [self.buttons["start"], self.buttons["pause"]]:
                 button.disabled = True
                 button.tooltip = tooltip
 
     def _setup_menu_buttons(self):
         # Setting up menu
-        self.start_button = widgets.Button(
+        self.buttons["start"] = widgets.Button(
             description="Start",
             disabled=False,
             button_style="",  # 'success', 'info', 'warning', 'danger' or ''
             tooltip="Start game",
             icon="play",  # (FontAwesome names without the `fa-` prefix)
         )
-        self.start_button.on_click(self._process_start_request)
+        self.buttons["start"].on_click(self._process_start_request)
 
-        self.pause_button = widgets.Button(
+        self.buttons["pause"] = widgets.Button(
             description="Pause",
             disabled=False,
             button_style="",  # 'success', 'info', 'warning', 'danger' or ''
             tooltip="Pause game",
             icon="pause",  # (FontAwesome names without the `fa-` prefix)
         )
-        self.pause_button.on_click(self._process_pause_request)
+        self.buttons["pause"].on_click(self._process_pause_request)
 
-        self.reset_button = widgets.Button(
+        self.buttons["reset"] = widgets.Button(
             description="Reset",
             disabled=False,
             button_style="",  # 'success', 'info', 'warning', 'danger' or ''
             tooltip="Reset game.",
             icon="refresh",  # (FontAwesome names without the `fa-` prefix)
         )
-        self.reset_button.on_click(self._process_reset_request)
+        self.buttons["reset"].on_click(self._process_reset_request)
 
-        self.back_to_menu_button = widgets.Button(
+        self.buttons["back_to_menu"] = widgets.Button(
             description="Menu",
             disabled=False,
             button_style="",  # 'success', 'info', 'warning', 'danger' or ''
             tooltip="Back to main menu.",
             icon="bars",  # (FontAwesome names without the `fa-` prefix)
         )
-        self.back_to_menu_button.on_click(self._go_to_start_screen)
+        self.buttons["back_to_menu"].on_click(self._go_to_start_screen)
 
         self.game_logo_small = widgets.Image(
             value=self.game_logo_img,
@@ -197,10 +200,10 @@ class Game(widgets.VBox):
         return widgets.HBox(
             children=[
                 self.game_logo_small,
-                self.start_button,
-                self.pause_button,
-                self.reset_button,
-                self.back_to_menu_button,
+                self.buttons["start"],
+                self.buttons["pause"],
+                self.buttons["reset"],
+                self.buttons["back_to_menu"],
             ],
             # layout={"align_items": "center"},
         )
@@ -471,27 +474,91 @@ class Game(widgets.VBox):
 
     def _go_to_start_screen(self, change=None):
         # pylint: disable=unused-argument
-        self.pause_button.click()
+        self.buttons["pause"].click()
         self.start_screen.layout.display = None
+        self.settings_screen.layout.display = "none"
         self.main_app.layout.display = "none"
 
+    def _go_to_settings_screen(self, change=None):
+        # pylint: disable=unused-argument
+        self.start_screen.layout.display = "none"
+        self.main_app.layout.display = "none"
+        self.settings_screen.layout.display = None
+
     def _setup_start_screen(self):
-        self.begin_button = widgets.Button(
-            description="Start game",
-        )
         self.game_logo = widgets.Image(
             value=self.game_logo_img,
             format="png",
             width=150,
             layout={"margin": "30px"},
         )
-        self.begin_button.on_click(self._go_to_game)
+        self.buttons["go_to_game"] = widgets.Button(
+            description="Start game",
+        )
+        self.buttons["go_to_game"].on_click(self._go_to_game)
+        self.buttons["settings"] = widgets.Button(
+            description="Settings",
+        )
+        self.buttons["settings"].on_click(self._go_to_settings_screen)
         self.start_screen = widgets.VBox(
             children=[
                 self.game_logo,
-                self.begin_button,
+                self.buttons["go_to_game"],
+                self.buttons["settings"],
             ],
             layout={
                 "align_items": "center",
             },
         )
+
+    def _setup_settings_screen(self):
+        self.settings = {}
+        self.settings["battery_size"] = widgets.FloatSlider(
+            description="Battery",
+            orientation="horizontal",
+            min=0.1,
+            max=30,
+            step=0.1,
+            continuous_update=False,
+            layout={"height": f"{self.fig_height}px"},
+        )
+        self.game_logo = widgets.Image(
+            value=self.game_logo_img,
+            format="png",
+            width=50,
+            layout={"margin": "30px"},
+        )
+
+        self.buttons["back_to_menu_from_settings"] = widgets.Button(
+            description="Back",
+            disabled=False,
+            button_style="",  # 'success', 'info', 'warning', 'danger' or ''
+            tooltip="Back to main menu.",
+        )
+
+        def go_back(change=None):
+            # pylint: disable=unused-argument
+            self._reset_env()
+            self._go_to_start_screen()
+
+        self.buttons["back_to_menu_from_settings"].on_click(go_back)
+
+        self.settings_screen = widgets.VBox(
+            children=[
+                self.game_logo,
+                *self.settings.values(),
+                self.buttons["back_to_menu"],
+            ],
+            layout={
+                "align_items": "center",
+            },
+        )
+
+    def _reset_env(self):
+        self.cfg["battery_size"] = self.settings["battery_size"].value
+
+        if self.custom_env is None:
+            # Create underlying env if None given
+            self.env = gym.make("bauwerk/SolarBatteryHouse-v0", cfg=self.cfg)
+        else:
+            self.env = self.custom_env
