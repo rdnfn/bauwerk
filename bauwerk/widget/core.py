@@ -27,9 +27,11 @@ class Game(widgets.VBox):
         env: gym.Env = None,
         log_level: str = "error",
         height: int = 500,
-        step_time=None,
+        step_time=0.1,
+        automatic_stepping=True,
         visible_steps=24,
         episode_len=168,
+        _debug_mode=False,
     ):
         """Bauwerk building control game widget.
 
@@ -46,11 +48,13 @@ class Game(widgets.VBox):
         plt.set_loglevel(log_level)
 
         # Set params
+        self.automatic_stepping = automatic_stepping
         self.step_time = step_time
         self.fig_height = height - 150
         self.visible_steps = visible_steps
         self.reward_label = "reward (payment)"
         self.cfg = bauwerk.envs.solar_battery_house.EnvConfig(episode_len=episode_len)
+        self._debug_mode = _debug_mode
 
         # Set up menu screens
         self.game_logo_img = bauwerk.utils.data.access_package_data(
@@ -124,7 +128,7 @@ class Game(widgets.VBox):
         self.game_finished = False
 
         # Setup automatic stepping
-        if self.step_time:
+        if self.automatic_stepping:
             self.add_traits(step_requested=traitlets.Bool().tag(sync=True))
             self.step_requested = False
             self.observe(
@@ -218,9 +222,11 @@ class Game(widgets.VBox):
             self.fig.canvas.header_visible = False
             self.fig.canvas.toolbar_visible = False
             self.fig.canvas.resizable = False
-            # self.fig.canvas.footer_visible = False
-            # self.fig.canvas.layout.height = "200px"
-            # self.fig.canvas.layout.width = "400px"
+
+            if self._debug_mode:
+                self.fig.canvas.footer_visible = True
+            else:
+                self.fig.canvas.footer_visible = False
 
             plt.rcParams.update({"font.size": 10})
 
