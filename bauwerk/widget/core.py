@@ -532,7 +532,7 @@ class Game(widgets.VBox):
             orientation="horizontal",
             value=self.cfg.episode_len,
             min=2,
-            max=24 * 365,
+            max=24 * 31,
             step=1,
             continuous_update=False,
         )
