@@ -1,0 +1,15 @@
+# theme
+sphinx-book-theme==0.3.2
+
+# for code tabs
+sphinx-tabs
+
+# with docutils>=0.18 admonitions sometimes do not end
+docutils==0.16
+
+# Because of the following bug
+# https://github.com/readthedocs/readthedocs.org/issues/9038
+Jinja2<3.1
+
+# For allowing type hints
+sphinx-autodoc-typehints
