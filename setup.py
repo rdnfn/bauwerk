@@ -10,7 +10,7 @@ with open("README.rst", encoding="UTF-8") as readme_file:
 with open("HISTORY.rst", encoding="UTF-8") as history_file:
     history = history_file.read()
 
-requirements = ["gym", "numpy", "loguru"]
+requirements = ["gym", "numpy", "loguru", "importlib-resources;python_version<'3.9'"]
 
 test_requirements = [
     "pytest>=3",
@@ -48,6 +48,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/rdnfn/bauwerk",
-    version="0.1.0",
+    version="0.2.0",
     zip_safe=False,
 )

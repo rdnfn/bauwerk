@@ -10,6 +10,7 @@ Sphinx
 twine
 pytest
 black==22.6
+pylint==2.7.4
 pre-commit
 
 # Visualisation

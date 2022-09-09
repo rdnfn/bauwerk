@@ -1,10 +1,10 @@
-name: Tox tests
+name: tox-pytest
 
 on: [pull_request]
 
 jobs:
 
-  python-tests:
+  python:
 
     runs-on: ubuntu-latest
     strategy:
@@ -25,11 +25,11 @@ jobs:
         # Run tox using the version of Python in `PATH`
         run: tox -e py
 
-  gym-tests:
+  gym:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        gym: ["0.21", "0.22", "0.24", "0.25"]
+        gym: ["0.21", "0.22", "0.24", "0.25", "0.26"]
 
     steps:
       - uses: actions/checkout@v3
@@ -43,4 +43,5 @@ jobs:
         run: pip install tox pytest
       - name: Run tox
         # Run tox using the version of Python in `PATH`
-        run: tox -e py -force-dep "gym=${{ matrix.gym }}"
+        # Note: gym also need to be set as dep in tox.ini for the force arg to work
+        run: tox -e py --force-dep gym==${{ matrix.gym }}

@@ -2,6 +2,8 @@
 
 __author__ = """rdnfn"""
 __email__ = ""
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
-from bauwerk.core import setup
+import bauwerk.envs.registration
+
+bauwerk.envs.registration.register_all()

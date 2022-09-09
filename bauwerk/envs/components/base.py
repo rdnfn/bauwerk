@@ -2,7 +2,9 @@
 
 from loguru import logger
 import numpy as np
-import importlib.resources
+import bauwerk.utils.compat
+
+importlib_resources = bauwerk.utils.compat.get_importlib_resources()
 
 
 class EnvComponent:
@@ -20,11 +22,12 @@ class DataComponent(EnvComponent):
 
     def __init__(
         self,
-        data_path: str,
+        data_path: str = None,
         time_step_len: float = 1,
         num_steps: int = 24,
         fixed_sample_num: int = None,
         scaling_factor: float = 1.0,
+        _package_data_path=None,
     ) -> None:
         """Photovoltaic model that samples from data.
 
@@ -37,12 +40,14 @@ class DataComponent(EnvComponent):
 
         if data_path is not None:
             self.data = np.loadtxt(data_path, delimiter=",")
-        else:
-            bw_data_path = importlib.resources.files("bauwerk.data")
-            with importlib.resources.as_file(
-                bw_data_path.joinpath("default_solar_data.txt")
+        elif _package_data_path is not None:
+            bw_data_path = importlib_resources.files("bauwerk.data")
+            with importlib_resources.as_file(
+                bw_data_path.joinpath(_package_data_path)
             ) as data_file:
                 self.data = np.loadtxt(data_file, delimiter=",")
+        else:
+            raise ValueError("Either data_path or _package_data_path need to be given.")
 
         if scaling_factor != 1.0:
             self.data *= scaling_factor
