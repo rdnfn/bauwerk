@@ -3,9 +3,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import pathlib
-from typing import TYPE_CHECKING, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Tuple, Union, Any, Dict
 from loguru import logger
 import gym
+import gym.utils.seeding
 import numpy as np
 
 import bauwerk.utils.logging
@@ -308,12 +309,7 @@ class SolarBatteryHouseEnv(gym.Env):
         # But added to complete new gym step API
         truncated = False
 
-        if NEW_STEP_API_ACTIVE:
-            return_val = (observation, float(reward), terminated, truncated, info)
-        else:
-            return_val = (observation, float(reward), terminated, info)
-
-        return return_val
+        return observation, float(reward), terminated, truncated, info
 
     def _get_obs_from_state(self, state: dict) -> dict:
         """Get observation from state dict.
@@ -330,23 +326,16 @@ class SolarBatteryHouseEnv(gym.Env):
         self,
         *,
         seed: Optional[int] = None,
-        return_info: bool = False,
-        options: Optional[dict] = None,
+        return_info: bool = True,
+        options: Optional[dict] = None,  # pylint: disable=unused-argument
     ) -> object:
         """Resets environment to initial state and returns an initial observation.
 
         Returns:
             observation (object): the initial observation.
         """
-        if NEW_RESET_API_ACTIVE:
-            # Note that calling super().reset in gym < 0.22 will throw
-            # not implemented error.
-            # pylint: disable=unexpected-keyword-arg
-            super().reset(
-                seed=seed,
-                return_info=return_info,
-                options=options,
-            )
+        if seed is not None:
+            self._np_random, seed = gym.utils.seeding.np_random(seed)
 
         start = np.random.randint((self.data_len // 24) - 1) * 24
 
@@ -375,7 +364,12 @@ class SolarBatteryHouseEnv(gym.Env):
 
         self.logger.debug("Environment reset.")
 
-        return observation
+        if return_info:
+            return_val = (observation, {})
+        else:
+            return_val = observation
+
+        return return_val
 
     def render(self, mode: str = "human") -> None:
         """Renders the environment.
@@ -441,3 +435,33 @@ class SolarBatteryHouseEnv(gym.Env):
         np.random.seed(seed)
 
         return [seed]
+
+
+class GymCompatEnv(SolarBatteryHouseEnv):
+    """Compatiblity environment for Gym==0.21
+
+    After Gym v0.21 a number of breaking API changes were introduced.
+    Bauwerk adopts this new API but aims to be compatible with
+    Gym v0.21 as well. This version is used by Stable-Baselines 3.
+    """
+
+    def reset(self) -> Any:
+        """Reset the environment and return the initial observation."""
+        if not NEW_RESET_API_ACTIVE:
+            obs, _ = super().reset()
+            return obs
+        else:
+            return super().reset()
+
+    def step(self, action: Any) -> Tuple[Any, float, bool, Dict]:
+        """Run one timestep of the environment's dynamics."""
+        if not NEW_STEP_API_ACTIVE:
+            obs, reward, terminated, truncated, info = super().step(action)
+            done = terminated or truncated
+            return obs, reward, done, info
+        else:
+            return super().step(action)
+
+
+if not NEW_RESET_API_ACTIVE or not NEW_STEP_API_ACTIVE:
+    SolarBatteryHouseEnv = GymCompatEnv
