@@ -1,12 +1,7 @@
 """Simple tests for environment."""
 
-import warnings
-
-import bauwerk
+import bauwerk  # pylint: disable=unused-import
 import gym
-from bauwerk.constants import NEW_STEP_API_ACTIVE
-
-bauwerk.setup()
 
 
 def test_solar_battery_house():
@@ -14,21 +9,6 @@ def test_solar_battery_house():
 
     env = gym.make("bauwerk/SolarBatteryHouse-v0")
     take_steps_in_env(env, num_steps=10)
-
-
-def test_solar_battery_house_new_step_api():
-    """Basic test of solar battery house env."""
-
-    if NEW_STEP_API_ACTIVE:
-        env = gym.make("bauwerk/SolarBatteryHouse-v0", new_step_api=True)
-        take_steps_in_env(env, num_steps=10)
-    else:
-        warnings.warn(
-            (
-                "New step API could not be tested because using"
-                f" gym version {gym.__version__} < 0.25"
-            )
-        )
 
 
 def test_build_dist_a():
