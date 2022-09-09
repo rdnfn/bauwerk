@@ -109,7 +109,7 @@ html_theme_options = {
     "extra_navbar": "",
     "home_page_in_toc": False,
     "use_fullscreen_button": False,
-    "use_download_button": True,
+    "use_download_button": False,
     "repository_url": "https://github.com/rdnfn/bauwerk",
     "use_repository_button": True,
     "use_issues_button": True,

@@ -3,6 +3,6 @@ Environments
 ============
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    notebooks/solar_battery_house.ipynb
