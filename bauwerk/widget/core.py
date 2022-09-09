@@ -12,11 +12,9 @@ import matplotlib.patches as mpatches
 from loguru import logger
 
 import bauwerk
+from bauwerk.constants import NEW_RESET_API_ACTIVE, NEW_STEP_API_ACTIVE
 import bauwerk.utils.data
 import bauwerk.envs.solar_battery_house
-
-
-bauwerk.setup()
 
 
 class Game(widgets.VBox):
@@ -433,12 +431,17 @@ class Game(widgets.VBox):
 
             # pylint: disable=unused-variable
             # Note: using old step API to ensure compatibility
-            observation, reward, terminated, info = self.env.step(action)
+            if NEW_STEP_API_ACTIVE:
+                observation, reward, terminated, truncated, _ = self.env.step(action)
+                done = terminated or truncated
+            else:
+                observation, reward, done, _ = self.env.step(action)
+
             self.add_obs({**observation, self.reward_label: reward})
 
             self.reward += reward
 
-            if terminated:
+            if done:
                 self.game_finished = True
                 self.control.set_trait("disabled", True)
 
@@ -446,7 +449,11 @@ class Game(widgets.VBox):
 
     def reset(self):
 
-        obs = self.env.reset()
+        if NEW_RESET_API_ACTIVE:
+            obs, _ = self.env.reset()
+        else:
+            obs = self.env.reset()
+
         obs = {**obs, self.reward_label: np.array([0], dtype=np.float32)}
         self.obs_values = {
             key: [np.array([0], dtype=np.float32)] * self.visible_steps
