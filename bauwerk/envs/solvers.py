@@ -2,9 +2,15 @@
 
 import numpy as np
 import cvxpy as cp
-
-
+import gym
 from bauwerk.envs.solar_battery_house import SolarBatteryHouseEnv
+
+
+def solve(env: gym.Env):  # pylint: disable=used-before-assignment
+    if isinstance(env.env, SolarBatteryHouseEnv):
+        return solve_solar_battery_house(env)
+    else:
+        raise ValueError(f"Argument given not solvable environment by Bauwerk ({env})")
 
 
 def solve_solar_battery_house(env: SolarBatteryHouseEnv) -> np.array:
