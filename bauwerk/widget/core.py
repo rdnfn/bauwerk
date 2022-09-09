@@ -9,10 +9,16 @@ import traitlets
 import ipywidgets as widgets
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import ipympl  # pylint: disable=unused-import
 from loguru import logger
 
+
 import bauwerk
-from bauwerk.constants import NEW_RESET_API_ACTIVE, NEW_STEP_API_ACTIVE
+from bauwerk.constants import (
+    GYM_NEW_RESET_API_ACTIVE,
+    GYM_NEW_STEP_API_ACTIVE,
+    GYM_RESET_INFO_DEFAULT,
+)
 import bauwerk.utils.data
 import bauwerk.envs.solar_battery_house
 
@@ -431,7 +437,7 @@ class Game(widgets.VBox):
 
             # pylint: disable=unused-variable
             # Note: using old step API to ensure compatibility
-            if NEW_STEP_API_ACTIVE:
+            if GYM_NEW_STEP_API_ACTIVE:
                 observation, reward, terminated, truncated, _ = self.env.step(action)
                 done = terminated or truncated
             else:
@@ -449,7 +455,7 @@ class Game(widgets.VBox):
 
     def reset(self):
 
-        if NEW_RESET_API_ACTIVE:
+        if GYM_NEW_RESET_API_ACTIVE and GYM_RESET_INFO_DEFAULT:
             obs, _ = self.env.reset()
         else:
             obs = self.env.reset()

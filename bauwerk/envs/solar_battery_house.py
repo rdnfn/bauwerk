@@ -14,7 +14,11 @@ import bauwerk.envs.components.solar
 import bauwerk.envs.components.load
 import bauwerk.envs.components.grid
 import bauwerk.envs.components.battery
-from bauwerk.constants import NEW_RESET_API_ACTIVE, NEW_STEP_API_ACTIVE
+from bauwerk.constants import (
+    GYM_NEW_RESET_API_ACTIVE,
+    GYM_NEW_STEP_API_ACTIVE,
+    GYM_RESET_INFO_DEFAULT,
+)
 
 if TYPE_CHECKING:
     from bauwerk.envs.components.battery import BatteryModel
@@ -325,8 +329,8 @@ class SolarBatteryHouseEnv(gym.Env):
     def reset(
         self,
         *,
+        return_info: bool = GYM_RESET_INFO_DEFAULT,
         seed: Optional[int] = None,
-        return_info: bool = True,
         options: Optional[dict] = None,  # pylint: disable=unused-argument
     ) -> object:
         """Resets environment to initial state and returns an initial observation.
@@ -447,7 +451,7 @@ class GymCompatEnv(SolarBatteryHouseEnv):
 
     def reset(self) -> Any:
         """Reset the environment and return the initial observation."""
-        if not NEW_RESET_API_ACTIVE:
+        if not GYM_NEW_RESET_API_ACTIVE:
             obs, _ = super().reset()
             return obs
         else:
@@ -455,7 +459,7 @@ class GymCompatEnv(SolarBatteryHouseEnv):
 
     def step(self, action: Any) -> Tuple[Any, float, bool, Dict]:
         """Run one timestep of the environment's dynamics."""
-        if not NEW_STEP_API_ACTIVE:
+        if not GYM_NEW_STEP_API_ACTIVE:
             obs, reward, terminated, truncated, info = super().step(action)
             done = terminated or truncated
             return obs, reward, done, info
@@ -463,5 +467,5 @@ class GymCompatEnv(SolarBatteryHouseEnv):
             return super().step(action)
 
 
-if not NEW_RESET_API_ACTIVE or not NEW_STEP_API_ACTIVE:
+if not GYM_NEW_RESET_API_ACTIVE or not GYM_NEW_STEP_API_ACTIVE:
     SolarBatteryHouseEnv = GymCompatEnv
