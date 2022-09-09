@@ -15,6 +15,7 @@ import bauwerk.envs.components.load
 import bauwerk.envs.components.grid
 import bauwerk.envs.components.battery
 from bauwerk.constants import (
+    GYM_COMPAT_MODE,
     GYM_NEW_RESET_API_ACTIVE,
     GYM_NEW_STEP_API_ACTIVE,
     GYM_RESET_INFO_DEFAULT,
@@ -329,7 +330,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
     def reset(
         self,
         *,
-        return_info: bool = GYM_RESET_INFO_DEFAULT,
+        return_info: bool = True,
         seed: Optional[int] = None,
         options: Optional[dict] = None,  # pylint: disable=unused-argument
     ) -> object:
@@ -452,9 +453,13 @@ class GymCompatEnv(SolarBatteryHouseCoreEnv):
     def reset(self) -> Any:
         """Reset the environment and return the initial observation."""
         if not GYM_NEW_RESET_API_ACTIVE:
+            # Before v0.22 no info return could be done,
+            # Thus this only returns the observation
             return super().reset(return_info=False)
         else:
-            return super().reset()
+            # The return info default changed between v0.25 and v0.26
+            # from False to True
+            return super().reset(return_info=GYM_RESET_INFO_DEFAULT)
 
     def step(self, action: Any) -> Tuple[Any, float, bool, Dict]:
         """Run one timestep of the environment's dynamics."""
@@ -466,7 +471,7 @@ class GymCompatEnv(SolarBatteryHouseCoreEnv):
             return super().step(action)
 
 
-if not GYM_NEW_RESET_API_ACTIVE or not GYM_NEW_STEP_API_ACTIVE:
+if GYM_COMPAT_MODE:
     SolarBatteryHouseEnv = GymCompatEnv
 else:
     SolarBatteryHouseEnv = SolarBatteryHouseCoreEnv
