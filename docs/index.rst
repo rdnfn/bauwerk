@@ -9,7 +9,6 @@ Welcome to bauwerk's documentation!
    installation
    usage
    envs
-   modules
    contributing
    authors
    history
