@@ -216,10 +216,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             info (dict): contains auxiliary diagnostic information
                 (helpful for debugging, and sometimes learning)
         """
-        assert self.action_space.contains(action), "%r (%s) invalid" % (
-            action,
-            type(action),
-        )
+        assert self.action_space.contains(action), f"{action} ({type(action)}) invalid"
 
         info = {}
 
