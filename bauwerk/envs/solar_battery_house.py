@@ -443,7 +443,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
 
 
 class GymCompatEnv(SolarBatteryHouseCoreEnv):
-    """Compatiblity environment for Gym==0.21
+    """Compatiblity environment for v0.21<=Gym<=v0.25.
 
     After Gym v0.21 a number of breaking API changes were introduced.
     Bauwerk adopts this new API but aims to be compatible with
