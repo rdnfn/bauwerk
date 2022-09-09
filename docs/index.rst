@@ -8,6 +8,7 @@ Welcome to bauwerk's documentation!
    Home <self>
    installation
    usage
+   envs
    modules
    contributing
    authors
