@@ -13,3 +13,6 @@ Jinja2<3.1
 
 # For allowing type hints
 sphinx-autodoc-typehints
+
+#support for notebooks
+nbsphinx
