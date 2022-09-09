@@ -59,7 +59,7 @@ class EnvConfig:
     grid: GridModel = None
 
 
-class SolarBatteryHouseEnv(gym.Env):
+class SolarBatteryHouseCoreEnv(gym.Env):
     """A gym environment for controlling a house with solar installation and battery."""
 
     def __init__(
@@ -441,7 +441,7 @@ class SolarBatteryHouseEnv(gym.Env):
         return [seed]
 
 
-class GymCompatEnv(SolarBatteryHouseEnv):
+class GymCompatEnv(SolarBatteryHouseCoreEnv):
     """Compatiblity environment for Gym==0.21
 
     After Gym v0.21 a number of breaking API changes were introduced.
@@ -452,7 +452,7 @@ class GymCompatEnv(SolarBatteryHouseEnv):
     def reset(self) -> Any:
         """Reset the environment and return the initial observation."""
         if not GYM_NEW_RESET_API_ACTIVE:
-            obs, _ = super().reset()
+            obs, _ = super().reset(return_info=True)
             return obs
         else:
             return super().reset()
@@ -469,3 +469,5 @@ class GymCompatEnv(SolarBatteryHouseEnv):
 
 if not GYM_NEW_RESET_API_ACTIVE or not GYM_NEW_STEP_API_ACTIVE:
     SolarBatteryHouseEnv = GymCompatEnv
+else:
+    SolarBatteryHouseEnv = SolarBatteryHouseCoreEnv
