@@ -452,8 +452,7 @@ class GymCompatEnv(SolarBatteryHouseCoreEnv):
     def reset(self) -> Any:
         """Reset the environment and return the initial observation."""
         if not GYM_NEW_RESET_API_ACTIVE:
-            obs, _ = super().reset(return_info=True)
-            return obs
+            return super().reset(return_info=False)
         else:
             return super().reset()
 
