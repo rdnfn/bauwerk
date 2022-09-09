@@ -29,7 +29,7 @@ class Game(widgets.VBox):
         automatic_stepping=True,
         visible_steps=24,
         episode_len=168,
-        _debug_mode=False,
+        debug_mode=False,
     ):
         """Bauwerk building control game widget.
 
@@ -52,7 +52,7 @@ class Game(widgets.VBox):
         self.visible_steps = visible_steps
         self.reward_label = "reward (payment)"
         self.cfg = bauwerk.envs.solar_battery_house.EnvConfig(episode_len=episode_len)
-        self._debug_mode = _debug_mode
+        self.debug_mode = debug_mode
 
         # Set up menu screens
         self.game_logo_img = bauwerk.utils.data.access_package_data(
@@ -221,7 +221,7 @@ class Game(widgets.VBox):
             self.fig.canvas.toolbar_visible = False
             self.fig.canvas.resizable = False
 
-            if self._debug_mode:
+            if self.debug_mode:
                 self.fig.canvas.footer_visible = True
             else:
                 self.fig.canvas.footer_visible = False
