@@ -5,8 +5,10 @@ ARG VARIANT="3.9"
 #FROM mcr.microsoft.com/vscode/devcontainers/python:0-${VARIANT}
 FROM mcr.microsoft.com/vscode/devcontainers/anaconda:3
 
-COPY requirements/requirements_dev.txt /tmp/pip-tmp/
+COPY requirements/* /tmp/pip-tmp/
 RUN conda install -c conda-forge cvxpy
 RUN pip3 install --upgrade pip
-RUN pip3 --disable-pip-version-check --no-cache-dir install -r /tmp/pip-tmp/requirements_dev.txt \
+RUN pip3 --disable-pip-version-check --no-cache-dir install \
+    -r /tmp/pip-tmp/requirements_dev.txt \
+    -r /tmp/pip-tmp/requirements_docs.txt \
     && rm -rf /tmp/pip-tmp
