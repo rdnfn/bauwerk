@@ -7,7 +7,7 @@ from bauwerk.envs.solar_battery_house import SolarBatteryHouseCoreEnv
 
 
 def solve(env: gym.Env):  # pylint: disable=used-before-assignment
-    if isinstance(env.env, SolarBatteryHouseCoreEnv):
+    if isinstance(env.unwrapped, SolarBatteryHouseCoreEnv):
         return solve_solar_battery_house(env)
     else:
         raise ValueError(f"Argument given not solvable environment by Bauwerk ({env})")
