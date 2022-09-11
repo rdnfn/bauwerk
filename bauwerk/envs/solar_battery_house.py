@@ -34,7 +34,7 @@ class EnvConfig:
 
     # general config params
     time_step_len: float = 1.0  # in hours
-    episode_len: float = 24 * 365  # in no of timesteps
+    episode_len: float = 24 * 365 - 1  # in no of timesteps (-1 bc of available obs)
     grid_charging: bool = True  # whether grid charging is allowed
     infeasible_control_penalty: bool = False  # whether penalty added for inf. control
     obs_keys: list = field(
@@ -48,7 +48,7 @@ class EnvConfig:
     solar_scaling_factor: float = 3.5  # kW (max performance)
     load_data: Union[str, pathlib.Path] = None
     load_scaling_factor: float = 4.5  # kW (max demand)
-    fixed_sample_num: int = 12
+    data_start_index: int = 0  # starting index for data-based components (solar & load)
 
     grid_peak_threshold: float = 4.0  # kW
     grid_base_price: float = 0.25  # Euro
@@ -187,13 +187,13 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             ),
             "solar": lambda: bauwerk.envs.components.solar.DataPV(
                 data_path=self.cfg.solar_data,
-                fixed_sample_num=self.cfg.fixed_sample_num,
+                data_start_index=self.cfg.data_start_index,
                 num_steps=self.cfg.episode_len,
                 scaling_factor=self.cfg.solar_scaling_factor,
             ),
             "load": lambda: bauwerk.envs.components.load.DataLoad(
                 data_path=self.cfg.load_data,
-                fixed_sample_num=self.cfg.fixed_sample_num,
+                data_start_index=self.cfg.data_start_index,
                 num_steps=self.cfg.episode_len,
                 scaling_factor=self.cfg.load_scaling_factor,
             ),

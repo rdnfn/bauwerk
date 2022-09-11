@@ -25,17 +25,12 @@ class DataComponent(EnvComponent):
         data_path: str = None,
         time_step_len: float = 1,
         num_steps: int = 24,
-        fixed_sample_num: int = None,
+        data_start_index: int = None,
         scaling_factor: float = 1.0,
         _package_data_path=None,
     ) -> None:
-        """Photovoltaic model that samples from data.
+        """Component model that samples from data."""
 
-        Args:
-            data_path (str): path to PV data in a txt file with solar trace in kW
-            time_step_len (float): length of time steps in hours. Defaults to 1.
-            num_steps (int): number of time steps. Defaults to 24.
-        """
         super().__init__()
 
         if data_path is not None:
@@ -53,7 +48,7 @@ class DataComponent(EnvComponent):
             self.data *= scaling_factor
         self.num_steps = num_steps
         self.time_step_len = time_step_len
-        self.fix_start(fixed_sample_num)
+        self.fix_start(data_start_index)
 
         self.reset()
 
@@ -66,7 +61,12 @@ class DataComponent(EnvComponent):
         if self.fixed_start is not None:
             start = self.fixed_start
         elif start is None:
-            start = np.random.randint(low=0, high=(len(self.data) // 24) - 1) * 24
+            start = (
+                np.random.randint(
+                    low=0, high=(len(self.data - self.num_steps) // 24) - 1
+                )
+                * 24
+            )
 
         self.start = start
 
@@ -110,7 +110,15 @@ class DataComponent(EnvComponent):
         """
         if start is None:
             self.fixed_start = None
-        elif start > len(self.data) // 24:
-            raise ValueError("Higher start index than days in data.")
+        elif start + self.num_steps > len(self.data):
+            raise ValueError(
+                (
+                    "Data start index too high given the amount of data available. "
+                    f"Trying to start at data step {start} with {self.num_steps} steps."
+                    f" This is would require more data ({start} + {self.num_steps} = "
+                    f"{start + self.num_steps}) than available ({len(self.data)}). "
+                    "Try changing `data_start_index` configuration."
+                )
+            )
         else:
-            self.fixed_start = start * 24
+            self.fixed_start = start
