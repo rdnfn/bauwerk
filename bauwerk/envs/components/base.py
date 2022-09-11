@@ -110,14 +110,15 @@ class DataComponent(EnvComponent):
         """
         if start is None:
             self.fixed_start = None
-        elif start + self.num_steps > len(self.data):
+        elif start + self.num_steps >= len(self.data):
             raise ValueError(
                 (
                     "Data start index too high given the amount of data available. "
                     f"Trying to start at data step {start} with {self.num_steps} steps."
-                    f" This is would require more data ({start} + {self.num_steps} = "
-                    f"{start + self.num_steps}) than available ({len(self.data)}). "
-                    "Try changing `data_start_index` configuration."
+                    f" This is would require more data ({start} + {self.num_steps} + 1"
+                    f" = {start + self.num_steps + 1}) than available "
+                    f"({len(self.data)}). "
+                    "Try changing `data_start_index` or `episode_len` configuration."
                 )
             )
         else:

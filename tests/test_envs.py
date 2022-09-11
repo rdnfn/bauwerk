@@ -8,7 +8,7 @@ def test_solar_battery_house():
     """Basic test of solar battery house env."""
 
     env = gym.make("bauwerk/SolarBatteryHouse-v0")
-    take_steps_in_env(env, num_steps=10)
+    take_steps_in_env(env, num_steps=env.cfg.episode_len)
 
 
 def test_build_dist_a():
