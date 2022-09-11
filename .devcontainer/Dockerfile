@@ -7,6 +7,7 @@ FROM mcr.microsoft.com/vscode/devcontainers/anaconda:3
 
 COPY requirements/* /tmp/pip-tmp/
 RUN conda install -c conda-forge cvxpy
+RUN conda install -c conda-forge pandoc
 RUN pip3 install --upgrade pip
 RUN pip3 --disable-pip-version-check --no-cache-dir install \
     -r /tmp/pip-tmp/requirements_dev.txt \
