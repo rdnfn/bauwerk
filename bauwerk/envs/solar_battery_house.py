@@ -42,14 +42,19 @@ class EnvConfig:
     )
 
     # component params
-    battery_size: float = 10
+    battery_size: float = 7.5  # kWh
     battery_chemistry: str = "NMC"
     solar_data: Union[str, pathlib.Path] = None
-    solar_scaling_factor: float = 1.0
+    solar_scaling_factor: float = 3.5  # kW (max performance)
     load_data: Union[str, pathlib.Path] = None
-    load_scaling_factor: float = 1.0
+    load_scaling_factor: float = 4.5  # kW (max demand)
     fixed_sample_num: int = 12
-    grid_peak_threshold: float = 1.0
+
+    grid_peak_threshold: float = 4.0  # kW
+    grid_base_price: float = 0.25  # Euro
+    grid_peak_price: float = 1.25  # Euro
+    grid_sell_price: float = 0.05  # Euro
+    grid_selling_allowed: bool = True
 
     # optional custom component models
     # (if these are set, component params above will
@@ -193,7 +198,11 @@ class SolarBatteryHouseCoreEnv(gym.Env):
                 scaling_factor=self.cfg.load_scaling_factor,
             ),
             "grid": lambda: bauwerk.envs.components.grid.PeakGrid(
-                peak_threshold=self.cfg.grid_peak_threshold
+                peak_threshold=self.cfg.grid_peak_threshold,
+                base_price=self.cfg.grid_base_price,
+                peak_price=self.cfg.grid_peak_price,
+                sell_price=self.cfg.grid_sell_price,
+                selling_allowed=self.cfg.grid_selling_allowed,
             ),
         }
         return comps_factory
