@@ -34,9 +34,9 @@ class EnvConfig:
 
     # general config params
     time_step_len: float = 1.0  # in hours
-    episode_len: float = 24
-    grid_charging: bool = True
-    infeasible_control_penalty: bool = False
+    episode_len: float = 24 * 365  # in no of timesteps
+    grid_charging: bool = True  # whether grid charging is allowed
+    infeasible_control_penalty: bool = False  # whether penalty added for inf. control
     obs_keys: list = field(
         default_factory=lambda: ["load", "pv_gen", "battery_cont", "time_step"]
     )
