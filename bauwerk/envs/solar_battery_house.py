@@ -38,7 +38,7 @@ class EnvConfig:
     grid_charging: bool = True  # whether grid charging is allowed
     infeasible_control_penalty: bool = False  # whether penalty added for inf. control
     obs_keys: list = field(
-        default_factory=lambda: ["load", "pv_gen", "battery_cont", "time_step"]
+        default_factory=lambda: ["load", "pv_gen", "battery_cont", "time_of_day"]
     )
 
     # component params
