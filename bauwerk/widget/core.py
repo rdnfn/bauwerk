@@ -464,7 +464,7 @@ class Game(widgets.VBox):
         self.obs_values = {
             key: [np.array([0], dtype=np.float32)] * self.visible_steps
             for key in obs.keys()
-            if key != "time_step"
+            if key not in ["time_step", "time_of_day"]
         }
         self.add_obs(obs)
         self.reward = 0
