@@ -343,6 +343,9 @@ class SolarBatteryHouseCoreEnv(gym.Env):
     def _get_time_of_day(self, step: int) -> np.array:
         """Get the time of day given a the current step.
 
+        Inspired by
+        https://ianlondon.github.io/blog/encoding-cyclical-features-24hour-time/.
+
         Args:
             step (int): the current time step.
 
@@ -350,10 +353,10 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             np.array: array of shape (2,) that uniquely represents the time of day
                 in circular fashion.
         """
-        time_of_day = np.array(
+        time_of_day = np.concatenate(
             [
-                np.cos(step * self.cfg.time_step_len / 24),
-                np.sin(step * self.cfg.time_step_len / 24),
+                np.cos(2 * np.pi * step * self.cfg.time_step_len / 24),
+                np.sin(2 * np.pi * step * self.cfg.time_step_len / 24),
             ],
         )
         return time_of_day
