@@ -55,9 +55,9 @@ def test_time_of_day():
 
     # Compatibility with multiple gym versions
     try:
-        init_obs = env.reset()
-    except ValueError:
         init_obs, _ = env.reset()
+    except ValueError:
+        init_obs = env.reset()
 
     all_obs = [init_obs]
     for _ in range(48):
