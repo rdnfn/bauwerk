@@ -139,9 +139,16 @@ def solve_solar_battery_house(env: SolarBatteryHouseCoreEnv) -> np.array:
         )
     )
 
-    prob = cp.Problem(objective, constraints)
-    result = prob.solve(verbose=False)  # pylint: disable=unused-variable
+    cvxpy_problem = cp.Problem(objective, constraints)
+    result = cvxpy_problem.solve(verbose=False)  # pylint: disable=unused-variable
 
-    charging_power = power_charge.value - power_discharge.value
+    (
+        min_charge_power,
+        max_charge_power,
+    ) = env.battery.get_charging_limits()
 
-    return charging_power
+    optimal_actions = (
+        power_charge.value / max_charge_power + power_discharge.value / min_charge_power
+    )
+
+    return optimal_actions, cvxpy_problem
