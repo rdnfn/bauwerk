@@ -2,6 +2,23 @@
 History
 =======
 
+0.2.1 (2022-09-09)
+------------------
+
+* Features
+
+  * Add ``time_of_day`` variable to observation space.
+
+* Improvements
+
+  * The ``solve`` function is now directly imported with ``bauwerk``, to simplify usage.
+  * Additional sections added to documentation.
+  * Add more grid parameters to ``SolarBatteryHouseEnv`` configuration.
+
+* Fixes:
+
+  * Ensure solver outputs actions that are valid in environment (i.e. normalised)
+
 0.2.0 (2022-09-09)
 ------------------
 
