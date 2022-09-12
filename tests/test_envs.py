@@ -48,3 +48,15 @@ def take_steps_in_env(env: gym.Env, num_steps: int = 10) -> None:
     env.reset()
     for _ in range(num_steps):
         env.step(env.action_space.sample())
+
+
+def test_time_of_day():
+    env = gym.make("bauwerk/SolarBatteryHouse-v0", cfg={"obs_keys": ["time_of_day"]})
+    init_obs = env.reset()
+    all_obs = [init_obs]
+    for _ in range(48):
+        obs, _, _, _ = env.step(env.action_space.sample())
+        all_obs.append(obs)
+    assert init_obs["time_of_day"][0] == all_obs[24]["time_of_day"][0]
+    assert init_obs["time_of_day"][0] == all_obs[48]["time_of_day"][0]
+    assert init_obs["time_of_day"][0] != all_obs[23]["time_of_day"][0]
