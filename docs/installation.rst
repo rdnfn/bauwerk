@@ -16,6 +16,10 @@ To install bauwerk, run this command in your terminal:
 
 This is the preferred method to install bauwerk, as it will always install the most recent stable release.
 
+.. note::
+
+    All Bauwerk dependencies will be automatically installed via pip, no further installation steps are required. Bauwerk does not rely on external building simulation engines such as EnergyPlus.
+
 If you don't have `pip`_ installed, this `Python installation guide`_ can guide
 you through the process.
 

@@ -2,12 +2,18 @@
 
 import numpy as np
 import cvxpy as cp
+import gym
+from bauwerk.envs.solar_battery_house import SolarBatteryHouseCoreEnv
 
 
-from bauwerk.envs.solar_battery_house import SolarBatteryHouseEnv
+def solve(env: gym.Env):  # pylint: disable=used-before-assignment
+    if isinstance(env.unwrapped, SolarBatteryHouseCoreEnv):
+        return solve_solar_battery_house(env)
+    else:
+        raise ValueError(f"Argument given not solvable environment by Bauwerk ({env})")
 
 
-def solve_solar_battery_house(env: SolarBatteryHouseEnv) -> np.array:
+def solve_solar_battery_house(env: SolarBatteryHouseCoreEnv) -> np.array:
     """Solve the SolarBatteryHouse environment using CVXPY.
 
     This function is based on the following notebook:
@@ -133,9 +139,16 @@ def solve_solar_battery_house(env: SolarBatteryHouseEnv) -> np.array:
         )
     )
 
-    prob = cp.Problem(objective, constraints)
-    result = prob.solve(verbose=False)  # pylint: disable=unused-variable
+    cvxpy_problem = cp.Problem(objective, constraints)
+    result = cvxpy_problem.solve(verbose=False)  # pylint: disable=unused-variable
 
-    charging_power = power_charge.value - power_discharge.value
+    (
+        min_charge_power,
+        max_charge_power,
+    ) = env.battery.get_charging_limits()
 
-    return charging_power
+    optimal_actions = (
+        power_charge.value / max_charge_power + power_discharge.value / min_charge_power
+    )
+
+    return optimal_actions, cvxpy_problem

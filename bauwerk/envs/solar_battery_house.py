@@ -34,22 +34,27 @@ class EnvConfig:
 
     # general config params
     time_step_len: float = 1.0  # in hours
-    episode_len: float = 24
-    grid_charging: bool = True
-    infeasible_control_penalty: bool = False
+    episode_len: float = 24 * 365 - 1  # in no of timesteps (-1 bc of available obs)
+    grid_charging: bool = True  # whether grid charging is allowed
+    infeasible_control_penalty: bool = False  # whether penalty added for inf. control
     obs_keys: list = field(
-        default_factory=lambda: ["load", "pv_gen", "battery_cont", "time_step"]
+        default_factory=lambda: ["load", "pv_gen", "battery_cont", "time_of_day"]
     )
 
     # component params
-    battery_size: float = 10
+    battery_size: float = 7.5  # kWh
     battery_chemistry: str = "NMC"
     solar_data: Union[str, pathlib.Path] = None
-    solar_scaling_factor: float = 1.0
+    solar_scaling_factor: float = 3.5  # kW (max performance)
     load_data: Union[str, pathlib.Path] = None
-    load_scaling_factor: float = 1.0
-    fixed_sample_num: int = 12
-    grid_peak_threshold: float = 1.0
+    load_scaling_factor: float = 4.5  # kW (max demand)
+    data_start_index: int = 0  # starting index for data-based components (solar & load)
+
+    grid_peak_threshold: float = 4.0  # kW
+    grid_base_price: float = 0.25  # Euro
+    grid_peak_price: float = 1.25  # Euro
+    grid_sell_price: float = 0.05  # Euro
+    grid_selling_allowed: bool = True
 
     # optional custom component models
     # (if these are set, component params above will
@@ -124,6 +129,9 @@ class SolarBatteryHouseCoreEnv(gym.Env):
                 shape=(1,),
                 dtype=np.float32,
             ),
+            "time_of_day": gym.spaces.Box(
+                low=-1.0, high=1.0, shape=(2,), dtype=np.float32
+            ),
         }
 
         # Selecting the subset of obs spaces selected
@@ -182,18 +190,22 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             ),
             "solar": lambda: bauwerk.envs.components.solar.DataPV(
                 data_path=self.cfg.solar_data,
-                fixed_sample_num=self.cfg.fixed_sample_num,
+                data_start_index=self.cfg.data_start_index,
                 num_steps=self.cfg.episode_len,
                 scaling_factor=self.cfg.solar_scaling_factor,
             ),
             "load": lambda: bauwerk.envs.components.load.DataLoad(
                 data_path=self.cfg.load_data,
-                fixed_sample_num=self.cfg.fixed_sample_num,
+                data_start_index=self.cfg.data_start_index,
                 num_steps=self.cfg.episode_len,
                 scaling_factor=self.cfg.load_scaling_factor,
             ),
             "grid": lambda: bauwerk.envs.components.grid.PeakGrid(
-                peak_threshold=self.cfg.grid_peak_threshold
+                peak_threshold=self.cfg.grid_peak_threshold,
+                base_price=self.cfg.grid_base_price,
+                peak_price=self.cfg.grid_peak_price,
+                sell_price=self.cfg.grid_sell_price,
+                selling_allowed=self.cfg.grid_selling_allowed,
             ),
         }
         return comps_factory
@@ -216,10 +228,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             info (dict): contains auxiliary diagnostic information
                 (helpful for debugging, and sometimes learning)
         """
-        assert self.action_space.contains(action), "%r (%s) invalid" % (
-            action,
-            type(action),
-        )
+        assert self.action_space.contains(action), f"{action} ({type(action)}) invalid"
 
         info = {}
 
@@ -227,7 +236,10 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         self.logger.debug("step - action: %1.3f", action)
 
         # Get old state
-        load, pv_generation, _, _, _, sum_load, sum_pv_gen, _, _ = self.state.values()
+        load = self.state["load"]
+        pv_generation = self.state["pv_gen"]
+        cum_load = self.state["cum_load"]
+        cum_pv_gen = self.state["cum_pv_gen"]
 
         # Actions are proportion of max/min charging power, hence scale up
         if action > 0:
@@ -274,8 +286,8 @@ class SolarBatteryHouseCoreEnv(gym.Env):
 
         battery_cont = self.battery.get_energy_content()
 
-        sum_load += load
-        sum_pv_gen += pv_generation
+        cum_load += load
+        cum_pv_gen += pv_generation
         self.time_step += 1
 
         self.state = {
@@ -284,10 +296,11 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             "battery_cont": np.array(battery_cont, dtype=np.float32),
             "time_step": int(self.time_step),
             "time_step_cont": self.time_step.astype(np.float32),
-            "cum_load": sum_load,
-            "cum_pv_gen": sum_pv_gen,
+            "cum_load": cum_load,
+            "cum_pv_gen": cum_pv_gen,
             "load_change": np.array([load_change], dtype=np.float32),
             "pv_change": np.array([pv_change], dtype=np.float32),
+            "time_of_day": self._get_time_of_day(step=self.time_step),
         }
 
         observation = self._get_obs_from_state(self.state)
@@ -327,6 +340,27 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         """
         return {key: state[key] for key in self.cfg.obs_keys}
 
+    def _get_time_of_day(self, step: int) -> np.array:
+        """Get the time of day given a the current step.
+
+        Inspired by
+        https://ianlondon.github.io/blog/encoding-cyclical-features-24hour-time/.
+
+        Args:
+            step (int): the current time step.
+
+        Returns:
+            np.array: array of shape (2,) that uniquely represents the time of day
+                in circular fashion.
+        """
+        time_of_day = np.concatenate(
+            [
+                np.cos(2 * np.pi * step * self.cfg.time_step_len / 24),
+                np.sin(2 * np.pi * step * self.cfg.time_step_len / 24),
+            ],
+        )
+        return time_of_day
+
     def reset(
         self,
         *,
@@ -342,7 +376,12 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         if seed is not None:
             self._np_random, seed = gym.utils.seeding.np_random(seed)
 
-        start = np.random.randint((self.data_len // 24) - 1) * 24
+        self.time_step = np.array([0])
+
+        if not self.cfg.data_start_index:
+            start = np.random.randint((self.data_len // 24) - 1) * 24
+        else:
+            start = self.cfg_start_index
 
         self.battery.reset()
         self.load.reset(start=start)
@@ -361,11 +400,10 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             "cum_pv_gen": np.array([0.0], dtype=np.float32),
             "load_change": np.array([0.0], dtype=np.float32),
             "pv_change": np.array([0.0], dtype=np.float32),
+            "time_of_day": self._get_time_of_day(self.time_step),
         }
 
         observation = self._get_obs_from_state(self.state)
-
-        self.time_step = np.array([0])
 
         self.logger.debug("Environment reset.")
 

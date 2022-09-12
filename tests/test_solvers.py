@@ -10,3 +10,10 @@ def test_solar_battery_house_solver() -> None:
 
     env = gym.make("bauwerk/SolarBatteryHouse-v0")
     bauwerk.envs.solvers.solve_solar_battery_house(env)
+
+
+def test_general_solver() -> None:
+    """Basic test whether running solver throws errors."""
+
+    env = gym.make("bauwerk/SolarBatteryHouse-v0")
+    bauwerk.solve(env)

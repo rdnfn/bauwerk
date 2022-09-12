@@ -10,7 +10,7 @@
 			// Append -bullseye or -buster to pin to an OS version.
 			// Use -bullseye variants on local on arm64/Apple Silicon.
 			// Note: ray[rllib] is not available on debian 11 (bullseye)
-			"VARIANT": "3.10-bullseye",
+			"VARIANT": "3.10-bullseye"
 		}
 	},
 	"workspaceFolder": "/bauwerk",
