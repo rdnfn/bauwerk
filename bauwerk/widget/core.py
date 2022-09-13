@@ -93,7 +93,7 @@ class Game(widgets.VBox):
         action_low = self.env.action_space.low[0]
 
         self.control = widgets.FloatSlider(
-            description="Battery",
+            description="Charging",
             orientation="vertical",
             min=action_low,
             max=action_high,
@@ -259,6 +259,8 @@ class Game(widgets.VBox):
                 # animated=True,
                 fontfamily="monospace",
                 fontsize=15,
+                color="white",
+                bbox={"boxstyle": "Round", "facecolor": "black", "linewidth": 2.5},
             )
 
             # Right handside of plt animation
@@ -421,8 +423,7 @@ class Game(widgets.VBox):
                 self.score_text.set_text(
                     f"Game finished\nScore: {self.reward:.2f}" f"{self.score_currency}"
                 )
-                self.score_text.set_color("white")
-                self.score_text.set_backgroundcolor("black")
+                self.score_text.set_backgroundcolor("darkolivegreen")
 
             self._update_house_figure()
 
@@ -524,8 +525,7 @@ class Game(widgets.VBox):
         if hasattr(self, "score_text"):
             # changing back the score text to black
             # on white background
-            self.score_text.set_color("black")
-            self.score_text.set_bbox(None)
+            self.score_text.set_backgroundcolor("black")
 
         if hasattr(self, "control"):
             self.control.set_trait("disabled", False)
