@@ -45,3 +45,19 @@ jobs:
         # Run tox using the version of Python in `PATH`
         # Note: gym also need to be set as dep in tox.ini for the force arg to work
         run: tox -e py --force-dep gym==${{ matrix.gym }}
+  sb3:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Setup Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.9"
+      - name: Install tox and any other packages
+        run: pip install pytest tox
+      - name: Run tox
+        # Run tox using the version of Python in `PATH`
+        # Note: gym also need to be set as dep in tox.ini for the force arg to work
+        run: tox -e sb3
