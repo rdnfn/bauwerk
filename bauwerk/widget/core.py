@@ -229,6 +229,9 @@ class Game(widgets.VBox):
             px = 1 / plt.rcParams["figure.dpi"]
             fig_height = self.fig_height * px * 1  # in inches
 
+            plt.rcParams["font.family"] = "monospace"
+            # plt.rcParams["font.weight"] = "bold"
+
             self.fig = plt.figure(
                 constrained_layout=True,
                 figsize=(7, fig_height),  # dpi=50
@@ -259,6 +262,7 @@ class Game(widgets.VBox):
                 # animated=True,
                 fontfamily="monospace",
                 fontsize=15,
+                fontweight="bold",
                 color="white",
                 bbox={"boxstyle": "Round", "facecolor": "black", "linewidth": 2.5},
             )
