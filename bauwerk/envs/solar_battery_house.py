@@ -193,12 +193,14 @@ class SolarBatteryHouseCoreEnv(gym.Env):
                 data_start_index=self.cfg.data_start_index,
                 num_steps=self.cfg.episode_len,
                 scaling_factor=self.cfg.solar_scaling_factor,
+                time_step_len=self.cfg.time_step_len,
             ),
             "load": lambda: bauwerk.envs.components.load.DataLoad(
                 data_path=self.cfg.load_data,
                 data_start_index=self.cfg.data_start_index,
                 num_steps=self.cfg.episode_len,
                 scaling_factor=self.cfg.load_scaling_factor,
+                time_step_len=self.cfg.time_step_len,
             ),
             "grid": lambda: bauwerk.envs.components.grid.PeakGrid(
                 peak_threshold=self.cfg.grid_peak_threshold,
@@ -206,6 +208,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
                 peak_price=self.cfg.grid_peak_price,
                 sell_price=self.cfg.grid_sell_price,
                 selling_allowed=self.cfg.grid_selling_allowed,
+                time_step_len=self.cfg.time_step_len,
             ),
         }
         return comps_factory

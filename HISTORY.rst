@@ -7,6 +7,19 @@ History
 
 * Features
 
+  * Add support for much slower speed in game widget
+
+* Improvements
+
+  * Add clock and day to game widget
+  * Design improvements for game widget
+
+
+0.2.1 (2022-09-12)
+------------------
+
+* Features
+
   * Add ``time_of_day`` variable to observation space.
 
 * Improvements

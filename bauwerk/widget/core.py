@@ -32,9 +32,10 @@ class Game(widgets.VBox):
         log_level: str = "error",
         height: int = 500,
         step_time=0.5,
+        time_step_len=1 / 12,
         automatic_stepping=True,
-        visible_steps=24,
-        episode_len=168,
+        visible_h=24,
+        episode_len=12 * 24 * 2,
         debug_mode=False,
         score_currency="€",
         score_scale=10.0,
@@ -58,9 +59,12 @@ class Game(widgets.VBox):
         self.automatic_stepping = automatic_stepping
         self.step_time = step_time
         self.fig_height = height - 150
-        self.visible_steps = visible_steps
+        self.visible_steps = int(visible_h / time_step_len)
         self.reward_label = "reward (payment)"
-        self.cfg = bauwerk.envs.solar_battery_house.EnvConfig(episode_len=episode_len)
+        self.cfg = bauwerk.envs.solar_battery_house.EnvConfig(
+            episode_len=episode_len,
+            time_step_len=time_step_len,
+        )
         self.debug_mode = debug_mode
         self.score_currency = score_currency
         self.include_clock = include_clock
@@ -408,7 +412,7 @@ class Game(widgets.VBox):
             days = self.current_step * self.cfg.time_step_len // 24 + 1
             hours = self.current_step * self.cfg.time_step_len % 24
             mins = (hours % 1) * 60
-            self.time_text.set_text(f"{int(hours):02d}:{int(mins):02d}")
+            self.time_text.set_text(f"{round(hours):02d}:{round(mins):02d}")
             self.time_day_text.set_text(f"Day {int(days)}")
 
     def _update_figure(self):
