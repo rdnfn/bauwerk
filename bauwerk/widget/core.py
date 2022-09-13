@@ -31,11 +31,14 @@ class Game(widgets.VBox):
         env: gym.Env = None,
         log_level: str = "error",
         height: int = 500,
-        step_time=0.1,
+        step_time=0.5,
         automatic_stepping=True,
         visible_steps=24,
         episode_len=168,
         debug_mode=False,
+        score_currency="€",
+        score_scale=10.0,
+        include_clock=True,
     ):
         """Bauwerk building control game widget.
 
@@ -59,6 +62,13 @@ class Game(widgets.VBox):
         self.reward_label = "reward (payment)"
         self.cfg = bauwerk.envs.solar_battery_house.EnvConfig(episode_len=episode_len)
         self.debug_mode = debug_mode
+        self.score_currency = score_currency
+        self.include_clock = include_clock
+
+        # Apply scaling factor
+        self.cfg.grid_peak_price *= score_scale
+        self.cfg.grid_base_price *= score_scale
+        self.cfg.grid_sell_price *= score_scale
 
         # Set up menu screens
         self.game_logo_img = bauwerk.utils.data.access_package_data(
@@ -244,11 +254,11 @@ class Game(widgets.VBox):
             axs_left[1].axis("off")
             self.score_text = axs_left[1].text(
                 x=0.1,
-                y=0.7,
-                s="Score: 0",
+                y=0.5,
+                s=f"Score: 0.00{self.score_currency}",
                 # animated=True,
                 fontfamily="monospace",
-                fontsize=16,
+                fontsize=15,
             )
 
             # Right handside of plt animation
@@ -316,6 +326,34 @@ class Game(widgets.VBox):
         )
         img_ax.add_patch(self.indicator_battery_side)
 
+        clock_face = (1, 240 / 255, 195 / 255)
+
+        if self.include_clock:
+
+            self.time_day_text = img_ax.text(
+                x=290,
+                y=110,
+                s="Day 1",
+                # animated=True,
+                fontfamily="monospace",
+                fontsize=9,
+                fontweight="bold",
+                color="white",
+                bbox={"boxstyle": "Round", "facecolor": "black", "linewidth": 2.5},
+            )
+
+            self.time_text = img_ax.text(
+                x=275,
+                y=60,
+                s="00:00",
+                # animated=True,
+                fontfamily="monospace",
+                fontsize=14,
+                fontweight="bold",
+                color="black",
+                bbox={"boxstyle": "Round", "facecolor": clock_face, "linewidth": 2.5},
+            )
+
         img_ax.imshow(self.img_house)
 
     def _update_house_figure(self):
@@ -360,6 +398,13 @@ class Game(widgets.VBox):
         )
         self.indicator_battery_side.set_xy(new_xy)
 
+        if self.include_clock:
+            days = self.current_step * self.cfg.time_step_len // 24 + 1
+            hours = self.current_step * self.cfg.time_step_len % 24
+            mins = (hours % 1) * 60
+            self.time_text.set_text(f"{int(hours):02d}:{int(mins):02d}")
+            self.time_day_text.set_text(f"Day {int(days)}")
+
     def _update_figure(self):
         for i, obs_part in enumerate(self.obs_values.values()):
             # setting new data
@@ -371,9 +416,13 @@ class Game(widgets.VBox):
             axs.relim()
             axs.autoscale_view(True, True, True)
 
-            self.score_text.set_text(f"Score: {self.reward:.2f}")
+            self.score_text.set_text(f"Score: {self.reward:.2f}{self.score_currency}")
             if self.game_finished:
-                self.score_text.set_text(f"Game finished.\nScore: {self.reward:.2f}")
+                self.score_text.set_text(
+                    f"Game finished\nScore: {self.reward:.2f}" f"{self.score_currency}"
+                )
+                self.score_text.set_color("white")
+                self.score_text.set_backgroundcolor("black")
 
             self._update_house_figure()
 
@@ -446,6 +495,7 @@ class Game(widgets.VBox):
             self.add_obs({**observation, self.reward_label: reward})
 
             self.reward += reward
+            self.current_step += 1
 
             if done:
                 self.game_finished = True
@@ -469,6 +519,13 @@ class Game(widgets.VBox):
         self.add_obs(obs)
         self.reward = 0
         self.game_finished = False
+        self.current_step = 0
+
+        if hasattr(self, "score_text"):
+            # changing back the score text to black
+            # on white background
+            self.score_text.set_color("black")
+            self.score_text.set_bbox(None)
 
         if hasattr(self, "control"):
             self.control.set_trait("disabled", False)
