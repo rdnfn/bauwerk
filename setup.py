@@ -10,7 +10,12 @@ with open("README.rst", encoding="UTF-8") as readme_file:
 with open("HISTORY.rst", encoding="UTF-8") as history_file:
     history = history_file.read()
 
-requirements = ["gym", "numpy", "loguru", "importlib-resources;python_version<'3.9'"]
+requirements = [
+    "gym",
+    "numpy>=1.20",
+    "loguru",
+    "importlib-resources;python_version<'3.9'",
+]
 
 test_requirements = [
     "pytest>=3",

@@ -353,11 +353,12 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             np.array: array of shape (2,) that uniquely represents the time of day
                 in circular fashion.
         """
-        time_of_day = np.concatenate(
-            [
+        time_of_day = np.concatenate(  # pylint: disable=unexpected-keyword-arg
+            (
                 np.cos(2 * np.pi * step * self.cfg.time_step_len / 24),
                 np.sin(2 * np.pi * step * self.cfg.time_step_len / 24),
-            ],
+            ),
+            dtype=np.float32,
         )
         return time_of_day
 
