@@ -30,7 +30,7 @@ def test_solver_consistency_solar_battery_house() -> None:
 
     env.reset()
     battery_cont_env = []
-    test_range = 20
+    test_range = 2000
     for action in optimal_act[:test_range]:
         step_ret = env.step(action)
         battery_cont_env.append((step_ret[0]["battery_cont"]))
