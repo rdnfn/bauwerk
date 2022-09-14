@@ -2,6 +2,8 @@
 
 import bauwerk  # pylint: disable=unused-import
 import gym
+import numpy as np
+import pytest
 
 
 def test_solar_battery_house():
@@ -72,3 +74,42 @@ def test_time_of_day():
     assert init_obs["time_of_day"][0] == all_obs[24]["time_of_day"][0]
     assert init_obs["time_of_day"][0] == all_obs[48]["time_of_day"][0]
     assert init_obs["time_of_day"][0] != all_obs[23]["time_of_day"][0]
+
+
+def test_changing_step_size():
+    """Test the interpolation in when using different time_step_len."""
+
+    env_short_steps = gym.make(
+        "bauwerk/SolarBatteryHouse-v0", cfg={"time_step_len": 0.5}
+    )
+    env_short_steps.reset()
+
+    env_normal_steps = gym.make(
+        "bauwerk/SolarBatteryHouse-v0", cfg={"time_step_len": 1}
+    )
+    env_normal_steps.reset()
+
+    env_long_steps = gym.make(
+        "bauwerk/SolarBatteryHouse-v0", cfg={"time_step_len": 2, "episode_len": 100}
+    )
+    env_long_steps.reset()
+
+    def test_action(action):
+        for _ in range(8):
+            envs_ret = env_short_steps.step(action)
+        for _ in range(4):
+            envn_ret = env_normal_steps.step(action)
+        for _ in range(2):
+            envl_ret = env_long_steps.step(action)
+
+        for key in envs_ret[0].keys():
+            assert envs_ret[0][key][0] == pytest.approx(
+                envn_ret[0][key][0], 0.0001
+            ), f"Obs key `{key}` comparison failed."
+            assert envs_ret[0][key][0] == pytest.approx(
+                envl_ret[0][key][0], 0.0001
+            ), f"Obs key `{key}` comparison failed."
+
+    for i in [0.5, 0.0]:
+        action = np.array([i], dtype=np.float32)
+        test_action(action)
