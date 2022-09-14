@@ -410,9 +410,9 @@ class Game(widgets.VBox):
 
         if self.include_clock:
             days = self.current_step * self.cfg.time_step_len // 24 + 1
-            hours = self.current_step * self.cfg.time_step_len % 24
+            hours = (self.current_step * self.cfg.time_step_len) % 24
             mins = (hours % 1) * 60
-            self.time_text.set_text(f"{round(hours):02d}:{round(mins):02d}")
+            self.time_text.set_text(f"{int(hours):02d}:{round(mins):02d}")
             self.time_day_text.set_text(f"Day {int(days)}")
 
     def _update_figure(self):
