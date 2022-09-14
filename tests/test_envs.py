@@ -102,12 +102,18 @@ def test_changing_step_size():
         for _ in range(2):
             envl_ret = env_long_steps.step(action)
 
+        # Note: these assert statements are only approximate as
+        # the battery model is NOT mathematically consistent
+        # when varying step sizes. See calc_max_charging in
+        # battery model for more info. This test only flags
+        # drastic misalignment with step len changes.
+        abs_test_tolerance = 0.1
         for key in envs_ret[0].keys():
             assert envs_ret[0][key][0] == pytest.approx(
-                envn_ret[0][key][0], 0.0001
+                envn_ret[0][key][0], abs=abs_test_tolerance
             ), f"Obs key `{key}` comparison failed after taking action {action}."
             assert envs_ret[0][key][0] == pytest.approx(
-                envl_ret[0][key][0], 0.0001
+                envl_ret[0][key][0], abs=abs_test_tolerance
             ), f"Obs key `{key}` comparison failed after taking action {action}."
 
     for i in [0.5, 0.0, -0.5]:
