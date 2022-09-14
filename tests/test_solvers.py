@@ -26,7 +26,7 @@ def test_solver_consistency_solar_battery_house() -> None:
 
     env = gym.make("bauwerk/SolarBatteryHouse-v0")
     optimal_act, cp_problem = bauwerk.solve(env)
-    battery_cont_cp = cp_problem.var_dict["energy_battery"].value
+    battery_cont_cp = cp_problem.var_dict["energy_battery"].value[1:]
 
     env.reset()
     battery_cont_env = []
