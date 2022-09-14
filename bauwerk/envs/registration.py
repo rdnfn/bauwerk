@@ -12,10 +12,10 @@ def register_all() -> None:
 
     gym.envs.registration.register(
         id="bauwerk/BuildDistA-v0",
-        entry_point="bauwerk.envs.distributions:sample_build_dist_a",
+        entry_point="bauwerk.envs.distributions:BuildDistAEnv",
     )
 
     gym.envs.registration.register(
         id="bauwerk/BuildDistB-v0",
-        entry_point="bauwerk.envs.distributions:sample_build_dist_b",
+        entry_point="bauwerk.envs.distributions:BuildDistBEnv",
     )

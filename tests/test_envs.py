@@ -30,11 +30,15 @@ def test_solar_battery_house_dict_config():
 def test_env_seed():
     """Test of seed in distribution."""
 
-    env1 = gym.make("bauwerk/BuildDistB-v0", seed=1)
-    env2 = gym.make("bauwerk/BuildDistB-v0", seed=2)
-    env3 = gym.make("bauwerk/BuildDistB-v0", seed=2)
-    assert env1.battery.size != env2.battery.size
-    assert env2.battery.size == env3.battery.size
+    env = gym.make("bauwerk/BuildDistB-v0")
+    env.reset(seed=0)
+    batt_size_1 = env.cfg.battery_size
+    env.reset(seed=1)
+    batt_size_2 = env.cfg.battery_size
+    env.reset(seed=1)
+    batt_size_3 = env.cfg.battery_size
+    assert batt_size_1 != batt_size_2
+    assert batt_size_2 == batt_size_3
 
 
 def take_steps_in_env(env: gym.Env, num_steps: int = 10) -> None:

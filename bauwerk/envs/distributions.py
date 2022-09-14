@@ -1,19 +1,39 @@
 """Sampling functions for distributions over buildings."""
 
+from typing import Optional
 import random
+import gym
 import bauwerk.envs.solar_battery_house
+import bauwerk.utils.gym
 
 
-def sample_build_dist_a(seed: int = None):  # pylint: disable=unused-argument
-    """Sample env from building distribution A that varies battery size."""
-    return bauwerk.envs.solar_battery_house.SolarBatteryHouseEnv()
+BuildDistAEnv = bauwerk.envs.solar_battery_house.SolarBatteryHouseEnv
 
 
-def sample_build_dist_b(seed: int = None):
-    """Sample env from building distribution A that varies battery size."""
-    if seed is not None:
-        random.seed(seed)
-    sampled_cfg = {"battery_size": random.uniform(5, 15)}
-    return bauwerk.envs.solar_battery_house.SolarBatteryHouseEnv(
-        cfg=sampled_cfg,
-    )
+class BuildDistBCoreEnv(bauwerk.envs.solar_battery_house.SolarBatteryHouseCoreEnv):
+    """Building distribution B over varying Battery sizes."""
+
+    def reset(
+        self,
+        *,
+        return_info: bool = True,
+        seed: Optional[int] = None,
+        options: Optional[dict] = None,  # pylint: disable=unused-argument
+    ) -> object:
+        """Resets environment to initial state and returns an initial observation.
+
+        This samples a new building (i.e. with a different battery size).
+
+        Returns:
+            observation (object): the initial observation.
+        """
+        if seed is not None:
+            self._np_random, seed = gym.utils.seeding.np_random(seed)
+            random.seed(seed)
+        self.cfg.battery_size = random.uniform(5, 15)
+        self._setup_components()
+
+        return super().reset(seed=seed, return_info=return_info, options=options)
+
+
+BuildDistBEnv = bauwerk.utils.gym.make_old_gym_api_compatible(BuildDistBCoreEnv)

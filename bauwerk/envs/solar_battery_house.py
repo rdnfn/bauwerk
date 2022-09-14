@@ -3,23 +3,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import pathlib
-from typing import TYPE_CHECKING, Optional, Tuple, Union, Any, Dict
+from typing import TYPE_CHECKING, Optional, Tuple, Union
 from loguru import logger
 import gym
 import gym.utils.seeding
 import numpy as np
 
 import bauwerk.utils.logging
+import bauwerk.utils.gym
 import bauwerk.envs.components.solar
 import bauwerk.envs.components.load
 import bauwerk.envs.components.grid
 import bauwerk.envs.components.battery
-from bauwerk.constants import (
-    GYM_COMPAT_MODE,
-    GYM_NEW_RESET_API_ACTIVE,
-    GYM_NEW_STEP_API_ACTIVE,
-    GYM_RESET_INFO_DEFAULT,
-)
 
 if TYPE_CHECKING:
     from bauwerk.envs.components.battery import BatteryModel
@@ -42,13 +37,15 @@ class EnvConfig:
     )
 
     # component params
+
     battery_size: float = 7.5  # kWh
     battery_chemistry: str = "NMC"
+
+    data_start_index: int = 0  # starting index for data-based components (solar & load)
     solar_data: Union[str, pathlib.Path] = None
     solar_scaling_factor: float = 3.5  # kW (max performance)
     load_data: Union[str, pathlib.Path] = None
     load_scaling_factor: float = 4.5  # kW (max demand)
-    data_start_index: int = 0  # starting index for data-based components (solar & load)
 
     grid_peak_threshold: float = 4.0  # kW
     grid_base_price: float = 0.25  # Euro
@@ -484,36 +481,6 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         return [seed]
 
 
-class GymCompatEnv(SolarBatteryHouseCoreEnv):
-    """Compatiblity environment for v0.21<=Gym<=v0.25.
-
-    After Gym v0.21 a number of breaking API changes were introduced.
-    Bauwerk adopts this new API but aims to be compatible with
-    Gym v0.21 as well. This version is used by Stable-Baselines 3.
-    """
-
-    def reset(self) -> Any:
-        """Reset the environment and return the initial observation."""
-        if not GYM_NEW_RESET_API_ACTIVE:
-            # Before v0.22 no info return could be done,
-            # Thus this only returns the observation
-            return super().reset(return_info=False)
-        else:
-            # The return info default changed between v0.25 and v0.26
-            # from False to True
-            return super().reset(return_info=GYM_RESET_INFO_DEFAULT)
-
-    def step(self, action: Any) -> Tuple[Any, float, bool, Dict]:
-        """Run one timestep of the environment's dynamics."""
-        if not GYM_NEW_STEP_API_ACTIVE:
-            obs, reward, terminated, truncated, info = super().step(action)
-            done = terminated or truncated
-            return obs, reward, done, info
-        else:
-            return super().step(action)
-
-
-if GYM_COMPAT_MODE:
-    SolarBatteryHouseEnv = GymCompatEnv
-else:
-    SolarBatteryHouseEnv = SolarBatteryHouseCoreEnv
+SolarBatteryHouseEnv = bauwerk.utils.gym.make_old_gym_api_compatible(
+    SolarBatteryHouseCoreEnv
+)
