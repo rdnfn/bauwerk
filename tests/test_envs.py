@@ -105,11 +105,11 @@ def test_changing_step_size():
         for key in envs_ret[0].keys():
             assert envs_ret[0][key][0] == pytest.approx(
                 envn_ret[0][key][0], 0.0001
-            ), f"Obs key `{key}` comparison failed."
+            ), f"Obs key `{key}` comparison failed after taking action {action}."
             assert envs_ret[0][key][0] == pytest.approx(
                 envl_ret[0][key][0], 0.0001
-            ), f"Obs key `{key}` comparison failed."
+            ), f"Obs key `{key}` comparison failed after taking action {action}."
 
-    for i in [0.5, 0.0]:
+    for i in [0.5, 0.0, -0.5]:
         action = np.array([i], dtype=np.float32)
         test_action(action)
