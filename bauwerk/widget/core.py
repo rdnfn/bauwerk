@@ -251,6 +251,7 @@ class Game(widgets.VBox):
 
             plt.rcParams.update({"font.size": 10})
 
+            # split canvas into left and right subfigures
             subfigs = self.fig.subfigures(1, 2, wspace=0.07, width_ratios=[1, 2])
 
             # Left handside of plt animation
