@@ -2,12 +2,13 @@
 History
 =======
 
-0.2.1 (2022-09-12)
+0.2.2 (2022-09-00)
 ------------------
 
 * Features
 
   * Add support for much slower speed in game widget
+  * Add benchmarks.
 
 * Improvements
 
