@@ -113,5 +113,5 @@ class BuildDistB(Benchmark):
 
     def make_env(self):
         env = gym.make("bauwerk/House-v0")
-        env.force_task_setting = True
+        env.unwrapped.force_task_setting = True
         return env
