@@ -5,6 +5,7 @@ import random
 import gym
 import bauwerk.envs.solar_battery_house
 import bauwerk.utils.gym
+from loguru import logger
 
 
 BuildDistAEnv = bauwerk.envs.solar_battery_house.SolarBatteryHouseEnv
@@ -12,6 +13,11 @@ BuildDistAEnv = bauwerk.envs.solar_battery_house.SolarBatteryHouseEnv
 
 class BuildDistBCoreEnv(bauwerk.envs.solar_battery_house.SolarBatteryHouseCoreEnv):
     """Building distribution B over varying Battery sizes."""
+
+    logger.warning(
+        "Deprecation warning: access of building distribution B"
+        " via gym.make has been deprecated. Use bauwerk.benchmarks.BuildDistB instead."
+    )
 
     def reset(
         self,
