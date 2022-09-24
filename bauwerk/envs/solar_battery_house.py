@@ -15,6 +15,7 @@ import bauwerk.envs.components.solar
 import bauwerk.envs.components.load
 import bauwerk.envs.components.grid
 import bauwerk.envs.components.battery
+import bauwerk.benchmarks
 
 if TYPE_CHECKING:
     from bauwerk.envs.components.battery import BatteryModel
@@ -37,7 +38,6 @@ class EnvConfig:
     )
 
     # component params
-
     battery_size: float = 7.5  # kWh
     battery_chemistry: str = "NMC"
 
@@ -68,6 +68,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
     def __init__(
         self,
         cfg: Union[EnvConfig, dict] = None,
+        force_task_setting=False,
     ) -> None:
         """A gym environment for controlling a house with solar and battery.
 
@@ -82,6 +83,8 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         elif isinstance(cfg, dict):
             cfg = EnvConfig(**cfg)
         self.cfg = cfg
+        self.force_task_setting = force_task_setting
+        self._task_is_set = False
 
         self._setup_components()
 
@@ -374,6 +377,11 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         Returns:
             observation (object): the initial observation.
         """
+        if self.force_task_setting and not self._task_is_set:
+            raise RuntimeError(
+                "No task set, but force_task_setting active. Have you set the task"
+                " using `env.set_task(...)`?"
+            )
         if seed is not None:
             self._np_random, seed = gym.utils.seeding.np_random(seed)
 
@@ -479,6 +487,13 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         np.random.seed(seed)
 
         return [seed]
+
+    def set_task(self, task: bauwerk.benchmarks.Task) -> object:
+        """Sets a new House control task, i.e. changes the building parameters."""
+        self.cfg = task.cfg
+        self._setup_components()
+        self._task_is_set = True
+        self.reset()
 
 
 SolarBatteryHouseEnv = bauwerk.utils.gym.make_old_gym_api_compatible(
