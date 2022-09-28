@@ -116,7 +116,7 @@ def solve_solar_battery_house(env: SolarBatteryHouseCoreEnv) -> np.array:
         grid_constraints += [power_sell == 0]  # stopping selling to the grid
 
     battery_constraints = [
-        energy_battery[0] == 0,
+        energy_battery[0] == env.cfg.battery_start_charge * env.cfg.battery_size,
         energy_battery[1:]
         == energy_battery[:-1]
         + eta_c * power_charge * T_u
