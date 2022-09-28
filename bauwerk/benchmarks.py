@@ -75,22 +75,28 @@ class BuildDistB(Benchmark):
     NUM_TRAIN_TASKS = 20
     NUM_TEST_TASKS = 10
 
-    def __init__(self, seed=None):
+    def __init__(self, seed=None, task_ep_len=24 * 30):
         super().__init__()
 
         self.env_class = bauwerk.envs.HouseEnv
+        self.task_ep_len = task_ep_len
         self._train_classes = OrderedDict([(ENV_NAME, self.env_class)])
         self._test_classes = [self.env_class]
+
+        # Creating tasks
         self._train_tasks = self._create_tasks(
-            seed=seed, num_tasks=self.NUM_TRAIN_TASKS
+            seed=seed,
+            num_tasks=self.NUM_TRAIN_TASKS,
+            task_ep_len=task_ep_len,
         )
         self._test_tasks = self._create_tasks(
             seed=(seed + 1 if seed is not None else seed),
             num_tasks=self.NUM_TEST_TASKS,
+            task_ep_len=task_ep_len,
         )
 
     @staticmethod
-    def _create_tasks(seed, num_tasks):
+    def _create_tasks(seed, num_tasks, task_ep_len):
         """Create tasks representing building distribution B."""
         if seed is not None:
             old_np_state = np.random.get_state()
@@ -102,7 +108,8 @@ class BuildDistB(Benchmark):
             task = Task(
                 env_name=ENV_NAME,
                 cfg=bauwerk.envs.solar_battery_house.EnvConfig(
-                    battery_size=np.random.uniform(5, 15)
+                    battery_size=np.random.uniform(5, 15),
+                    episode_len=task_ep_len,
                 ),
             )
             tasks.append(task)
@@ -112,6 +119,6 @@ class BuildDistB(Benchmark):
         return tasks
 
     def make_env(self):
-        env = gym.make("bauwerk/House-v0")
+        env = gym.make("bauwerk/House-v0", cfg={"episode_len": self.task_ep_len})
         env.unwrapped.force_task_setting = True
         return env
