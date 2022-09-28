@@ -15,7 +15,13 @@ class BatteryModel(EnvComponent):
 class LithiumIonBattery(BatteryModel):
     """Class modelling lithium-ion battery."""
 
-    def __init__(self, size: float, chemistry: str, time_step_len: float):
+    def __init__(
+        self,
+        size: float = 10,
+        chemistry: str = "LTO",
+        time_step_len: float = 1.0,
+        start_charge: float = 0.5,
+    ):
         """Class modelling lithium-ion battery.
 
         This class was originally written and kindly provided by Fiodar Kazhamiaka.
@@ -35,6 +41,7 @@ class LithiumIonBattery(BatteryModel):
         self.size = size
         self.chemistry = chemistry
         self.time_step_len = time_step_len
+        self.start_charge = start_charge
 
         # declare battery model parameters
         self.num_cells = None
@@ -56,10 +63,7 @@ class LithiumIonBattery(BatteryModel):
 
         self.set_parameters()
 
-        # battery energy content
-        self.b = np.array(
-            [self.v1_bar], dtype=np.float32
-        )  # pylint: disable=invalid-name
+        self.reset()
 
     def set_parameters(self):
         """Set battery model parameters according to specified Li-Ion chemistry."""
@@ -217,7 +221,7 @@ class LithiumIonBattery(BatteryModel):
     def reset(self) -> None:
         """Reset battery energy content."""
         self.b = np.array(
-            [self.v1_bar], dtype=np.float32
+            [self.size * self.start_charge], dtype=np.float32
         )  # pylint: disable=invalid-name
 
     def get_contraints(

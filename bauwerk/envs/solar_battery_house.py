@@ -40,6 +40,7 @@ class EnvConfig:
     # component params
     battery_size: float = 7.5  # kWh
     battery_chemistry: str = "NMC"
+    battery_start_charge: float = 0.5  # perc. of size that should begin with.
 
     data_start_index: int = 0  # starting index for data-based components (solar & load)
     solar_data: Union[str, pathlib.Path] = None
@@ -138,11 +139,6 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         obs_spaces = {key: obs_spaces[key] for key in self.cfg.obs_keys}
         self.observation_space = gym.spaces.Dict(obs_spaces)
 
-        (
-            self.min_charge_power,
-            self.max_charge_power,
-        ) = self.battery.get_charging_limits()
-
         self.logger = logger
         bauwerk.utils.logging.setup_log_print_options()
         self.logger.info("Environment initialised.")
@@ -187,6 +183,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
                 size=self.cfg.battery_size,
                 chemistry=self.cfg.battery_chemistry,
                 time_step_len=self.cfg.time_step_len,
+                start_charge=self.cfg.battery_start_charge,
             ),
             "solar": lambda: bauwerk.envs.components.solar.DataPV(
                 data_path=self.cfg.solar_data,
@@ -387,10 +384,17 @@ class SolarBatteryHouseCoreEnv(gym.Env):
 
         self.time_step = np.array([0])
 
+        # make sure we have current type of battery
+        # (relevant if task was changed)
+        (
+            self.min_charge_power,
+            self.max_charge_power,
+        ) = self.battery.get_charging_limits()
+
         if not self.cfg.data_start_index:
             start = np.random.randint((self.data_len // 24) - 1) * 24
         else:
-            start = self.cfg_start_index
+            start = self.cfg.data_start_index
 
         self.battery.reset()
         self.load.reset(start=start)
@@ -402,7 +406,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         self.state = {
             "load": np.array([load], dtype=np.float32),
             "pv_gen": np.array([pv_gen], dtype=np.float32),
-            "battery_cont": np.array([0.0], dtype=np.float32),
+            "battery_cont": self.battery.get_energy_content(),
             "time_step": 0,
             "time_step_cont": np.array([0.0], dtype=np.float32),
             "cum_load": np.array([0.0], dtype=np.float32),
@@ -490,10 +494,26 @@ class SolarBatteryHouseCoreEnv(gym.Env):
 
     def set_task(self, task: bauwerk.benchmarks.Task) -> object:
         """Sets a new House control task, i.e. changes the building parameters."""
-        self.cfg = task.cfg
+
+        # check task cfg type
+        if task.cfg is None:
+            cfg = EnvConfig()
+        elif isinstance(task.cfg, dict):
+            cfg = EnvConfig(**task.cfg)
+        elif isinstance(task.cfg, EnvConfig):
+            cfg = task.cfg
+        else:
+            raise ValueError(
+                f"Task config type not recognised ({type(task.cfg)}"
+                "is not an instance of None, dict and EnvConfig.)"
+            )
+
+        self.cfg = cfg
         self._setup_components()
         self._task_is_set = True
         self.reset()
+
+        # TODO: add change of observation space according to cfg changed
 
 
 SolarBatteryHouseEnv = bauwerk.utils.gym.make_old_gym_api_compatible(
