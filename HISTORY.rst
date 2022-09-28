@@ -7,13 +7,15 @@ History
 
 * Features
 
-  * Add support for much slower speed in game widget
+  * Add support for much slower speed in game widget.
   * Add benchmarks.
+  * Add support for setting tasks in environment.
 
 * Improvements
 
-  * Add clock and day to game widget
-  * Design improvements for game widget
+  * Add clock and day to game widget.
+  * Design improvements for game widget.
+  * Add evaluation module.
 
 
 0.2.1 (2022-09-12)
