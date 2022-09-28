@@ -119,3 +119,21 @@ def test_changing_step_size():
     for i in [0.5, 0.0, -0.5]:
         action = np.array([i], dtype=np.float32)
         test_action(action)
+
+
+def test_battery_size_impact_without_tasks():
+    """Test whether battery size increase leads to better performance.
+
+    Which it generally should, or at least not decreasing performance."""
+
+    ep_len = 24 * 30  # evaluate on 1 month of actions
+
+    env0 = gym.make("bauwerk/House-v0", cfg={"battery_size": 11, "episode_len": ep_len})
+    env1 = gym.make("bauwerk/House-v0", cfg={"battery_size": 12, "episode_len": ep_len})
+
+    perf_env0 = bauwerk.evaluation.get_optimal_perf(env0, eval_len=ep_len)
+    perf_env1 = bauwerk.evaluation.get_optimal_perf(env1, eval_len=ep_len)
+
+    # If env0's battery size is smaller, than it's performance should be smaller
+    # as well, and vice versa for env1
+    assert (env0.battery.size < env1.battery.size) == (perf_env0 < perf_env1)
