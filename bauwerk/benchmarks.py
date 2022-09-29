@@ -80,6 +80,10 @@ class BuildDistB(Benchmark):
 
         self.env_class = bauwerk.envs.HouseEnv
         self.task_ep_len = task_ep_len
+
+        self.max_battery_size = 20
+        self.min_battery_size = 0.5
+
         self._train_classes = OrderedDict([(ENV_NAME, self.env_class)])
         self._test_classes = [self.env_class]
 
@@ -95,8 +99,7 @@ class BuildDistB(Benchmark):
             task_ep_len=task_ep_len,
         )
 
-    @staticmethod
-    def _create_tasks(seed, num_tasks, task_ep_len):
+    def _create_tasks(self, seed, num_tasks, task_ep_len):
         """Create tasks representing building distribution B."""
         if seed is not None:
             old_np_state = np.random.get_state()
@@ -108,7 +111,9 @@ class BuildDistB(Benchmark):
             task = Task(
                 env_name=ENV_NAME,
                 cfg=bauwerk.envs.solar_battery_house.EnvConfig(
-                    battery_size=np.random.uniform(5, 15),
+                    battery_size=np.random.uniform(
+                        self.min_battery_size, self.max_battery_size
+                    ),
                     episode_len=task_ep_len,
                 ),
             )
@@ -119,6 +124,12 @@ class BuildDistB(Benchmark):
         return tasks
 
     def make_env(self):
-        env = gym.make("bauwerk/House-v0", cfg={"episode_len": self.task_ep_len})
+        env = gym.make(
+            "bauwerk/House-v0",
+            cfg={
+                "episode_len": self.task_ep_len,
+                "battery_size": self.max_battery_size,
+            },
+        )
         env.unwrapped.force_task_setting = True
         return env
