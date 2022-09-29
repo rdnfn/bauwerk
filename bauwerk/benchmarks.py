@@ -82,6 +82,8 @@ class BuildDistB(Benchmark):
 
         self.env_class = bauwerk.envs.HouseEnv
         self.task_ep_len = task_ep_len
+        self.max_battery_size = self.MAX_BATTERY_SIZE
+        self.min_battery_size = self.MIN_BATTERY_SIZE
 
         self._train_classes = OrderedDict([(ENV_NAME, self.env_class)])
         self._test_classes = [self.env_class]
