@@ -74,15 +74,14 @@ class BuildDistB(Benchmark):
 
     NUM_TRAIN_TASKS = 20
     NUM_TEST_TASKS = 10
+    MAX_BATTERY_SIZE = 20
+    MIN_BATTERY_SIZE = 0.5
 
     def __init__(self, seed=None, task_ep_len=24 * 30):
         super().__init__()
 
         self.env_class = bauwerk.envs.HouseEnv
         self.task_ep_len = task_ep_len
-
-        self.max_battery_size = 20
-        self.min_battery_size = 0.5
 
         self._train_classes = OrderedDict([(ENV_NAME, self.env_class)])
         self._test_classes = [self.env_class]
@@ -112,7 +111,7 @@ class BuildDistB(Benchmark):
                 env_name=ENV_NAME,
                 cfg=bauwerk.envs.solar_battery_house.EnvConfig(
                     battery_size=np.random.uniform(
-                        self.min_battery_size, self.max_battery_size
+                        self.MIN_BATTERY_SIZE, self.MAX_BATTERY_SIZE
                     ),
                     episode_len=task_ep_len,
                 ),
