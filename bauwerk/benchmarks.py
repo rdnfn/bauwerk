@@ -26,8 +26,8 @@ class Task:
     Should be passed into set_task method.
     """
 
-    env_name: str
     cfg: object  # cfg of Bauwerk environment (changed from `data` in MetaWorld API)
+    env_name: str = ENV_NAME
 
 
 class Benchmark(abc.ABC):
