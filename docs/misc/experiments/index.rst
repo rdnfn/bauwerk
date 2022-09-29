@@ -8,3 +8,4 @@ Experimental results with Bauwerk environments.
    :maxdepth: 1
 
    exp01_solar_battery_house.ipynb
+   exp02_building_distribution_b.ipynb
