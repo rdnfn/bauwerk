@@ -10,6 +10,7 @@ History
   * Add support for much slower speed in game widget.
   * Add benchmarks.
   * Add support for setting tasks in environment.
+  * Add wrapper that addd task parameters to observation space.
 
 * Improvements
 
