@@ -28,7 +28,16 @@ def test_task_param_obs_wrapper():
     # check that whenever a new task is set, the observation changes accordingly
     for task in build_dist_b.train_tasks[:2]:
         wrapped_env.set_task(task)
-        wrapped_env.reset()
+
+        # check that obs returned by reset correct
+        # compatibility with multiple gym versions
+        try:
+            init_obs, _ = wrapped_env.reset()
+        except ValueError:
+            init_obs = wrapped_env.reset()
+        assert task.cfg.battery_size == init_obs["task_param"]
+
+        # check that obs returned by step correct
         step_return = wrapped_env.step(wrapped_env.action_space.sample())
         obs = step_return[0]
         print(obs)

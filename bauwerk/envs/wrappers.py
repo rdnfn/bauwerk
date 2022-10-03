@@ -41,4 +41,4 @@ class TaskParamObs(gym.ObservationWrapper):
         self.task_param_values = np.array(
             [getattr(self.env.cfg, key) for key in self.task_param_names]
         )
-        return self.env.reset(*args, **kwargs)
+        return super().reset(*args, **kwargs)
