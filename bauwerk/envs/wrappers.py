@@ -56,3 +56,29 @@ class TaskParamObs(gym.ObservationWrapper):
             [getattr(self.env.cfg, key) for key in self.task_param_names]
         )
         return super().reset(*args, **kwargs)
+
+
+class ClipReward(gym.RewardWrapper):
+    """Clip reward of environment."""
+
+    def __init__(self, env: gym.Env, min_reward: float, max_reward: float):
+        """Clip reward of environment.
+
+        Adapted from https://www.gymlibrary.dev/api/wrappers/#rewardwrapper.
+        Note that in Bauwerk environments clipping the reward may
+        lead to alternative optimal policies.
+        Thus, use with care.
+
+        Args:
+            env (gym.Env): environment to apply wrapper to.
+            min_reward (float): minimum reward value.
+            max_reward (float): maximum reward value.
+        """
+
+        super().__init__(env)
+        self.min_reward = min_reward
+        self.max_reward = max_reward
+        self.reward_range = (min_reward, max_reward)
+
+    def reward(self, reward):
+        return np.clip(reward, self.min_reward, self.max_reward)
