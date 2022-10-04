@@ -5,6 +5,8 @@
 from stable_baselines3.common.callbacks import BaseCallback
 import gym
 import bauwerk.evaluation
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 def eval_model(model: object, env: gym.Env, eval_len: int) -> float:
@@ -71,6 +73,59 @@ class EvalCallback(BaseCallback):
             self.data.append(eval_model(self.model, self.eval_env, self.eval_len))
 
         return True
+
+    def plot(self):
+
+        num_train_step = len(self.data) * self.eval_freq
+
+        x = np.arange(
+            0,
+            len(self.data) * self.eval_freq,
+            self.eval_freq,
+        )
+
+        # create plot
+        plt.title(f"Evaluation env (size {self.eval_env.battery.size:.01f} kWh)")
+        plt.plot(x, self.data, label="Performance")
+        perf_eval_rand, _ = bauwerk.evaluation.get_avg_rndm_perf(
+            self.eval_env,
+            eval_len=self.eval_len,
+            num_samples=10,
+        )
+        perf_eval_opt = bauwerk.evaluation.get_optimal_perf(
+            self.eval_env, eval_len=self.eval_len
+        )
+        perf_nocharge = bauwerk.evaluation.evaluate_actions(
+            np.zeros((self.eval_len, 1)), self.eval_env
+        )
+        plt.hlines(
+            perf_eval_opt,
+            0,
+            num_train_step,
+            label="Optimal",
+            linestyle=":",
+            color="black",
+        )
+        plt.hlines(
+            perf_eval_rand,
+            0,
+            num_train_step,
+            label="Random",
+            linestyle="--",
+            color="grey",
+        )
+        plt.hlines(
+            perf_nocharge,
+            0,
+            num_train_step,
+            label="No charging",
+            linestyle="-.",
+            color="lightblue",
+        )
+        plt.legend()
+        plt.ylabel("avg grid payment (per timestep)")
+        plt.xlabel(f"timesteps (each {self.eval_env.cfg.time_step_len}h)")
+        plt.tight_layout()
 
 
 # Measuring performance relative to random and optimal
