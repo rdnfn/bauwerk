@@ -3,6 +3,8 @@
 import bauwerk
 import bauwerk.envs.wrappers
 import bauwerk.utils.testing
+import numpy as np
+import gym
 
 
 def test_task_param_obs_wrapper():
@@ -42,3 +44,23 @@ def test_task_param_obs_wrapper():
         obs = step_return[0]
         print(obs)
         assert task.cfg.battery_size == obs["task_param"], f"{obs}"
+
+
+def test_infeasible_control_wrapper():
+    env = gym.make("bauwerk/House-v0")
+    env = bauwerk.envs.wrappers.InfeasControlPenalty(env)
+
+    # unwrapped control env
+    test_env = gym.make("bauwerk/House-v0")
+
+    zero_action = np.array([0], dtype="float32")
+    impossible_action = np.array([-1.0], dtype="float32")
+
+    env.reset()
+    test_env.reset()
+
+    # check that zero action does not lead to differing reward
+    assert env.step(zero_action)[2] == test_env.step(zero_action)[2]
+
+    # check that impossible action leads to differing reward
+    assert env.step(impossible_action)[2] < test_env.step(impossible_action)[2]
