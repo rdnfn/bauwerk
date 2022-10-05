@@ -141,3 +141,50 @@ def compute_rel_perf(p_model: float, p_rand: float, p_opt: float) -> float:
         float: model performanc relative to random and optimal
     """
     return (p_model - p_rand) / (p_opt - p_rand)
+
+
+def evaluate_and_plot_on_multiple_battery_sizes(
+    env: gym.Env, model: object, task_len: int
+) -> None:
+    """Plot performance of sb3 model
+
+    Args:
+        env (gym.Env): environment to evaluate on
+        model (object): sb3 trained (or untrained) model
+        task_len (int): length of task
+    """
+
+    # evaluate over range of battery sizes
+    battery_sizes = np.arange(1, 21, 1)
+    perf_per_task = []
+    opt_perf_per_task = []
+    for size in battery_sizes:
+        task = bauwerk.benchmarks.Task(
+            cfg=bauwerk.envs.solar_battery_house.EnvConfig(
+                battery_size=size, episode_len=task_len
+            )
+        )
+        env.set_task(task)
+        perf_sac = bauwerk.utils.sb3.eval_model(model, env, eval_len=task_len)
+        perf_opt = bauwerk.evaluation.get_optimal_perf(env, eval_len=task_len)
+        perf_per_task.append(perf_sac)
+        opt_perf_per_task.append(perf_opt)
+
+    # calculate perf when no charging for plot
+    perf_nocharge = bauwerk.evaluation.evaluate_actions(np.zeros((task_len, 1)), env)
+
+    # plotting
+    plt.plot(battery_sizes, perf_per_task, label="Model performance")
+    plt.plot(battery_sizes, opt_perf_per_task, label="Optimal performance")
+    plt.xlabel("Battery size (kWh)")
+    plt.ylabel("Avg grid payment (per timestep)")
+    plt.hlines(
+        perf_nocharge,
+        1,
+        len(battery_sizes),
+        label="No charging",
+        linestyle="-.",
+        color="lightblue",
+    )
+    _ = plt.legend()
+    plt.show()
