@@ -1,5 +1,6 @@
 """Wrappers for Bauwerk environments."""
 
+from typing import Any, Dict, Tuple
 import gym
 import numpy as np
 
@@ -80,5 +81,21 @@ class ClipReward(gym.RewardWrapper):
         self.max_reward = max_reward
         self.reward_range = (min_reward, max_reward)
 
-    def reward(self, reward):
+    def reward(self, reward: float) -> float:
         return np.clip(reward, self.min_reward, self.max_reward)
+
+
+class InfeasControlPenalty(gym.Wrapper):
+    """Add penalty to reward when agents tries infeasible control actions."""
+
+    def __init__(self, env: gym.Env, penalty_factor: float = 1.0) -> None:
+        self.penalty_factor = penalty_factor
+        super().__init__(env)
+
+    def step(self, action: object) -> Tuple[object, float, bool, Dict[str, Any]]:
+        step_return = list(super().step(action))
+        info = step_return[-1]
+        reward = step_return[2]
+        reward -= info["power_diff"]
+        step_return[2] = reward
+        return tuple(step_return)

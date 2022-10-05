@@ -269,11 +269,12 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         reward = -cost
 
         # Add impossible control penalty to cost
+        info["power_diff"] = np.abs(charging_power - float(attempted_action))
         if self.cfg.infeasible_control_penalty:
-            power_diff = np.abs(charging_power - float(attempted_action))
-            reward -= power_diff
-            self.logger.debug("step - cost: %6.3f, power_diff: %6.3f", cost, power_diff)
-            info["power_diff"] = power_diff
+            reward -= info["power_diff"]
+            self.logger.debug(
+                "step - cost: %6.3f, power_diff: %6.3f", cost, info["power_diff"]
+            )
 
         # Get load and PV generation for next time step
         new_load = self.load.get_next_load()
