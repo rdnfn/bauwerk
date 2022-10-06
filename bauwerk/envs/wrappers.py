@@ -56,7 +56,9 @@ class TaskParamObs(gym.ObservationWrapper):
         self.task_param_values = np.array(
             [getattr(self.env.cfg, key) for key in self.task_param_names]
         )
-        return super().reset(*args, **kwargs)
+        reset_return = list(super().reset(*args, **kwargs))
+        reset_return[0] = self.observation(reset_return[0])
+        return tuple(reset_return)
 
 
 class ClipReward(gym.RewardWrapper):
