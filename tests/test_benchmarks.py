@@ -1,7 +1,7 @@
 """Tests for benchmark API."""
 
 import bauwerk.benchmarks
-import bauwerk.evaluation
+import bauwerk.eval
 import bauwerk.envs.solar_battery_house
 import bauwerk
 import gym
@@ -74,8 +74,8 @@ def test_battery_size_impact():
     env0.set_task(tasks[0])
     env1.set_task(tasks[1])
 
-    perf_env0 = bauwerk.evaluation.get_optimal_perf(env0, eval_len=ep_len)
-    perf_env1 = bauwerk.evaluation.get_optimal_perf(env1, eval_len=ep_len)
+    perf_env0 = bauwerk.eval.get_optimal_perf(env0, eval_len=ep_len)
+    perf_env1 = bauwerk.eval.get_optimal_perf(env1, eval_len=ep_len)
 
     # If env0's battery size is smaller, than it's performance should be smaller
     # as well, and vice versa for env1
@@ -89,7 +89,7 @@ def test_battery_size_change_task_vs_cfg():
 
     env0 = gym.make("bauwerk/House-v0", cfg={"battery_size": 8, "episode_len": ep_len})
 
-    perf_env0 = bauwerk.evaluation.get_optimal_perf(env0, eval_len=ep_len)
+    perf_env0 = bauwerk.eval.get_optimal_perf(env0, eval_len=ep_len)
 
     env0.set_task(
         bauwerk.benchmarks.Task(
@@ -100,7 +100,7 @@ def test_battery_size_change_task_vs_cfg():
             },
         )
     )
-    perf_env1 = bauwerk.evaluation.get_optimal_perf(env0, eval_len=ep_len)
+    perf_env1 = bauwerk.eval.get_optimal_perf(env0, eval_len=ep_len)
 
     # If env0's battery size is smaller, than it's performance should be smaller
     # as well, and vice versa for env1
@@ -140,7 +140,7 @@ def test_perf_acts_in_task_vs_config():
     ep_len = 24 * 30  # evaluate on 1 month of actions
     env0 = gym.make("bauwerk/House-v0", cfg={"battery_size": 11, "episode_len": ep_len})
     opt_acts0, _ = bauwerk.solve(env0)
-    perf_before_task = bauwerk.evaluation.get_optimal_perf(env0, eval_len=ep_len)
+    perf_before_task = bauwerk.eval.get_optimal_perf(env0, eval_len=ep_len)
 
     env0.set_task(
         bauwerk.benchmarks.Task(
@@ -150,12 +150,12 @@ def test_perf_acts_in_task_vs_config():
             ),
         )
     )
-    perf_after_task = bauwerk.evaluation.get_optimal_perf(env0, eval_len=ep_len)
+    perf_after_task = bauwerk.eval.get_optimal_perf(env0, eval_len=ep_len)
     opt_acts1, _ = bauwerk.solve(env0)
 
     env2 = gym.make("bauwerk/House-v0", cfg={"battery_size": 12, "episode_len": ep_len})
 
-    perf_same_as_task = bauwerk.evaluation.get_optimal_perf(env2, eval_len=ep_len)
+    perf_same_as_task = bauwerk.eval.get_optimal_perf(env2, eval_len=ep_len)
     opt_acts2, _ = bauwerk.solve(env2)
 
     # check that changing the task also changes optimal actions

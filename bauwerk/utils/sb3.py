@@ -4,7 +4,7 @@
 
 from stable_baselines3.common.callbacks import BaseCallback
 import gym
-import bauwerk.evaluation
+import bauwerk.eval
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -28,7 +28,7 @@ def eval_model(model: object, env: gym.Env, eval_len: int) -> float:
         model_actions.append(action)
         obs, _, _, _ = env.step(action)
 
-    p_model = bauwerk.evaluation.evaluate_actions(model_actions[:eval_len], env)
+    p_model = bauwerk.eval.evaluate_actions(model_actions[:eval_len], env)
     return p_model
 
 
@@ -87,15 +87,15 @@ class EvalCallback(BaseCallback):
         # create plot
         plt.title(f"Evaluation env (size {self.eval_env.battery.size:.01f} kWh)")
         plt.plot(x, self.data, label="Performance")
-        perf_eval_rand, _ = bauwerk.evaluation.get_avg_rndm_perf(
+        perf_eval_rand, _ = bauwerk.eval.get_avg_rndm_perf(
             self.eval_env,
             eval_len=self.eval_len,
             num_samples=10,
         )
-        perf_eval_opt = bauwerk.evaluation.get_optimal_perf(
+        perf_eval_opt = bauwerk.eval.get_optimal_perf(
             self.eval_env, eval_len=self.eval_len
         )
-        perf_nocharge = bauwerk.evaluation.evaluate_actions(
+        perf_nocharge = bauwerk.eval.evaluate_actions(
             np.zeros((self.eval_len, 1)), self.eval_env
         )
         plt.hlines(
@@ -166,12 +166,12 @@ def evaluate_and_plot_on_multiple_battery_sizes(
         )
         env.set_task(task)
         perf_sac = bauwerk.utils.sb3.eval_model(model, env, eval_len=task_len)
-        perf_opt = bauwerk.evaluation.get_optimal_perf(env, eval_len=task_len)
+        perf_opt = bauwerk.eval.get_optimal_perf(env, eval_len=task_len)
         perf_per_task.append(perf_sac)
         opt_perf_per_task.append(perf_opt)
 
     # calculate perf when no charging for plot
-    perf_nocharge = bauwerk.evaluation.evaluate_actions(np.zeros((task_len, 1)), env)
+    perf_nocharge = bauwerk.eval.evaluate_actions(np.zeros((task_len, 1)), env)
 
     # plotting
     plt.plot(battery_sizes, perf_per_task, label="Model performance")

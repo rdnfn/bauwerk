@@ -119,8 +119,8 @@ def test_battery_size_impact_without_tasks():
     env0 = gym.make("bauwerk/House-v0", cfg={"battery_size": 11, "episode_len": ep_len})
     env1 = gym.make("bauwerk/House-v0", cfg={"battery_size": 12, "episode_len": ep_len})
 
-    perf_env0 = bauwerk.evaluation.get_optimal_perf(env0, eval_len=ep_len)
-    perf_env1 = bauwerk.evaluation.get_optimal_perf(env1, eval_len=ep_len)
+    perf_env0 = bauwerk.eval.get_optimal_perf(env0, eval_len=ep_len)
+    perf_env1 = bauwerk.eval.get_optimal_perf(env1, eval_len=ep_len)
 
     # If env0's battery size is smaller, than it's performance should be smaller
     # as well, and vice versa for env1
