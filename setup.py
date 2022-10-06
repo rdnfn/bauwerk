@@ -54,4 +54,7 @@ setup(
     url="https://github.com/rdnfn/bauwerk",
     version="0.2.1",
     zip_safe=False,
+    entry_points={
+        "console_scripts": ["bauwerk-exp=bauwerk.exp.core:run"],
+    },
 )
