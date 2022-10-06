@@ -3,6 +3,7 @@
 from typing import Any, Dict, Tuple
 import gym
 import numpy as np
+import copy
 
 
 class TaskParamObs(gym.ObservationWrapper):
@@ -38,7 +39,9 @@ class TaskParamObs(gym.ObservationWrapper):
             task_param_low = np.zeros(shape)
             task_param_high = np.ones(shape)
 
-        new_spaces = env.observation_space.spaces  # new obs space starts from old
+        # new obs space starts from old
+        # note: copy is necessary because otherwise underlying obs space changed.
+        new_spaces = copy.copy(env.observation_space.spaces)
         new_spaces["task_param"] = gym.spaces.Box(
             low=task_param_low,
             high=task_param_high,
@@ -56,9 +59,7 @@ class TaskParamObs(gym.ObservationWrapper):
         self.task_param_values = np.array(
             [getattr(self.env.cfg, key) for key in self.task_param_names]
         )
-        reset_return = list(super().reset(*args, **kwargs))
-        reset_return[0] = self.observation(reset_return[0])
-        return tuple(reset_return)
+        return super().reset(*args, **kwargs)
 
 
 class ClipReward(gym.RewardWrapper):
