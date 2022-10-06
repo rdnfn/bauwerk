@@ -141,7 +141,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
 
         self.logger = logger
         bauwerk.utils.logging.setup_log_print_options()
-        self.logger.info("Environment initialised.")
+        self.logger.debug("Environment initialised.")
 
         self.state = None
 
