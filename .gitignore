@@ -108,5 +108,6 @@ ENV/
 # Notebooks
 notebooks/tests/
 
-# Hydra outputs
-bauwerk/exp/outputs
+# Experiment outputs
+outputs
+wandb
