@@ -35,7 +35,7 @@ class ExpConfig:
     task_len: int = 24  # * 30  # total length of task
 
     train_procedure: str = "consecutive"
-    num_train_tasks: int = 5  # will sample
+    num_train_tasks: int = 2  # will sample
 
     # whether to add infeasible control penalty
     infeasible_control_penalty: bool = False
@@ -108,22 +108,30 @@ def run(cfg: ExpConfig):
             tensorboard_log=run_tensorboard_log,
             **cfg.sb3_alg_kwargs,
         )
-
-        eval_callback = bauwerk.utils.sb3.EvalCallback(
-            eval_env=eval_env,
-            eval_len=cfg.task_len,
-            eval_freq=cfg.eval_freq,
+        callbacks = []
+        callbacks.append(
+            bauwerk.utils.sb3.EvalCallback(
+                eval_env=eval_env,
+                eval_len=cfg.task_len,
+                eval_freq=cfg.eval_freq,
+            )
         )
-        return wandb_run, model, eval_callback
+        callbacks.append(
+            bauwerk.utils.sb3.bauwerk.utils.sb3.DistPerfPlotCallback(
+                eval_env=eval_env,
+                eval_len=cfg.task_len,
+                eval_freq=cfg.eval_freq,
+            )
+        )
+        return wandb_run, model, callbacks
 
-    if cfg.single_task is not None or cfg.train_procedure == "consecutive":
-        wandb_run, model, eval_callback = create_model()
+    if not cfg.train_procedure == "separate_models":
+        wandb_run, model, callbacks = create_model()
 
     logger.info("Starting training loop.")
 
     # training per task
     trained_models = []
-    callbacks = []
     opt_perfs = []
     for i, task in enumerate(tasks):
         logger.info(f"Training on task {i + 1} out of {len(tasks)} tasks.")
@@ -131,14 +139,16 @@ def run(cfg: ExpConfig):
         eval_env.set_task(task)
 
         if cfg.train_procedure == "separate_models":
-            wandb_run, model, eval_callback = create_model()
+            wandb_run, model, callbacks = create_model()
 
-        wandb_callback = wandb.integration.sb3.WandbCallback(
-            verbose=2,
+        callbacks.append(
+            wandb.integration.sb3.WandbCallback(
+                verbose=2,
+            )
         )
         model.learn(
             total_timesteps=cfg.train_steps_per_task,
-            callback=[eval_callback, wandb_callback],
+            callback=callbacks,
             # the last two configs prevent the log from being split up
             # between learn calls
             tb_log_name=f"run-{cfg.sb3_alg}-{wandb_run.id}",
@@ -146,7 +156,6 @@ def run(cfg: ExpConfig):
         )
 
         trained_models.append(model)
-        callbacks.append(eval_callback)
         opt_perfs.append(
             bauwerk.eval.get_optimal_perf(
                 eval_env,
