@@ -63,12 +63,11 @@ cs.store(name="config", node=ExpConfig)
 def run(cfg: ExpConfig):
     """Run Bauwerk building distribution experiment."""
 
-    run_id = uuid.uuid4().hex[:6]
-
     bauwerk.utils.logging.set_log_level(cfg.log_level)
 
     logger.info("Starting Bauwerk experiment.")
 
+    run_id = uuid.uuid4().hex[:6]
     build_dist: bauwerk.benchmarks.Benchmark = getattr(
         bauwerk.benchmarks, cfg.benchmark
     )(seed=1, task_ep_len=cfg.task_len)
@@ -90,8 +89,10 @@ def run(cfg: ExpConfig):
         tasks = build_dist.train_tasks[: cfg.num_train_tasks]
 
     # setting up wandb logging
-    root_tensorboard_dir = f"outputs/sb3/runs/{run_id}"
-    wandb.tensorboard.patch(root_logdir=root_tensorboard_dir)
+    root_tensorboard_dir = "outputs/sb3/runs/"
+    run_tensorboard_log = root_tensorboard_dir + f"{run_id}/"
+    # Note: the patch below leads to separation of experiment data
+    # wandb.tensorboard.patch(root_logdir=root_tensorboard_dir)
     wandb_run = wandb.init(
         project=cfg.wandb_project,
         config=cfg,
@@ -103,7 +104,7 @@ def run(cfg: ExpConfig):
         model = model_cls(
             env=train_env,
             # tensorboard logs are necessary for full wandb logging
-            tensorboard_log=root_tensorboard_dir,
+            tensorboard_log=run_tensorboard_log,
             **cfg.sb3_alg_kwargs,
         )
 
