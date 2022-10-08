@@ -3,10 +3,14 @@
 # Helper functions for evaluating methods
 
 from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.logger import Image
 import gym
 import bauwerk.eval
 import matplotlib.pyplot as plt
+import matplotlib.figure
 import numpy as np
+
+plt.switch_backend("agg")
 
 
 def eval_model(model: object, env: gym.Env, eval_len: int) -> float:
@@ -176,11 +180,13 @@ def evaluate_and_plot_on_multiple_battery_sizes(
     perf_nocharge = bauwerk.eval.evaluate_actions(np.zeros((task_len, 1)), env)
 
     # plotting
-    plt.plot(battery_sizes, perf_per_task, label="Model performance")
-    plt.plot(battery_sizes, opt_perf_per_task, label="Optimal performance")
-    plt.xlabel("Battery size (kWh)")
-    plt.ylabel("Avg grid payment (per timestep)")
-    plt.hlines(
+    fig: matplotlib.figure.Figure = plt.figure()
+    axs = fig.add_subplot(111)
+    axs.plot(battery_sizes, perf_per_task, label="Model performance")
+    axs.plot(battery_sizes, opt_perf_per_task, label="Optimal performance")
+    axs.set_xlabel("Battery size (kWh)")
+    axs.set_ylabel("Avg grid payment (per timestep)")
+    axs.hlines(
         perf_nocharge,
         1,
         len(battery_sizes),
@@ -188,5 +194,61 @@ def evaluate_and_plot_on_multiple_battery_sizes(
         linestyle="-.",
         color="lightblue",
     )
-    _ = plt.legend()
-    plt.show()
+    axs.legend()
+
+    fig.canvas.draw()
+
+    data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+    data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+
+    return data
+
+
+# callback for evaluating callback during training
+class DistPerfPlotCallback(BaseCallback):
+    """Save plot of performance on distribution."""
+
+    def __init__(
+        self,
+        eval_env: gym.Env,
+        eval_len: int,
+        eval_freq: int = 24 * 7,
+        verbose: int = 0,
+    ):
+        """Eval callback that repeatedly evaluates model during training.
+
+        Args:
+            eval_env (gym.Env): environment to evaluate on.
+            eval_len (int): how long to evaluate in eval env.
+            eval_freq (int, optional): How often to evaluate in training env steps.
+                Defaults to 24*7.
+            verbose (int, optional): How verbose the callback should be.
+                Defaults to 0.
+        """
+        super().__init__(verbose)
+        self.eval_len = eval_len
+        self.eval_freq = eval_freq
+        self.eval_env = eval_env
+        self.first_training_start = True
+
+    def _on_training_start(self) -> None:
+        """
+        This method is called before the first rollout starts.
+        """
+        if self.first_training_start:
+            self._log_image()
+
+    def _on_step(self) -> bool:
+        if self.num_timesteps % self.eval_freq == 0:
+            self._log_image()
+        return True
+
+    def _log_image(self) -> None:
+        image = evaluate_and_plot_on_multiple_battery_sizes(
+            env=self.eval_env, model=self.model, task_len=self.eval_len
+        )
+        self.logger.record(
+            "perf_cross_distribution",
+            Image(image, "HWC"),
+            exclude=("stdout", "log", "json", "csv"),
+        )
