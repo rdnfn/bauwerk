@@ -70,7 +70,9 @@ class EvalCallback(BaseCallback):
 
     def _on_step(self) -> bool:
         if self.num_timesteps % self.eval_freq == 0:
-            self.data.append(eval_model(self.model, self.eval_env, self.eval_len))
+            perf = eval_model(self.model, self.eval_env, self.eval_len)
+            self.data.append(perf)
+            self.logger.record("eval_perf", perf)
 
         return True
 
