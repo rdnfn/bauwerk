@@ -88,25 +88,36 @@ def run(cfg: ExpConfig):
     elif cfg.train_procedure == "consecutive":
         tasks = build_dist.train_tasks[: cfg.num_train_tasks]
 
-    # setting up wandb logging
-    root_tensorboard_dir = "outputs/sb3/runs/"
-    run_tensorboard_log = root_tensorboard_dir + f"{run_id}/"
-    # Note: the patch below leads to separation of experiment data
-    # wandb.tensorboard.patch(root_logdir=root_tensorboard_dir)
-    wandb_run = wandb.init(
-        project=cfg.wandb_project,
-        config=cfg,
-        sync_tensorboard=True,
-        id=run_id,
-    )
+    def create_model():
+        """Create model and set up logging."""
 
-    if cfg.single_task is not None or cfg.train_procedure == "consecutive":
+        # setting up wandb logging
+        root_tensorboard_dir = "outputs/sb3/runs/"
+        run_tensorboard_log = root_tensorboard_dir + f"{run_id}/"
+        # Note: the patch below leads to separation of experiment data
+        # wandb.tensorboard.patch(root_logdir=root_tensorboard_dir)
+        wandb_run = wandb.init(
+            project=cfg.wandb_project,
+            config=cfg,
+            sync_tensorboard=True,
+            id=run_id,
+        )
         model = model_cls(
             env=train_env,
             # tensorboard logs are necessary for full wandb logging
             tensorboard_log=run_tensorboard_log,
             **cfg.sb3_alg_kwargs,
         )
+
+        eval_callback = bauwerk.utils.sb3.EvalCallback(
+            eval_env=eval_env,
+            eval_len=cfg.task_len,
+            eval_freq=cfg.eval_freq,
+        )
+        return wandb_run, model, eval_callback
+
+    if cfg.single_task is not None or cfg.train_procedure == "consecutive":
+        wandb_run, model, eval_callback = create_model()
 
     logger.info("Starting training loop.")
 
@@ -120,17 +131,8 @@ def run(cfg: ExpConfig):
         eval_env.set_task(task)
 
         if cfg.train_procedure == "separate_models":
-            model = model_cls(
-                env=train_env,
-                verbose=0,
-                **cfg.sb3_alg_kwargs,
-            )
+            wandb_run, model, eval_callback = create_model()
 
-        eval_callback = bauwerk.utils.sb3.EvalCallback(
-            eval_env=eval_env,
-            eval_len=cfg.task_len,
-            eval_freq=cfg.eval_freq,
-        )
         wandb_callback = wandb.integration.sb3.WandbCallback(
             verbose=2,
         )
