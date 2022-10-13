@@ -150,7 +150,10 @@ def compute_rel_perf(p_model: float, p_rand: float, p_opt: float) -> float:
 
 
 def evaluate_and_plot_on_multiple_battery_sizes(
-    env: gym.Env, model: object, task_len: int
+    env: gym.Env,
+    model: object,
+    task_len: int,
+    fix_y_limits: bool = True,
 ) -> None:
     """Plot performance of sb3 model
 
@@ -158,6 +161,8 @@ def evaluate_and_plot_on_multiple_battery_sizes(
         env (gym.Env): environment to evaluate on
         model (object): sb3 trained (or untrained) model
         task_len (int): length of task
+        fix_y_limits (bool): whether to fix the y axis limits to top and nocharge perf.
+            Defaults to True.
     """
 
     # evaluate over range of battery sizes
@@ -186,6 +191,9 @@ def evaluate_and_plot_on_multiple_battery_sizes(
     axs.plot(battery_sizes, opt_perf_per_task, label="Optimal performance")
     axs.set_xlabel("Battery size (kWh)")
     axs.set_ylabel("Avg grid payment (per timestep)")
+    if fix_y_limits:
+        margin = (np.max(perf_opt) - perf_nocharge) * 0.05
+        axs.set_ylim(bottom=perf_nocharge - margin, top=np.max(perf_opt) + margin)
     axs.hlines(
         perf_nocharge,
         1,
