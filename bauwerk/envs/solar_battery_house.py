@@ -40,7 +40,7 @@ class EnvConfig:
     # component params
     battery_size: float = 7.5  # kWh
     battery_chemistry: str = "NMC"
-    battery_start_charge: float = 0.5  # perc. of size that should begin with.
+    battery_start_charge: float = 0.0  # 0.5  # perc. of size that should begin with.
 
     data_start_index: int = 0  # starting index for data-based components (solar & load)
     solar_data: Union[str, pathlib.Path] = None
