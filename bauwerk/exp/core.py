@@ -32,7 +32,7 @@ class ExpConfig:
     # env training params
     total_train_steps: int = 24 * 365  # total steps in env during training
     train_steps_per_task: int = 24 * 7 * 10
-    task_len: int = 24  # * 30  # total length of task
+    task_len: int = 24 * 30  # total length of task
 
     train_procedure: str = "consecutive"
     num_train_tasks: int = 2  # will sample
@@ -48,7 +48,7 @@ class ExpConfig:
     sb3_alg_kwargs: Sb3Config = Sb3Config()
 
     # evaluation
-    eval_freq: int = 24 * 7  # evaluate model performance once per week
+    eval_freq: int = 24 * 7  # evaluate model performance at this frequency
 
     # logging & experiment tracking
     log_level: str = "INFO"
