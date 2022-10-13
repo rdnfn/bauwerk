@@ -125,3 +125,17 @@ def test_battery_size_impact_without_tasks():
     # If env0's battery size is smaller, than it's performance should be smaller
     # as well, and vice versa for env1
     assert (env0.battery.size < env1.battery.size) == (perf_env0 < perf_env1)
+
+
+def test_scaling_factor():
+
+    for solar_scaling_factor in [1, 3.5, 10, 20]:
+        env = gym.make(
+            "bauwerk/House-v0", cfg={"solar_scaling_factor": solar_scaling_factor}
+        )
+        obs = []
+        env.reset()
+        for _ in range(1000):
+            obs.append(env.step(env.action_space.sample())[0]["pv_gen"])
+
+        assert np.max(obs) <= solar_scaling_factor
