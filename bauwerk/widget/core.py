@@ -302,20 +302,25 @@ class Game(widgets.VBox):
                 self.obs_lines["load"] = self.obs_axs[0].plot(
                     self.line_x,
                     self.obs_values["load"][-self.visible_steps :],
+                    color="red",
                 )
 
                 self.obs_lines["pv_gen"] = self.obs_axs[0].plot(
                     self.line_x,
                     self.obs_values["pv_gen"][-self.visible_steps :],
+                    color="lightskyblue",
                 )
 
-                self.obs_axs[0].set_title("PV and load")
+                self.obs_axs[0].set_title("PV generation (blue) and load (red)")
+                self.obs_axs[0].set_ylim(
+                    -0.5, max(self.env.solar.max_value, self.env.load.max_value) + 0.5
+                )
 
                 # battery content plot
                 self.obs_lines["battery_cont"] = self.obs_axs[1].plot(
                     self.line_x,
                     self.obs_values["battery_cont"][-self.visible_steps :],
-                    color="lime",
+                    color="white",
                 )
                 self.obs_axs[1].set_title("Battery content")
                 self.obs_axs[1].set_ylim(-0.5, self.cfg.battery_size + 0.5)
@@ -324,7 +329,7 @@ class Game(widgets.VBox):
                     np.array(
                         self.obs_values["battery_cont"][-self.visible_steps :]
                     ).flatten(),
-                    color="lime",
+                    color="white",
                     alpha=0.5,
                 )
 
@@ -484,15 +489,22 @@ class Game(widgets.VBox):
                 value[0].set_data(
                     self.line_x, self.obs_values[key][-self.visible_steps :]
                 )
+
+            # update battery content fill below curve
             self.obs_lines_fills["battery_cont"].remove()
             self.obs_lines_fills["battery_cont"] = self.obs_axs[1].fill_between(
                 self.line_x,
                 np.array(
                     self.obs_values["battery_cont"][-self.visible_steps :]
                 ).flatten(),
-                color="lime",
+                color="white",
                 alpha=0.5,
             )
+
+            # rescale reward
+            axs = self.obs_axs[2]
+            axs.relim()
+            axs.autoscale_view(True, True, True)
 
         self.score_text.set_text(f"Score: {self.reward:.2f}{self.score_currency}")
 
