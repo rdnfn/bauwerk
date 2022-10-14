@@ -40,6 +40,7 @@ class Game(widgets.VBox):
         score_currency="€",
         score_scale=10.0,
         include_clock=True,
+        alternative_plotting=True,
     ):
         """Bauwerk building control game widget.
 
@@ -68,6 +69,7 @@ class Game(widgets.VBox):
         self.debug_mode = debug_mode
         self.score_currency = score_currency
         self.include_clock = include_clock
+        self.alternative_plotting = alternative_plotting
 
         # Apply scaling factor
         self.cfg.grid_peak_price *= score_scale
@@ -274,19 +276,67 @@ class Game(widgets.VBox):
 
             # Right handside of plt animation
             # Create observation data plots
-            self.obs_axs = subfigs[1].subplots(len(self.obs_values))
 
-            self.obs_lines = []
             self.line_x = np.linspace(0, self.visible_steps, self.visible_steps)
 
-            for i, (obs_name, obs_part) in enumerate(self.obs_values.items()):
-                self.obs_lines.append(
-                    self.obs_axs[i].plot(
-                        self.line_x,
-                        obs_part[-self.visible_steps :],
+            if not self.alternative_plotting:
+                self.obs_lines = []
+                self.obs_axs = subfigs[1].subplots(len(self.obs_values))
+
+                for i, (obs_name, obs_part) in enumerate(self.obs_values.items()):
+                    self.obs_lines.append(
+                        self.obs_axs[i].plot(
+                            self.line_x,
+                            obs_part[-self.visible_steps :],
+                        )
                     )
+                    self.obs_axs[i].set_title(obs_name.replace("_", " "))
+            else:
+                # plt.style.use("dark_background")
+                # subfigs[1].set_facecolor("black")
+                self.obs_axs = subfigs[1].subplots(3)
+                self.obs_lines = {}
+                self.obs_lines_fills = {}
+
+                # adding pv gen and load to one plot
+                self.obs_lines["load"] = self.obs_axs[0].plot(
+                    self.line_x,
+                    self.obs_values["load"][-self.visible_steps :],
                 )
-                self.obs_axs[i].set_title(obs_name.replace("_", " "))
+
+                self.obs_lines["pv_gen"] = self.obs_axs[0].plot(
+                    self.line_x,
+                    self.obs_values["pv_gen"][-self.visible_steps :],
+                )
+
+                self.obs_axs[0].set_title("PV and load")
+
+                # battery content plot
+                self.obs_lines["battery_cont"] = self.obs_axs[1].plot(
+                    self.line_x,
+                    self.obs_values["battery_cont"][-self.visible_steps :],
+                    color="lime",
+                )
+                self.obs_axs[1].set_title("Battery content")
+                self.obs_axs[1].set_ylim(-0.5, self.cfg.battery_size + 0.5)
+                self.obs_lines_fills["battery_cont"] = self.obs_axs[1].fill_between(
+                    self.line_x,
+                    np.array(
+                        self.obs_values["battery_cont"][-self.visible_steps :]
+                    ).flatten(),
+                    color="lime",
+                    alpha=0.5,
+                )
+
+                self.obs_lines[self.reward_label] = self.obs_axs[2].plot(
+                    self.line_x,
+                    self.obs_values[self.reward_label][-self.visible_steps :],
+                )
+                self.obs_axs[2].set_title(self.reward_label)
+
+                for ax in self.obs_axs:
+                    ax.set_facecolor("black")
+
             for ax in self.obs_axs:
                 ax.label_outer()
 
@@ -417,24 +467,42 @@ class Game(widgets.VBox):
             self.time_day_text.set_text(f"Day {int(days)}")
 
     def _update_figure(self):
-        for i, obs_part in enumerate(self.obs_values.values()):
-            # setting new data
-            self.obs_lines[i][0].set_data(self.line_x, obs_part[-self.visible_steps :])
-
-            # rescaling y axis
-            # based on https://stackoverflow.com/a/7198623
-            axs = self.obs_axs[i]
-            axs.relim()
-            axs.autoscale_view(True, True, True)
-
-            self.score_text.set_text(f"Score: {self.reward:.2f}{self.score_currency}")
-            if self.game_finished:
-                self.score_text.set_text(
-                    f"Game finished\nScore: {self.reward:.2f}" f"{self.score_currency}"
+        if not self.alternative_plotting:
+            for i, obs_part in enumerate(self.obs_values.values()):
+                # setting new data
+                self.obs_lines[i][0].set_data(
+                    self.line_x, obs_part[-self.visible_steps :]
                 )
-                self.score_text.set_backgroundcolor("darkolivegreen")
 
-            self._update_house_figure()
+                # rescaling y axis
+                # based on https://stackoverflow.com/a/7198623
+                axs = self.obs_axs[i]
+                axs.relim()
+                axs.autoscale_view(True, True, True)
+        else:
+            for key, value in self.obs_lines.items():
+                value[0].set_data(
+                    self.line_x, self.obs_values[key][-self.visible_steps :]
+                )
+            self.obs_lines_fills["battery_cont"].remove()
+            self.obs_lines_fills["battery_cont"] = self.obs_axs[1].fill_between(
+                self.line_x,
+                np.array(
+                    self.obs_values["battery_cont"][-self.visible_steps :]
+                ).flatten(),
+                color="lime",
+                alpha=0.5,
+            )
+
+        self.score_text.set_text(f"Score: {self.reward:.2f}{self.score_currency}")
+
+        if self.game_finished:
+            self.score_text.set_text(
+                f"Game finished\nScore: {self.reward:.2f}" f"{self.score_currency}"
+            )
+            self.score_text.set_backgroundcolor("darkolivegreen")
+
+        self._update_house_figure()
 
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
