@@ -1,6 +1,7 @@
 """Simple tests for environment."""
 
 import bauwerk  # pylint: disable=unused-import
+import bauwerk.envs.solar_battery_house
 import bauwerk.utils.testing
 import gym
 import numpy as np
@@ -139,3 +140,26 @@ def test_scaling_factor():
             obs.append(env.step(env.action_space.sample())[0]["pv_gen"])
 
         assert np.max(obs) <= solar_scaling_factor
+
+
+def test_absolute_actions():
+    """Test absolute actions in Bauwerk House environment."""
+
+    BATTERY_SIZE = 10  # pylint: disable=invalid-name
+
+    env = gym.make(
+        "bauwerk/House-v0",
+        cfg=bauwerk.EnvConfig(
+            battery_size=BATTERY_SIZE,
+            action_space_type="absolute",
+        ),
+    )
+
+    assert env.cfg.battery_size == BATTERY_SIZE
+    assert env.action_space.high == BATTERY_SIZE
+
+    # ensure that when taking half battery capacity action, also have less or
+    # equal to half content
+    env.reset()
+    env.step(np.array([BATTERY_SIZE / 2], dtype="float32"))
+    assert env.battery.get_energy_content() <= BATTERY_SIZE / 2

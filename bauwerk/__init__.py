@@ -6,10 +6,11 @@ __version__ = "0.2.1"
 
 import bauwerk.envs.registration
 import bauwerk.utils.logging
+from bauwerk.envs.solar_battery_house import EnvConfig
 
 try:
     import cvxpy
-    from bauwerk.envs.solvers import solve
+    from bauwerk.envs.solvers import solve  # pylint: disable=ungrouped-imports
 except ImportError:
 
     def solve(env):

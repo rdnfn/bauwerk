@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import pathlib
-from typing import TYPE_CHECKING, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Tuple, Union, Any
 from loguru import logger
 import gym
 import gym.utils.seeding
@@ -15,7 +15,6 @@ import bauwerk.envs.components.solar
 import bauwerk.envs.components.load
 import bauwerk.envs.components.grid
 import bauwerk.envs.components.battery
-import bauwerk.benchmarks
 
 if TYPE_CHECKING:
     from bauwerk.envs.components.battery import BatteryModel
@@ -35,6 +34,9 @@ class EnvConfig:
     infeasible_control_penalty: bool = False  # whether penalty added for inf. control
     obs_keys: list = field(
         default_factory=lambda: ["load", "pv_gen", "battery_cont", "time_of_day"]
+    )
+    action_space_type: str = (
+        "relative"  # either relative (to battery size) or absolute (kW)
     )
 
     # component params
@@ -92,9 +94,25 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         self.data_len = min(len(self.load.data), len(self.solar.data))
 
         # Setting up action and observation space
+        if self.cfg.action_space_type == "absolute":
+            (
+                act_low,
+                act_high,
+            ) = self.battery.get_charging_limits()
+        elif self.cfg.action_space_type == "relative":
+            act_low = -1
+            act_high = 1
+        else:
+            raise ValueError(
+                (
+                    f"cfg.action_space_type ({self.cfg.action_space_type} invalid)."
+                    " Must be one of either 'relative' or 'absolute'."
+                )
+            )
+
         self.action_space = gym.spaces.Box(
-            low=-1,
-            high=1,
+            low=act_low,
+            high=act_high,
             shape=(1,),
             dtype=np.float32,
         )
@@ -241,11 +259,12 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         cum_load = self.state["cum_load"]
         cum_pv_gen = self.state["cum_pv_gen"]
 
-        # Actions are proportion of max/min charging power, hence scale up
-        if action > 0:
-            action *= self.max_charge_power
-        else:
-            action *= -self.min_charge_power
+        if self.cfg.action_space_type == "relative":
+            # Actions are proportion of max/min charging power, hence scale up
+            if action > 0:
+                action *= self.max_charge_power
+            else:
+                action *= -self.min_charge_power
 
         attempted_action = action
 
@@ -493,7 +512,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
 
         return [seed]
 
-    def set_task(self, task: bauwerk.benchmarks.Task) -> object:
+    def set_task(self, task: Any) -> object:
         """Sets a new House control task, i.e. changes the building parameters."""
 
         # check task cfg type

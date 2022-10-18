@@ -14,7 +14,7 @@ from collections import OrderedDict
 import gym
 import numpy as np
 import bauwerk.envs.solar_battery_house
-import bauwerk.envs
+import bauwerk
 
 ENV_NAME = "bauwerk/House-v0"
 
@@ -60,10 +60,10 @@ class CfgDist:
         variable_params_dict = dict(
             (name, dist.sample()) for name, dist in self.variable_params.items()
         )
-        return bauwerk.envs.EnvConfig(**variable_params_dict, **self.fixed_params)
+        return bauwerk.EnvConfig(**variable_params_dict, **self.fixed_params)
 
 
-def sample_cfg_dist(self) -> bauwerk.envs.EnvConfig:
+def sample_cfg_dist(self) -> bauwerk.EnvConfig:
 
     variable_params = dict(
         (field.name, getattr(self, field.name).sample())
@@ -71,14 +71,14 @@ def sample_cfg_dist(self) -> bauwerk.envs.EnvConfig:
         else (field.name, getattr(self, field.name))
         for field in dataclasses.fields(self)
     )
-    return bauwerk.envs.EnvConfig(**variable_params)
+    return bauwerk.EnvConfig(**variable_params)
 
 
 CfgDist = dataclasses.make_dataclass(
     cls_name="CfgDist",
     fields=list(
         (field.name, Union[field.type, ParamDist], field)
-        for field in dataclasses.fields(bauwerk.envs.EnvConfig)
+        for field in dataclasses.fields(bauwerk.EnvConfig)
     ),
     namespace={
         "sample": sample_cfg_dist,
