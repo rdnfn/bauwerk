@@ -181,3 +181,17 @@ def test_dtype_of_actions():
 
     with pytest.raises(AssertionError):
         env.step(np.array([""], dtype="str"))
+
+
+def test_dtype_of_obs():
+    """Check that both np.float32 and np.float64 actions work in env."""
+
+    env = gym.make(
+        "bauwerk/House-v0",
+    )
+
+    env.reset()
+    obs = env.step(np.array([0.0]))[0]
+
+    for observation in obs.values():
+        assert observation.dtype == np.float64
