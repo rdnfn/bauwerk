@@ -139,11 +139,15 @@ class BauwerkBenchmark(Benchmark):
         seed: Optional[int] = None,
         num_train_tasks: int = 20,
         num_test_tasks: int = 10,
+        dtype: Union[str, np.dtype] = None,
     ):
         super().__init__()
 
         # add cfg distribution
         self.cfg_dist = cfg_dist
+
+        if not dtype is None:
+            self.cfg_dist.dtype = dtype
 
         self.env_class = bauwerk.envs.HouseEnv
 
@@ -189,6 +193,7 @@ class BauwerkBenchmark(Benchmark):
             cfg={
                 "episode_len": self.cfg_dist.episode_len,
                 "battery_size": self.cfg_dist.battery_size.high,
+                "dtype": self.cfg_dist.dtype,
             },
         )
         env.unwrapped.force_task_setting = True

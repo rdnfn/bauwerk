@@ -213,3 +213,14 @@ def test_obs_identical_task_vs_cfg():
 
         return_env0 = env0.step(action)
         return_env1 = env1.step(action)
+
+
+def test_dtype():
+    """Test changing the dtype in building distributions."""
+
+    dtype = np.float64
+
+    dist = bauwerk.benchmarks.BuildDistB(dtype=dtype)
+    env = dist.make_env()
+
+    assert env.action_space.sample().dtype == dtype
