@@ -46,7 +46,7 @@ class TaskParamObs(gym.ObservationWrapper):
             low=task_param_low,
             high=task_param_high,
             shape=shape,
-            dtype=np.float32,
+            dtype=float,
         )
 
         self.observation_space = gym.spaces.Dict(new_spaces)

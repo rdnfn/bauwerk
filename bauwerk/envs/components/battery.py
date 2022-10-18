@@ -221,7 +221,7 @@ class LithiumIonBattery(BatteryModel):
     def reset(self) -> None:
         """Reset battery energy content."""
         self.b = np.array(
-            [self.size * self.start_charge], dtype=np.float32
+            [self.size * self.start_charge], dtype=float
         )  # pylint: disable=invalid-name
 
     def get_contraints(

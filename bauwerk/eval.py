@@ -59,7 +59,7 @@ def evaluate_actions(actions: list, env: gym.Env) -> float:
     cum_reward = 0
     env.reset()
     for action in actions:
-        obs_return = env.step(np.array(action, dtype=np.float32))
+        obs_return = env.step(np.array(action, dtype=float))
         cum_reward += obs_return[1]
 
     return cum_reward / len(actions)

@@ -114,43 +114,41 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             low=act_low,
             high=act_high,
             shape=(1,),
-            dtype=np.float32,
+            dtype=float,
         )
         obs_spaces = {
             "load": gym.spaces.Box(
-                low=0, high=np.finfo(np.float32).max, shape=(1,), dtype=np.float32
+                low=0, high=np.finfo(float).max, shape=(1,), dtype=float
             ),
             "pv_gen": gym.spaces.Box(
-                low=0, high=np.finfo(np.float32).max, shape=(1,), dtype=np.float32
+                low=0, high=np.finfo(float).max, shape=(1,), dtype=float
             ),
             "battery_cont": gym.spaces.Box(
-                low=0, high=self.battery.size, shape=(1,), dtype=np.float32
+                low=0, high=self.battery.size, shape=(1,), dtype=float
             ),
             "time_step": gym.spaces.Discrete(self.cfg.episode_len + 1),
             "time_step_cont": gym.spaces.Box(
-                low=0, high=self.cfg.episode_len + 1, shape=(1,), dtype=np.float32
+                low=0, high=self.cfg.episode_len + 1, shape=(1,), dtype=float
             ),
             "cum_load": gym.spaces.Box(
-                low=0, high=np.finfo(np.float32).max, shape=(1,), dtype=np.float32
+                low=0, high=np.finfo(float).max, shape=(1,), dtype=float
             ),
             "cum_pv_gen": gym.spaces.Box(
-                low=0, high=np.finfo(np.float32).max, shape=(1,), dtype=np.float32
+                low=0, high=np.finfo(float).max, shape=(1,), dtype=float
             ),
             "load_change": gym.spaces.Box(
-                low=np.finfo(np.float32).min,
-                high=np.finfo(np.float32).max,
+                low=np.finfo(float).min,
+                high=np.finfo(float).max,
                 shape=(1,),
-                dtype=np.float32,
+                dtype=float,
             ),
             "pv_change": gym.spaces.Box(
-                low=np.finfo(np.float32).min,
-                high=np.finfo(np.float32).max,
+                low=np.finfo(float).min,
+                high=np.finfo(float).max,
                 shape=(1,),
-                dtype=np.float32,
+                dtype=float,
             ),
-            "time_of_day": gym.spaces.Box(
-                low=-1.0, high=1.0, shape=(2,), dtype=np.float32
-            ),
+            "time_of_day": gym.spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=float),
         }
 
         # Selecting the subset of obs spaces selected
@@ -311,15 +309,15 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         self.time_step += 1
 
         self.state = {
-            "load": np.array([load], dtype=np.float32),
-            "pv_gen": np.array([pv_generation], dtype=np.float32),
-            "battery_cont": np.array(battery_cont, dtype=np.float32),
+            "load": np.array([load], dtype=float),
+            "pv_gen": np.array([pv_generation], dtype=float),
+            "battery_cont": np.array(battery_cont, dtype=float),
             "time_step": int(self.time_step),
-            "time_step_cont": self.time_step.astype(np.float32),
+            "time_step_cont": self.time_step.astype(float),
             "cum_load": cum_load,
             "cum_pv_gen": cum_pv_gen,
-            "load_change": np.array([load_change], dtype=np.float32),
-            "pv_change": np.array([pv_change], dtype=np.float32),
+            "load_change": np.array([load_change], dtype=float),
+            "pv_change": np.array([pv_change], dtype=float),
             "time_of_day": self._get_time_of_day(step=self.time_step),
         }
 
@@ -378,7 +376,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
                 np.cos(2 * np.pi * step * self.cfg.time_step_len / 24),
                 np.sin(2 * np.pi * step * self.cfg.time_step_len / 24),
             ),
-            dtype=np.float32,
+            dtype=float,
         )
         return time_of_day
 
@@ -424,15 +422,15 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         pv_gen = self.solar.get_next_generation()
 
         self.state = {
-            "load": np.array([load], dtype=np.float32),
-            "pv_gen": np.array([pv_gen], dtype=np.float32),
+            "load": np.array([load], dtype=float),
+            "pv_gen": np.array([pv_gen], dtype=float),
             "battery_cont": self.battery.get_energy_content(),
             "time_step": 0,
-            "time_step_cont": np.array([0.0], dtype=np.float32),
-            "cum_load": np.array([0.0], dtype=np.float32),
-            "cum_pv_gen": np.array([0.0], dtype=np.float32),
-            "load_change": np.array([0.0], dtype=np.float32),
-            "pv_change": np.array([0.0], dtype=np.float32),
+            "time_step_cont": np.array([0.0], dtype=float),
+            "cum_load": np.array([0.0], dtype=float),
+            "cum_pv_gen": np.array([0.0], dtype=float),
+            "load_change": np.array([0.0], dtype=float),
+            "pv_change": np.array([0.0], dtype=float),
             "time_of_day": self._get_time_of_day(self.time_step),
         }
 
