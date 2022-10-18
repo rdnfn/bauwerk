@@ -17,6 +17,7 @@ History
   * Add clock and day to game widget.
   * Design improvements for game widget.
   * Add evaluation module.
+  * Action spaces now compatible with any float dtype, not just np.float32.
 
 
 0.2.1 (2022-09-12)
