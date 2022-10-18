@@ -38,7 +38,9 @@ class EnvConfig:
     action_space_type: str = (
         "relative"  # either relative (to battery size) or absolute (kW)
     )
-    dtype = "float32"  # note that SB3 requires np.float32 action space.
+    dtype: Union[
+        str, np.dtype
+    ] = "float32"  # note that SB3 requires np.float32 action space.
 
     # component params
     battery_size: float = 7.5  # kWh

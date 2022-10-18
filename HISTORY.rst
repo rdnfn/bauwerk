@@ -17,6 +17,7 @@ History
   * Add clock and day to game widget.
   * Design improvements for game widget.
   * Add evaluation module.
+  * Action spaces dtype can now be set in env cfg.
 
 
 0.2.1 (2022-09-12)

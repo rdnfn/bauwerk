@@ -106,7 +106,7 @@ def test_changing_step_size():
             ), f"Obs key `{key}` comparison failed after taking action {action}."
 
     for i in [0.5, 0.0, -0.5]:
-        action = np.array([i], dtype=float)
+        action = np.array([i], dtype=env_short_steps.cfg.dtype)
         test_action(action)
 
 
@@ -168,27 +168,20 @@ def test_absolute_actions():
 def test_dtype_of_actions():
     """Check that both np.float32 and np.float64 actions work in env."""
 
-    env = gym.make(
-        "bauwerk/House-v0",
-    )
+    for dtype in ["float", np.float, np.float32, np.float64, "float64"]:
+        env = gym.make("bauwerk/House-v0", cfg={"dtype": dtype})
 
-    env.reset()
-    env.step(np.array([0.0]))
-    env.step(np.array([0.0], dtype="float"))
-    env.step(np.array([0.0], dtype="float32"))
-    env.step(np.array([0.0], dtype="float64"))
-    env.step(np.array([0.0], dtype="int"))
+        env.reset()
+        env.step(np.array([0.0], dtype=dtype))
 
-    with pytest.raises(AssertionError):
-        env.step(np.array([""], dtype="str"))
+        with pytest.raises(AssertionError):
+            env.step(np.array([""], dtype="str"))
 
 
 def test_dtype_of_obs():
     """Check that both np.float32 and np.float64 actions work in env."""
 
-    env = gym.make(
-        "bauwerk/House-v0",
-    )
+    env = gym.make("bauwerk/House-v0", cfg={"dtype": np.float64})
 
     env.reset()
     obs = env.step(np.array([0.0]))[0]
