@@ -106,7 +106,7 @@ def test_changing_step_size():
             ), f"Obs key `{key}` comparison failed after taking action {action}."
 
     for i in [0.5, 0.0, -0.5]:
-        action = np.array([i], dtype=np.float32)
+        action = np.array([i], dtype=float)
         test_action(action)
 
 
@@ -163,3 +163,21 @@ def test_absolute_actions():
     env.reset()
     env.step(np.array([BATTERY_SIZE / 2], dtype="float32"))
     assert env.battery.get_energy_content() <= BATTERY_SIZE / 2
+
+
+def test_dtype_of_actions():
+    """Check that both np.float32 and np.float64 actions work in env."""
+
+    env = gym.make(
+        "bauwerk/House-v0",
+    )
+
+    env.reset()
+    env.step(np.array([0.0]))
+    env.step(np.array([0.0], dtype="float"))
+    env.step(np.array([0.0], dtype="float32"))
+    env.step(np.array([0.0], dtype="float64"))
+    env.step(np.array([0.0], dtype="int"))
+
+    with pytest.raises(AssertionError):
+        env.step(np.array([""], dtype="str"))
