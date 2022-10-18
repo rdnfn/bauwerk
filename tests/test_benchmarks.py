@@ -61,10 +61,9 @@ def test_task_enforcing():
 
 def test_battery_size_impact():
 
-    ep_len = 24 * 30  # evaluate on 1 month of actions
-
     # Create SolarBatteryHouse environment
-    build_dist_b = bauwerk.benchmarks.BuildDistB(seed=100, task_ep_len=ep_len)
+    build_dist_b = bauwerk.benchmarks.BuildDistB(seed=100)
+    ep_len = build_dist_b.cfg_dist.episode_len
 
     env0 = build_dist_b.make_env()
     env1 = build_dist_b.make_env()

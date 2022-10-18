@@ -7,13 +7,13 @@ https://github.com/rlworkgroup/metaworld
 
 
 from dataclasses import dataclass
-from typing import List
+import dataclasses
+from typing import List, Any, Optional, Dict, Union
 import abc
 from collections import OrderedDict
 import gym
 import numpy as np
 import bauwerk.envs.solar_battery_house
-
 import bauwerk.envs
 
 ENV_NAME = "bauwerk/House-v0"
@@ -28,6 +28,62 @@ class Task:
 
     cfg: object  # cfg of Bauwerk environment (changed from `data` in MetaWorld API)
     env_name: str = ENV_NAME
+
+
+@dataclass
+class ParamDist:
+    fn: Any  # function to draw from
+
+
+@dataclass
+class ContParamDist(ParamDist):
+    """Distribution over single cfg param."""
+
+    low: float  # lower bound of distribution
+    high: float  # higher bound of distribution
+
+    def sample(self):
+        return self.fn(low=self.low, high=self.high)
+
+
+@dataclass
+class CfgDist:
+    """Distribution over env configurations.
+
+    Made up of ParamDist's.
+    """
+
+    variable_params: Dict[str, ParamDist]
+    fixed_params: Optional[Dict] = None
+
+    def sample(self):
+        variable_params_dict = dict(
+            (name, dist.sample()) for name, dist in self.variable_params.items()
+        )
+        return bauwerk.envs.EnvConfig(**variable_params_dict, **self.fixed_params)
+
+
+def sample_cfg_dist(self) -> bauwerk.envs.EnvConfig:
+
+    variable_params = dict(
+        (field.name, getattr(self, field.name).sample())
+        if isinstance(getattr(self, field.name), ParamDist)
+        else (field.name, getattr(self, field.name))
+        for field in dataclasses.fields(self)
+    )
+    return bauwerk.envs.EnvConfig(**variable_params)
+
+
+CfgDist = dataclasses.make_dataclass(
+    cls_name="CfgDist",
+    fields=list(
+        (field.name, Union[field.type, ParamDist], field)
+        for field in dataclasses.fields(bauwerk.envs.EnvConfig)
+    ),
+    namespace={
+        "sample": sample_cfg_dist,
+    },
+)
 
 
 class Benchmark(abc.ABC):
@@ -67,7 +123,7 @@ class Benchmark(abc.ABC):
         pass
 
 
-class BuildDistB(Benchmark):
+class BauwerkBenchmark(Benchmark):
     """Building distribution B.
 
     This Benchmark provides environment with varying battery sizes."""
@@ -77,13 +133,19 @@ class BuildDistB(Benchmark):
     MAX_BATTERY_SIZE = 20
     MIN_BATTERY_SIZE = 0.5
 
-    def __init__(self, seed=None, task_ep_len=24 * 30):
+    def __init__(
+        self,
+        cfg_dist,
+        seed: Optional[int] = None,
+        num_train_tasks: int = 20,
+        num_test_tasks: int = 10,
+    ):
         super().__init__()
 
+        # add cfg distribution
+        self.cfg_dist = cfg_dist
+
         self.env_class = bauwerk.envs.HouseEnv
-        self.task_ep_len = task_ep_len
-        self.max_battery_size = self.MAX_BATTERY_SIZE
-        self.min_battery_size = self.MIN_BATTERY_SIZE
 
         self._train_classes = OrderedDict([(ENV_NAME, self.env_class)])
         self._test_classes = [self.env_class]
@@ -91,16 +153,14 @@ class BuildDistB(Benchmark):
         # Creating tasks
         self._train_tasks = self._create_tasks(
             seed=seed,
-            num_tasks=self.NUM_TRAIN_TASKS,
-            task_ep_len=task_ep_len,
+            num_tasks=num_train_tasks,
         )
         self._test_tasks = self._create_tasks(
             seed=(seed + 1 if seed is not None else seed),
-            num_tasks=self.NUM_TEST_TASKS,
-            task_ep_len=task_ep_len,
+            num_tasks=num_test_tasks,
         )
 
-    def _create_tasks(self, seed, num_tasks, task_ep_len):
+    def _create_tasks(self, seed, num_tasks):
         """Create tasks representing building distribution B."""
         if seed is not None:
             old_np_state = np.random.get_state()
@@ -111,12 +171,7 @@ class BuildDistB(Benchmark):
         for _ in range(num_tasks):
             task = Task(
                 env_name=ENV_NAME,
-                cfg=bauwerk.envs.solar_battery_house.EnvConfig(
-                    battery_size=np.random.uniform(
-                        self.MIN_BATTERY_SIZE, self.MAX_BATTERY_SIZE
-                    ),
-                    episode_len=task_ep_len,
-                ),
+                cfg=self.cfg_dist.sample(),
             )
             tasks.append(task)
 
@@ -125,12 +180,32 @@ class BuildDistB(Benchmark):
         return tasks
 
     def make_env(self):
+        """Create environment with max parameters.
+
+        This enables shared obs and act space.
+        """
         env = gym.make(
             "bauwerk/House-v0",
             cfg={
-                "episode_len": self.task_ep_len,
-                "battery_size": self.max_battery_size,
+                "episode_len": self.cfg_dist.episode_len,
+                "battery_size": self.cfg_dist.battery_size.high,
             },
         )
         env.unwrapped.force_task_setting = True
         return env
+
+
+class BuildDistB(BauwerkBenchmark):
+    """Bauwerk building distribution B: varying battery sizes."""
+
+    def __init__(self, **kwargs):
+        """Bauwerk building distribution B: varying battery sizes."""
+        cfg_dist = CfgDist(
+            battery_size=ContParamDist(
+                low=0.5,
+                high=20,
+                fn=np.random.uniform,
+            ),
+            episode_len=24 * 30,
+        )
+        super().__init__(**kwargs, cfg_dist=cfg_dist)

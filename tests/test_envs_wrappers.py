@@ -9,16 +9,15 @@ import gym
 
 def test_task_param_obs_wrapper():
     """Test TaskParamObs wrapper that adds task parameters to observation."""
-    ep_len = 24 * 30  # evaluate on 1 month of actions
 
     # Create SolarBatteryHouse environment
-    build_dist_b = bauwerk.benchmarks.BuildDistB(seed=100, task_ep_len=ep_len)
+    build_dist_b = bauwerk.benchmarks.BuildDistB(seed=100)
     env = build_dist_b.make_env()
     wrapped_env = bauwerk.envs.wrappers.TaskParamObs(
         env,
         task_param_names=["battery_size"],
-        task_param_low=build_dist_b.min_battery_size,
-        task_param_high=build_dist_b.max_battery_size,
+        task_param_low=build_dist_b.cfg_dist.battery_size.low,
+        task_param_high=build_dist_b.cfg_dist.battery_size.high,
     )
     wrapped_env.set_task(build_dist_b.train_tasks[0])
 
