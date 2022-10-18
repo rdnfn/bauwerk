@@ -572,7 +572,7 @@ class Game(widgets.VBox):
         if not self.game_finished:
 
             action = self.control.value
-            action = np.array([action], dtype=np.float32)
+            action = np.array([action], dtype=self.env.cfg.dtype)
 
             # pylint: disable=unused-variable
             # Note: using old step API to ensure compatibility
@@ -600,9 +600,9 @@ class Game(widgets.VBox):
         else:
             obs = self.env.reset()
 
-        obs = {**obs, self.reward_label: np.array([0], dtype=np.float32)}
+        obs = {**obs, self.reward_label: np.array([0], dtype=float)}
         self.obs_values = {
-            key: [np.array([0], dtype=np.float32)] * self.visible_steps
+            key: [np.array([0], dtype=float)] * self.visible_steps
             for key in obs.keys()
             if key not in ["time_step", "time_of_day"]
         }
