@@ -165,6 +165,42 @@ def test_absolute_actions():
     assert env.battery.get_energy_content() <= BATTERY_SIZE / 2
 
 
+def test_absolute_actions_equivalence():
+    """Test absolute actions in Bauwerk House environment in other way.
+
+    This test checks if when using two buildings with different battery sizes,
+    whether the same actions lead to similar outcomes under absolute actions.
+    """
+
+    env0 = gym.make(
+        "bauwerk/House-v0",
+        cfg=bauwerk.EnvConfig(
+            battery_size=5,
+            action_space_type="absolute",
+        ),
+    )
+    env1 = gym.make(
+        "bauwerk/House-v0",
+        cfg=bauwerk.EnvConfig(
+            battery_size=10,
+            action_space_type="absolute",
+        ),
+    )
+    env2 = gym.make(
+        "bauwerk/House-v0",
+        cfg=bauwerk.EnvConfig(
+            battery_size=10,
+            action_space_type="relative",
+        ),
+    )
+    for env in [env0, env1, env2]:
+        env.reset()
+        env.step(np.array([1.0], dtype="float32"))
+
+    assert env0.battery.get_energy_content() == env1.battery.get_energy_content()
+    assert env1.battery.get_energy_content() < env2.battery.get_energy_content()
+
+
 def test_dtype_of_actions():
     """Check that both np.float32 and np.float64 actions work in env."""
 
