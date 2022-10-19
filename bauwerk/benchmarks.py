@@ -132,6 +132,7 @@ class BuildDist(Benchmark):
         seed: Optional[int] = None,
         num_train_tasks: int = 20,
         num_test_tasks: int = 10,
+        episode_len: Optional[int] = None,
         dtype: Union[str, np.dtype] = None,
     ):
         """Building distribution.
@@ -141,6 +142,8 @@ class BuildDist(Benchmark):
             seed (Optional[int], optional): Random seed. Defaults to None.
             num_train_tasks (int, optional): Number of training tasks. Defaults to 20.
             num_test_tasks (int, optional): Number of test tasks. Defaults to 10.
+            episode_len: (int, optional): Length of episode in distribution
+                environments. If not set, defaults to distribution configuration.
             dtype (Union[str, np.dtype], optional): data type to be returned and
                 received by envs. Defaults to None, which leads to the general default
                 of np.float32.
@@ -149,6 +152,9 @@ class BuildDist(Benchmark):
 
         # add cfg distribution
         self.cfg_dist = cfg_dist
+
+        if episode_len is not None:
+            self.cfg_dist.episode_len = episode_len
 
         if not dtype is None:
             self.cfg_dist.dtype = dtype

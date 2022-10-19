@@ -224,3 +224,13 @@ def test_dtype():
     env = dist.make_env()
 
     assert env.action_space.sample().dtype == dtype
+
+
+def test_episode_len():
+
+    ep_len = 143
+
+    dist = bauwerk.benchmarks.BuildDistB(episode_len=ep_len)
+    env = dist.make_env()
+
+    assert env.cfg.episode_len == ep_len
