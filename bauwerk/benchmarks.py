@@ -123,24 +123,28 @@ class Benchmark(abc.ABC):
         pass
 
 
-class BauwerkBenchmark(Benchmark):
-    """Building distribution B.
-
-    This Benchmark provides environment with varying battery sizes."""
-
-    NUM_TRAIN_TASKS = 20
-    NUM_TEST_TASKS = 10
-    MAX_BATTERY_SIZE = 20
-    MIN_BATTERY_SIZE = 0.5
+class BuildDist(Benchmark):
+    """Building distribution."""
 
     def __init__(
         self,
-        cfg_dist,
+        cfg_dist: CfgDist,
         seed: Optional[int] = None,
         num_train_tasks: int = 20,
         num_test_tasks: int = 10,
         dtype: Union[str, np.dtype] = None,
     ):
+        """Building distribution.
+
+        Args:
+            cfg_dist (CfgDist): distribution over bauwerk env configs.
+            seed (Optional[int], optional): Random seed. Defaults to None.
+            num_train_tasks (int, optional): Number of training tasks. Defaults to 20.
+            num_test_tasks (int, optional): Number of test tasks. Defaults to 10.
+            dtype (Union[str, np.dtype], optional): data type to be returned and
+                received by envs. Defaults to None, which leads to the general default
+                of np.float32.
+        """
         super().__init__()
 
         # add cfg distribution
@@ -200,7 +204,7 @@ class BauwerkBenchmark(Benchmark):
         return env
 
 
-class BuildDistB(BauwerkBenchmark):
+class BuildDistB(BuildDist):
     """Bauwerk building distribution B: varying battery sizes."""
 
     def __init__(self, **kwargs):
