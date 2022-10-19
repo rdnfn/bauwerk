@@ -9,8 +9,16 @@ import bauwerk.eval
 import matplotlib.pyplot as plt
 import matplotlib.figure
 import numpy as np
+from loguru import logger
 
-plt.switch_backend("agg")
+
+def enable_wandb_plot_logging():
+    """Enable wandb plot logging.
+
+    Note that this may be necessary for wandb logging plots but prevents local jupyter
+    loading of plots
+    """
+    plt.switch_backend("agg")
 
 
 def eval_model(model: object, env: gym.Env, eval_len: int) -> float:
@@ -238,6 +246,14 @@ class DistPerfPlotCallback(BaseCallback):
         self.eval_freq = eval_freq
         self.eval_env = eval_env
         self.first_training_start = True
+
+        enable_wandb_plot_logging()
+        logger.warning(
+            (
+                "Changed matplotlib global settings to be able to log plots to"
+                " wandb. This may prevent plots from showing inside jupyter notebooks."
+            )
+        )
 
     def _on_training_start(self) -> None:
         """
