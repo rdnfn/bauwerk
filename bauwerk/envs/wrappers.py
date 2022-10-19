@@ -88,6 +88,30 @@ class ClipReward(gym.RewardWrapper):
         return np.clip(reward, self.min_reward, self.max_reward)
 
 
+class ClipActions(gym.ActionWrapper):
+    """Clip actions that can be taken in environment."""
+
+    def __init__(self, env: gym.Env, low: Any, high: Any):
+        """Clip actions that can be taken in environment.
+
+        Args:
+            env (gym.Env): gym to clip actions for.
+            low (Any): lower bound of clipped action space (passed to gym.spaces.Box).
+                This must fit the shape of the env's action space.
+            high (Any): upper bound of clipped action space (passed to gym.spaces.Box).
+        """
+        super().__init__(env)
+        self.action_space = gym.spaces.Box(
+            low=low,
+            high=high,
+            shape=env.action_space.shape,
+            dtype=env.cfg.dtype,
+        )
+
+    def action(self, act):
+        return act
+
+
 class InfeasControlPenalty(gym.Wrapper):
     """Add penalty to reward when agents tries infeasible control actions."""
 
