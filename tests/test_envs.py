@@ -197,6 +197,7 @@ def test_absolute_actions_equivalence():
         env.reset()
         env.step(np.array([1.0], dtype="float32"))
 
+    assert env0.action_space.high == 5.0
     assert env0.battery.get_energy_content() == env1.battery.get_energy_content()
     assert env1.battery.get_energy_content() < env2.battery.get_energy_content()
 

@@ -204,6 +204,7 @@ class BuildDist(Benchmark):
                 "episode_len": self.cfg_dist.episode_len,
                 "battery_size": self.cfg_dist.battery_size.high,
                 "dtype": self.cfg_dist.dtype,
+                "action_space_type": self.cfg_dist.action_space_type,
             },
         )
         env.unwrapped.force_task_setting = True

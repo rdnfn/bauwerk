@@ -234,3 +234,22 @@ def test_episode_len():
     env = dist.make_env()
 
     assert env.cfg.episode_len == ep_len
+
+
+def test_action_space_types():
+
+    build_dist = bauwerk.benchmarks.BuildDist(
+        cfg_dist=bauwerk.benchmarks.CfgDist(
+            battery_size=bauwerk.benchmarks.ContParamDist(
+                low=0.5,
+                high=20,
+                fn=np.random.uniform,
+            ),
+            episode_len=24 * 30,
+            action_space_type="absolute",
+        ),
+        seed=100,
+    )
+
+    env = build_dist.make_env()
+    assert env.action_space.high == 20.0
