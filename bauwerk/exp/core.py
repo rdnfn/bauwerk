@@ -86,7 +86,8 @@ def run(cfg: ExpConfig):
 
     # configuration based on training type (single task vs multi-task)
     if cfg.env_mode == "single_env":
-        tasks = [bauwerk.benchmarks.Task(cfg=cfg.env_cfg)]
+        logger.debug(str(cfg.env_cfg))
+        tasks = [bauwerk.benchmarks.Task(cfg=bauwerk.EnvConfig(**cfg.env_cfg))]
     elif cfg.train_procedure == "consecutive":
         tasks = build_dist.train_tasks[: cfg.num_train_tasks]
 
