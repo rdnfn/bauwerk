@@ -221,8 +221,8 @@ class BuildDist(Benchmark):
         This enables shared obs and act space.
         """
         cfg = self.cfg_dist.get_default_env_cfg()
-        for name, value in self.env_params:
-            cfg[name] = value
+        for name, value in self.env_params.items():
+            setattr(cfg, name, value)
 
         env = gym.make(
             "bauwerk/House-v0",
