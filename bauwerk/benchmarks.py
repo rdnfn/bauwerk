@@ -64,14 +64,26 @@ class CfgDist:
 
 
 def sample_cfg_dist(self) -> bauwerk.EnvConfig:
+    """Sample from CfgDist."""
 
-    variable_params = dict(
+    params = dict(
         (field.name, getattr(self, field.name).sample())
         if isinstance(getattr(self, field.name), ParamDist)
         else (field.name, getattr(self, field.name))
         for field in dataclasses.fields(self)
     )
-    return bauwerk.EnvConfig(**variable_params)
+    return bauwerk.EnvConfig(**params)
+
+
+def get_default_env_cfg(self) -> bauwerk.EnvConfig:
+    """Get default CfgDist with max values."""
+    params = dict(
+        (field.name, getattr(self, field.name).high)
+        if isinstance(getattr(self, field.name), ParamDist)
+        else (field.name, getattr(self, field.name))
+        for field in dataclasses.fields(self)
+    )
+    return bauwerk.EnvConfig(**params)
 
 
 CfgDist = dataclasses.make_dataclass(
@@ -82,6 +94,7 @@ CfgDist = dataclasses.make_dataclass(
     ),
     namespace={
         "sample": sample_cfg_dist,
+        "get_default_env_cfg": get_default_env_cfg,
     },
 )
 
@@ -134,6 +147,7 @@ class BuildDist(Benchmark):
         num_test_tasks: int = 10,
         episode_len: Optional[int] = None,
         dtype: Union[str, np.dtype] = None,
+        env_params: Optional[Dict] = None,
     ):
         """Building distribution.
 
@@ -147,6 +161,9 @@ class BuildDist(Benchmark):
             dtype (Union[str, np.dtype], optional): data type to be returned and
                 received by envs. Defaults to None, which leads to the general default
                 of np.float32.
+            env_params (dict, optional): parameters to pass when creating environment.
+                This should not be used when evaluating on pre-defined benchmark.
+                Defaults to None.
         """
         super().__init__()
 
@@ -160,6 +177,11 @@ class BuildDist(Benchmark):
             self.cfg_dist.dtype = dtype
 
         self.env_class = bauwerk.envs.HouseEnv
+
+        if not env_params is None:
+            self.env_params = env_params
+        else:
+            self.env_params = {}
 
         self._train_classes = OrderedDict([(ENV_NAME, self.env_class)])
         self._test_classes = [self.env_class]
@@ -198,14 +220,13 @@ class BuildDist(Benchmark):
 
         This enables shared obs and act space.
         """
+        cfg = self.cfg_dist.get_default_env_cfg()
+        for name, value in self.env_params:
+            cfg[name] = value
+
         env = gym.make(
             "bauwerk/House-v0",
-            cfg={
-                "episode_len": self.cfg_dist.episode_len,
-                "battery_size": self.cfg_dist.battery_size.high,
-                "dtype": self.cfg_dist.dtype,
-                "action_space_type": self.cfg_dist.action_space_type,
-            },
+            cfg=cfg,
         )
         env.unwrapped.force_task_setting = True
         return env
