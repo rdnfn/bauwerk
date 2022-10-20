@@ -258,7 +258,7 @@ def test_action_space_types():
 def test_benchmark_env_params():
 
     build_dist = bauwerk.benchmarks.BuildDistB(
-        env_params={"action_space_type": "absolute", "dtype": "float64"}
+        env_kwargs={"action_space_type": "absolute", "dtype": "float64"}
     )
 
     env = build_dist.make_env()

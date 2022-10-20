@@ -15,6 +15,7 @@ import gym
 import numpy as np
 import bauwerk.envs.solar_battery_house
 import bauwerk
+from loguru import logger
 
 ENV_NAME = "bauwerk/House-v0"
 
@@ -147,7 +148,7 @@ class BuildDist(Benchmark):
         num_test_tasks: int = 10,
         episode_len: Optional[int] = None,
         dtype: Union[str, np.dtype] = None,
-        env_params: Optional[Dict] = None,
+        env_kwargs: Optional[Dict] = None,
     ):
         """Building distribution.
 
@@ -161,7 +162,7 @@ class BuildDist(Benchmark):
             dtype (Union[str, np.dtype], optional): data type to be returned and
                 received by envs. Defaults to None, which leads to the general default
                 of np.float32.
-            env_params (dict, optional): parameters to pass when creating environment.
+            env_kwargs (dict, optional): parameters to pass when creating environment.
                 This should not be used when evaluating on pre-defined benchmark.
                 Defaults to None.
         """
@@ -178,10 +179,16 @@ class BuildDist(Benchmark):
 
         self.env_class = bauwerk.envs.HouseEnv
 
-        if not env_params is None:
-            self.env_params = env_params
+        if not env_kwargs is None:
+            logger.warning(
+                (
+                    "Env kwargs in benchmark changed. "
+                    "This may lead to inconsistent results."
+                )
+            )
+            self.env_kwargs = env_kwargs
         else:
-            self.env_params = {}
+            self.env_kwargs = {}
 
         self._train_classes = OrderedDict([(ENV_NAME, self.env_class)])
         self._test_classes = [self.env_class]
@@ -221,7 +228,7 @@ class BuildDist(Benchmark):
         This enables shared obs and act space.
         """
         cfg = self.cfg_dist.get_default_env_cfg()
-        for name, value in self.env_params.items():
+        for name, value in self.env_kwargs.items():
             setattr(cfg, name, value)
 
         env = gym.make(
