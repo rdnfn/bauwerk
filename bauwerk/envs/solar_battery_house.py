@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import pathlib
-from typing import TYPE_CHECKING, Optional, Tuple, Union, Any
+from typing import Optional, Tuple, Union, Any
 from loguru import logger
 import gym
 import gym.utils.seeding
@@ -16,12 +16,6 @@ import bauwerk.envs.components.load
 import bauwerk.envs.components.grid
 import bauwerk.envs.components.battery
 
-if TYPE_CHECKING:
-    from bauwerk.envs.components.battery import BatteryModel
-    from bauwerk.envs.components.grid import GridModel
-    from bauwerk.envs.components.load import LoadModel
-    from bauwerk.envs.components.solar import PVModel
-
 
 @dataclass
 class EnvConfig:
@@ -29,7 +23,7 @@ class EnvConfig:
 
     # general config params
     time_step_len: float = 1.0  # in hours
-    episode_len: float = 24 * 365 - 1  # in no of timesteps (-1 bc of available obs)
+    episode_len: int = 24 * 365 - 1  # in no of timesteps (-1 bc of available obs)
     grid_charging: bool = True  # whether grid charging is allowed
     infeasible_control_penalty: bool = False  # whether penalty added for inf. control
     obs_keys: list = field(
@@ -38,9 +32,7 @@ class EnvConfig:
     action_space_type: str = (
         "relative"  # either relative (to battery size) or absolute (kW)
     )
-    dtype: Union[
-        str, np.dtype
-    ] = "float32"  # note that SB3 requires np.float32 action space.
+    dtype: str = "float32"  # note that SB3 requires np.float32 action space.
 
     # component params
     battery_size: float = 7.5  # kWh
@@ -48,9 +40,9 @@ class EnvConfig:
     battery_start_charge: float = 0.0  # 0.5  # perc. of size that should begin with.
 
     data_start_index: int = 0  # starting index for data-based components (solar & load)
-    solar_data: Union[str, pathlib.Path] = None
+    solar_data: Optional[Union[str, pathlib.Path]] = None
     solar_scaling_factor: float = 3.5  # kW (max performance)
-    load_data: Union[str, pathlib.Path] = None
+    load_data: Optional[Union[str, pathlib.Path]] = None
     load_scaling_factor: float = 4.5  # kW (max demand)
 
     grid_peak_threshold: float = 4.0  # kW
@@ -62,10 +54,10 @@ class EnvConfig:
     # optional custom component models
     # (if these are set, component params above will
     # be ignored for the custom components set)
-    solar: PVModel = None
-    battery: BatteryModel = None
-    load: LoadModel = None
-    grid: GridModel = None
+    solar: Any = None
+    battery: Any = None
+    load: Any = None
+    grid: Any = None
 
 
 class SolarBatteryHouseCoreEnv(gym.Env):
