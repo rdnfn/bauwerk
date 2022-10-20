@@ -1,13 +1,13 @@
 """Utility functions to run experiments within Bauwerk."""
 
-from typing import Optional
+from typing import Optional, Dict
 from dataclasses import dataclass
-from bauwerk.benchmarks import Task
 import bauwerk.benchmarks
 import bauwerk.envs.wrappers
 import bauwerk.eval
 import bauwerk.utils.sb3
 import bauwerk.utils.logging
+import bauwerk
 import hydra
 from hydra.core.config_store import ConfigStore
 import stable_baselines3 as sb3
@@ -30,7 +30,6 @@ class ExpConfig:
     """Experiment configuration."""
 
     # env training params
-    total_train_steps: int = 24 * 365  # total steps in env during training
     train_steps_per_task: int = 24 * 7 * 10
     task_len: int = 24 * 30  # total length of task
 
@@ -40,8 +39,11 @@ class ExpConfig:
     # whether to add infeasible control penalty
     infeasible_control_penalty: bool = False
 
+    env_mode: str = "single_env"  # or "benchmark"
+    env_cfg: bauwerk.EnvConfig = bauwerk.EnvConfig()
     benchmark: str = "BuildDistB"  # benchmark to run experiment on
-    single_task: Optional[Task] = None
+    benchmark_env_kwargs: Optional[Dict] = None
+    # if set exp is run on single env
 
     # algorithm params
     sb3_alg: str = "SAC"
@@ -70,7 +72,7 @@ def run(cfg: ExpConfig):
     run_id = uuid.uuid4().hex[:6]
     build_dist: bauwerk.benchmarks.Benchmark = getattr(
         bauwerk.benchmarks, cfg.benchmark
-    )(seed=1, task_ep_len=cfg.task_len)
+    )(seed=1, env_kwargs=cfg.benchmark_env_kwargs)
 
     train_env = build_dist.make_env()
     eval_env = build_dist.make_env()
@@ -83,8 +85,8 @@ def run(cfg: ExpConfig):
     model_cls = getattr(sb3, cfg.sb3_alg)
 
     # configuration based on training type (single task vs multi-task)
-    if cfg.single_task is not None:
-        tasks = [cfg.single_task]
+    if cfg.env_mode == "single_env":
+        tasks = [bauwerk.benchmarks.Task(cfg=cfg.env_cfg)]
     elif cfg.train_procedure == "consecutive":
         tasks = build_dist.train_tasks[: cfg.num_train_tasks]
 
@@ -125,9 +127,6 @@ def run(cfg: ExpConfig):
         )
         return wandb_run, model, callbacks
 
-    if not cfg.train_procedure == "separate_models":
-        wandb_run, model, callbacks = create_model()
-
     logger.info("Starting training loop.")
 
     # training per task
@@ -138,7 +137,7 @@ def run(cfg: ExpConfig):
         train_env.set_task(task)
         eval_env.set_task(task)
 
-        if cfg.train_procedure == "separate_models":
+        if cfg.train_procedure == "separate_models" or i < 1:
             wandb_run, model, callbacks = create_model()
 
         callbacks.append(
