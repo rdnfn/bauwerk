@@ -2,12 +2,12 @@
 
 from typing import Optional, Dict
 from dataclasses import dataclass
+import bauwerk
 import bauwerk.benchmarks
 import bauwerk.envs.wrappers
 import bauwerk.eval
 import bauwerk.utils.sb3
 import bauwerk.utils.logging
-import bauwerk
 import hydra
 from hydra.core.config_store import ConfigStore
 import stable_baselines3 as sb3
@@ -22,7 +22,7 @@ class Sb3Config:
     """Kwargs for SB3 algorithm."""
 
     policy: str = "MultiInputPolicy"
-    verbose: int = 0
+    # verbose: int = 2
 
 
 @dataclass
@@ -30,23 +30,26 @@ class ExpConfig:
     """Experiment configuration."""
 
     # env training params
-    train_steps_per_task: int = 24 * 7 * 10
+    train_steps_per_task: int = 2000  # 24 * 365
     task_len: int = 24 * 30  # total length of task
-
-    train_procedure: str = "consecutive"
-    num_train_tasks: int = 2  # will sample
 
     # whether to add infeasible control penalty
     infeasible_control_penalty: bool = False
 
     env_mode: str = "single_env"  # or "benchmark"
     env_cfg: bauwerk.EnvConfig = bauwerk.EnvConfig()
+
+    # only apply if env_mode is benchmark
     benchmark: str = "BuildDistB"  # benchmark to run experiment on
     benchmark_env_kwargs: Optional[Dict] = None
-    # if set exp is run on single env
+    train_procedure: str = "consecutive"
+    num_train_tasks: int = 1  # will sample
 
     # algorithm params
     sb3_alg: str = "SAC"
+    # note: wandb logging may change
+    # depending on algorithm
+    # see https://github.com/DLR-RM/stable-baselines3/issues/263
     sb3_alg_kwargs: Sb3Config = Sb3Config()
 
     # evaluation
@@ -65,14 +68,14 @@ cs.store(name="config", node=ExpConfig)
 def run(cfg: ExpConfig):
     """Run Bauwerk building distribution experiment."""
 
-    bauwerk.utils.logging.set_log_level(cfg.log_level)
+    bauwerk.utils.logging.setup(log_level=cfg.log_level)
 
     logger.info("Starting Bauwerk experiment.")
 
     run_id = uuid.uuid4().hex[:6]
     build_dist: bauwerk.benchmarks.Benchmark = getattr(
         bauwerk.benchmarks, cfg.benchmark
-    )(seed=1, env_kwargs=cfg.benchmark_env_kwargs)
+    )(seed=1, env_kwargs=cfg.benchmark_env_kwargs, episode_len=cfg.task_len)
 
     train_env = build_dist.make_env()
     eval_env = build_dist.make_env()
@@ -91,20 +94,23 @@ def run(cfg: ExpConfig):
     elif cfg.train_procedure == "consecutive":
         tasks = build_dist.train_tasks[: cfg.num_train_tasks]
 
+    # setting up wandb logging
+    root_tensorboard_dir = "outputs/sb3/runs/"
+    run_tensorboard_log = root_tensorboard_dir + f"{run_id}/"
+    # Note: the patch below leads to separation of experiment data
+    # wandb.tensorboard.patch(root_logdir=root_tensorboard_dir)
+    wandb_run = wandb.init(
+        project=cfg.wandb_project,
+        config={"bauwerk": dict(cfg)},
+        sync_tensorboard=True,
+        id=run_id,
+        save_code=True,
+        monitor_gym=True,
+    )
+
     def create_model():
         """Create model and set up logging."""
 
-        # setting up wandb logging
-        root_tensorboard_dir = "outputs/sb3/runs/"
-        run_tensorboard_log = root_tensorboard_dir + f"{run_id}/"
-        # Note: the patch below leads to separation of experiment data
-        # wandb.tensorboard.patch(root_logdir=root_tensorboard_dir)
-        wandb_run = wandb.init(
-            project=cfg.wandb_project,
-            config=cfg,
-            sync_tensorboard=True,
-            id=run_id,
-        )
         model = model_cls(
             env=train_env,
             # tensorboard logs are necessary for full wandb logging
@@ -126,7 +132,12 @@ def run(cfg: ExpConfig):
                 eval_freq=cfg.eval_freq,
             )
         )
-        return wandb_run, model, callbacks
+        callbacks.append(
+            wandb.integration.sb3.WandbCallback(
+                verbose=2,
+            )
+        )
+        return model, callbacks
 
     logger.info("Starting training loop.")
 
@@ -139,20 +150,16 @@ def run(cfg: ExpConfig):
         eval_env.set_task(task)
 
         if cfg.train_procedure == "separate_models" or i < 1:
-            wandb_run, model, callbacks = create_model()
+            model, callbacks = create_model()
 
-        callbacks.append(
-            wandb.integration.sb3.WandbCallback(
-                verbose=2,
-            )
-        )
         model.learn(
             total_timesteps=cfg.train_steps_per_task,
             callback=callbacks,
             # the last two configs prevent the log from being split up
             # between learn calls
             tb_log_name=f"run-{cfg.sb3_alg}-{wandb_run.id}",
-            reset_num_timesteps=False,
+            # reset_num_timesteps=False,
+            progress_bar=True,
         )
 
         trained_models.append(model)
@@ -164,6 +171,7 @@ def run(cfg: ExpConfig):
         )
 
     wandb_run.finish()
+    logger.info("Run completed.")
 
 
 if __name__ == "__main__":
