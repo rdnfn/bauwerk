@@ -22,5 +22,5 @@ except ImportError:
         )
 
 
-bauwerk.utils.logging.set_log_level("WARNING")
+bauwerk.utils.logging.setup(log_level="WARNING")
 bauwerk.envs.registration.register_all()
