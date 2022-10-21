@@ -427,7 +427,9 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         self.state = {
             "load": np.array([load], dtype=self.cfg.dtype),
             "pv_gen": np.array([pv_gen], dtype=self.cfg.dtype),
-            "battery_cont": self.battery.get_energy_content(),
+            "battery_cont": np.array(
+                self.battery.get_energy_content(), dtype=self.cfg.dtype
+            ),
             "time_step": 0,
             "time_step_cont": np.array([0.0], dtype=self.cfg.dtype),
             "cum_load": np.array([0.0], dtype=self.cfg.dtype),
