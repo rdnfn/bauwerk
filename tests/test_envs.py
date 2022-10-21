@@ -205,7 +205,7 @@ def test_absolute_actions_equivalence():
 def test_dtype_of_actions():
     """Check that both np.float32 and np.float64 actions work in env."""
 
-    for dtype in ["float", np.float, np.float32, np.float64, "float64"]:
+    for dtype in ["float", float, np.float32, np.float64, "float64"]:
         env = gym.make("bauwerk/House-v0", cfg={"dtype": dtype})
 
         env.reset()
