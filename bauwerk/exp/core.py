@@ -56,6 +56,7 @@ class ExpConfig:
 
     # evaluation
     eval_freq: int = 24 * 7  # evaluate model performance at this frequency
+    dist_fig_freq: int = 24 * 7 * 4  # frequency of saving distribution evaluation plots
 
     # logging & experiment tracking
     log_level: str = "INFO"
@@ -149,7 +150,7 @@ def run(cfg: DictConfig):
             bauwerk.utils.sb3.bauwerk.utils.sb3.DistPerfPlotCallback(
                 eval_env=eval_env,
                 eval_len=cfg.task_len,
-                eval_freq=cfg.eval_freq,
+                eval_freq=cfg.dist_fig_freq,
             )
         )
         callbacks.append(
