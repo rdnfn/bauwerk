@@ -80,7 +80,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             cfg = EnvConfig()
         elif isinstance(cfg, dict):
             cfg = EnvConfig(**cfg)
-        self.cfg = cfg
+        self.cfg: EnvConfig = cfg
         self.force_task_setting = force_task_setting
         self._task_is_set = False
 
