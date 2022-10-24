@@ -175,6 +175,8 @@ def run(cfg: DictConfig):
         model.learn(
             total_timesteps=cfg.train_steps_per_task,
             callback=callbacks,
+            # note that the log interval is in episodes for off-policy algs
+            # (see https://github.com/DLR-RM/stable-baselines3/blob/0532a5719c2bb46fd96b61a7e03dd8cb180c00fc/stable_baselines3/common/off_policy_algorithm.py#L604) # pylint: disable=line-too-long
             log_interval=1,
             # the last two configs prevent the log from being split up
             # between learn calls
