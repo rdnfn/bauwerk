@@ -111,3 +111,4 @@ notebooks/tests/
 # Experiment outputs
 outputs
 wandb
+multirun
