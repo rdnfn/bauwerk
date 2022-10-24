@@ -65,12 +65,12 @@ class ExpConfig:
     def __post_init__(self):
         if self.env_mode == "single_env":
             if self.task_len != self.env_cfg.episode_len:
-                logger.warning(
+                logger.info(
                     (
-                        f"task_len ({self.task_len}) is not the same as env"
+                        f"Note that task_len ({self.task_len}) is not the same as env"
                         f"_cfg.episode_len ({self.env_cfg.episode_len}). "
                         "This would lead to inconsistent evaluation."
-                        f" Thus overwritting env_cfg.episode_len with {self.task_len}."
+                        f" Thus, overwritting env_cfg.episode_len with {self.task_len}."
                     )
                 )
                 self.env_cfg.episode_len = self.task_len
