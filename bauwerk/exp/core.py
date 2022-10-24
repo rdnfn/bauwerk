@@ -2,6 +2,7 @@
 
 from typing import Optional, Dict
 from dataclasses import dataclass
+import dataclasses
 import bauwerk
 import bauwerk.benchmarks
 import bauwerk.envs.wrappers
@@ -15,6 +16,7 @@ from loguru import logger
 import wandb
 import wandb.integration.sb3
 import uuid
+from omegaconf import OmegaConf, DictConfig
 
 
 @dataclass
@@ -30,7 +32,7 @@ class ExpConfig:
     """Experiment configuration."""
 
     # env training params
-    train_steps_per_task: int = 2000  # 24 * 365
+    train_steps_per_task: int = 8760  # 24 * 365
     task_len: int = 24 * 30  # total length of task
 
     # whether to add infeasible control penalty
@@ -59,14 +61,31 @@ class ExpConfig:
     log_level: str = "INFO"
     wandb_project: str = "bauwerk"
 
+    def __post_init__(self):
+        if self.env_mode == "single_env":
+            if self.task_len != self.env_cfg.episode_len:
+                logger.warning(
+                    (
+                        f"task_len ({self.task_len}) is not the same as env"
+                        f"_cfg.episode_len ({self.env_cfg.episode_len}). "
+                        "This would lead to inconsistent evaluation."
+                        f" Thus overwritting env_cfg.episode_len with {self.task_len}."
+                    )
+                )
+                self.env_cfg.episode_len = self.task_len
+
 
 cs = ConfigStore.instance()
 cs.store(name="config", node=ExpConfig)
 
 
 @hydra.main(config_path=None, config_name="config", version_base=None)
-def run(cfg: ExpConfig):
+def run(cfg: DictConfig):
     """Run Bauwerk building distribution experiment."""
+
+    # Enable running of cfg checks defined in __post_init__ method above.
+    # (from https://github.com/facebookresearch/hydra/issues/981)
+    cfg: ExpConfig = OmegaConf.to_object(cfg)
 
     bauwerk.utils.logging.setup(log_level=cfg.log_level)
 
@@ -90,18 +109,19 @@ def run(cfg: ExpConfig):
     # configuration based on training type (single task vs multi-task)
     if cfg.env_mode == "single_env":
         logger.debug(str(cfg.env_cfg))
-        tasks = [bauwerk.benchmarks.Task(cfg=bauwerk.EnvConfig(**cfg.env_cfg))]
+        tasks = [bauwerk.benchmarks.Task(cfg=cfg.env_cfg)]
     elif cfg.train_procedure == "consecutive":
         tasks = build_dist.train_tasks[: cfg.num_train_tasks]
 
     # setting up wandb logging
     root_tensorboard_dir = "outputs/sb3/runs/"
     run_tensorboard_log = root_tensorboard_dir + f"{run_id}/"
+    logger.info(f"Writing tensorboard logs to {run_tensorboard_log}")
     # Note: the patch below leads to separation of experiment data
     # wandb.tensorboard.patch(root_logdir=root_tensorboard_dir)
     wandb_run = wandb.init(
         project=cfg.wandb_project,
-        config={"bauwerk": dict(cfg)},
+        config={"bauwerk": dataclasses.asdict(cfg)},
         sync_tensorboard=True,
         id=run_id,
         save_code=True,
@@ -115,7 +135,7 @@ def run(cfg: ExpConfig):
             env=train_env,
             # tensorboard logs are necessary for full wandb logging
             tensorboard_log=run_tensorboard_log,
-            **cfg.sb3_alg_kwargs,
+            **dataclasses.asdict(cfg.sb3_alg_kwargs),
         )
         callbacks = []
         callbacks.append(
@@ -155,9 +175,10 @@ def run(cfg: ExpConfig):
         model.learn(
             total_timesteps=cfg.train_steps_per_task,
             callback=callbacks,
+            log_interval=1,
             # the last two configs prevent the log from being split up
             # between learn calls
-            tb_log_name=f"run-{cfg.sb3_alg}-{wandb_run.id}",
+            # tb_log_name=f"run-{cfg.sb3_alg}-{wandb_run.id}",
             # reset_num_timesteps=False,
             progress_bar=True,
         )
