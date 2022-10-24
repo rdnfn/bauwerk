@@ -99,6 +99,7 @@ def run(cfg: DictConfig):
 
     train_env = build_dist.make_env()
     eval_env = build_dist.make_env()
+    eval_env_dist = build_dist.make_env()
 
     # applying wrappers
     # (those that affect reward will only be applied to train env)
@@ -148,7 +149,7 @@ def run(cfg: DictConfig):
         )
         callbacks.append(
             bauwerk.utils.sb3.bauwerk.utils.sb3.DistPerfPlotCallback(
-                eval_env=eval_env,
+                eval_env=eval_env_dist,
                 eval_len=cfg.task_len,
                 eval_freq=cfg.dist_fig_freq,
             )
@@ -169,6 +170,7 @@ def run(cfg: DictConfig):
         logger.info(f"Training on task {i + 1} out of {len(tasks)} tasks.")
         train_env.set_task(task)
         eval_env.set_task(task)
+        eval_env_dist.set_task(task)
 
         if cfg.train_procedure == "separate_models" or i < 1:
             model, callbacks = create_model()
