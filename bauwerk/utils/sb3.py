@@ -54,6 +54,7 @@ class EvalCallback(BaseCallback):
         eval_len: int,
         eval_freq: int = 24 * 7,
         verbose: int = 0,
+        save_data_internally: bool = False,
     ):
         """Eval callback that repeatedly evaluates model during training.
 
@@ -64,36 +65,54 @@ class EvalCallback(BaseCallback):
                 Defaults to 24*7.
             verbose (int, optional): How verbose the callback should be.
                 Defaults to 0.
+            save_data_internally (bool, optional): whether the callback should retain
+                a local copy of the data. This enables using the plot() method.
+                Defaults to False.
         """
         super().__init__(verbose)
-        self.data = []
+        if save_data_internally:
+            self.data = []
+
         self.eval_len = eval_len
         self.eval_freq = eval_freq
         self.eval_env = eval_env
         self.first_training_start = True
+        self.save_data_internally = save_data_internally
 
     def _on_training_start(self) -> None:
         """
         This method is called before the first rollout starts.
         """
         if self.first_training_start:
-            perf = self._get_perf()
-            self.data.append(perf)
-            self.logger.record("eval_perf", perf)
+            perf = self._eval_and_dump_logs()
+            if self.save_data_internally:
+                self.data.append(perf)
             self.first_training_start = False
 
-    def _get_perf(self) -> float:
-        return eval_model(self.model, self.eval_env, self.eval_len)
+    def _eval_and_dump_logs(self) -> float:
+        perf = eval_model(self.model, self.eval_env, self.eval_len)
+        self.logger.record("eval_perf", perf)
+        # Ensuring that this value is actually recorded, not just computed
+        # See https://stable-baselines3.readthedocs.io/en/master/common/logger.html#stable_baselines3.common.logger.Logger.record # pylint: disable=line-too-long
+        self.logger.dump(step=self.num_timesteps)
+        return perf
 
     def _on_step(self) -> bool:
         if self.num_timesteps % self.eval_freq == 0:
-            perf = self._get_perf()
-            self.data.append(perf)
-            self.logger.record("eval_perf", perf)
+            perf = self._eval_and_dump_logs()
+            if self.save_data_internally:
+                self.data.append(perf)
 
         return True
 
     def plot(self):
+        if not self.save_data_internally:
+            raise ValueError(
+                (
+                    "Data not available. Set save_internal_data kwarg to true"
+                    " when instantiating callback."
+                )
+            )
 
         num_train_step = len(self.data) * self.eval_freq
 
