@@ -531,6 +531,15 @@ class SolarBatteryHouseCoreEnv(gym.Env):
                 "is not an instance of None, dict and EnvConfig.)"
             )
 
+        if self.cfg.episode_len != cfg.episode_len:
+            self.logger.warning(
+                (
+                    f"Setting task with differing episode_len ({cfg.episode_len})"
+                    f" from prior episode_len set in env ({self.cfg.episode_len})."
+                    " This may lead to unexpected behaviour."
+                )
+            )
+
         self.cfg = cfg
         self._setup_components()
         self._task_is_set = True
