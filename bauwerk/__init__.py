@@ -7,6 +7,7 @@ __version__ = "0.2.1"
 import bauwerk.envs.registration
 import bauwerk.utils.logging
 from bauwerk.envs.solar_battery_house import EnvConfig
+from bauwerk.envs.solar_battery_house import SolarBatteryHouseEnv as HouseEnv
 
 try:
     import cvxpy
