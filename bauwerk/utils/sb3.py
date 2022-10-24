@@ -77,12 +77,17 @@ class EvalCallback(BaseCallback):
         This method is called before the first rollout starts.
         """
         if self.first_training_start:
-            self.data.append(eval_model(self.model, self.eval_env, self.eval_len))
+            perf = self._get_perf()
+            self.data.append(perf)
+            self.logger.record("eval_perf", perf)
             self.first_training_start = False
+
+    def _get_perf(self) -> float:
+        return eval_model(self.model, self.eval_env, self.eval_len)
 
     def _on_step(self) -> bool:
         if self.num_timesteps % self.eval_freq == 0:
-            perf = eval_model(self.model, self.eval_env, self.eval_len)
+            perf = self._get_perf()
             self.data.append(perf)
             self.logger.record("eval_perf", perf)
 
