@@ -162,9 +162,9 @@ class EnvPlotter:
                 self.obs_lines_fills = {}
 
                 # adding pv gen and load to one plot
-                self.obs_lines["load"] = self.obs_axs[0].plot(
+                self.obs_lines["info_load"] = self.obs_axs[0].plot(
                     self.line_x,
-                    self.obs_values["load"][-self.visible_steps :],
+                    self.obs_values["info_load"][-self.visible_steps :],
                     color="red",
                 )
 
@@ -174,9 +174,9 @@ class EnvPlotter:
                     color="yellow",
                 )
 
-                self.obs_lines["pv_gen"] = self.obs_axs[0].plot(
+                self.obs_lines["info_pv_gen"] = self.obs_axs[0].plot(
                     self.line_x,
-                    self.obs_values["pv_gen"][-self.visible_steps :],
+                    self.obs_values["info_pv_gen"][-self.visible_steps :],
                     color="lightskyblue",
                 )
                 self.obs_axs[0].hlines(
@@ -200,17 +200,19 @@ class EnvPlotter:
                 self.obs_axs[0].set_ylabel("kW")
 
                 # battery content plot
-                self.obs_lines["battery_cont"] = self.obs_axs[1].plot(
+                self.obs_lines["info_battery_cont"] = self.obs_axs[1].plot(
                     self.line_x,
-                    self.obs_values["battery_cont"][-self.visible_steps :],
+                    self.obs_values["info_battery_cont"][-self.visible_steps :],
                     color="white",
                 )
                 self.obs_axs[1].set_title("Battery content")
                 self.obs_axs[1].set_ylim(-0.5, self.env.cfg.battery_size + 0.5)
-                self.obs_lines_fills["battery_cont"] = self.obs_axs[1].fill_between(
+                self.obs_lines_fills["info_battery_cont"] = self.obs_axs[
+                    1
+                ].fill_between(
                     self.line_x,
                     np.array(
-                        self.obs_values["battery_cont"][-self.visible_steps :]
+                        self.obs_values["info_battery_cont"][-self.visible_steps :]
                     ).flatten(),
                     color="white",
                     alpha=0.5,
@@ -252,8 +254,16 @@ class EnvPlotter:
                     self.line_x,
                     self.obs_values[self.reward_label][-self.visible_steps :],
                     color="lightgreen",
+                    linestyle=(0, (1, 1)),
                 )
-                self.obs_axs[-1].set_title(self.reward_label)
+                self.obs_lines["info_cost"] = self.obs_axs[-1].plot(
+                    self.line_x,
+                    self.obs_values["info_cost"][-self.visible_steps :],
+                    color="lightgreen",
+                )
+                self.obs_axs[-1].set_title(
+                    self.reward_label + " (dotted: includes penalty)"
+                )
                 self.obs_axs[-1].set_ylabel(self.score_currency)
                 self.obs_axs[-1].set_xlabel("Time (h)")
 
@@ -349,22 +359,22 @@ class EnvPlotter:
 
         # updating figure
         solar_strength = get_alpha_value(
-            self.obs_values["pv_gen"][-1], self.env.solar, 0.2, 0.9
+            self.obs_values["info_pv_gen"][-1], self.env.solar, 0.2, 0.9
         )
         solar_ray_strength = get_alpha_value(
-            self.obs_values["pv_gen"][-1], self.env.solar, 0.0, 0.5
+            self.obs_values["info_pv_gen"][-1], self.env.solar, 0.0, 0.5
         )
         self.indicator_solar.set_alpha(1 - solar_strength)
         self.indicator_solar_ray.set_alpha(solar_ray_strength)
 
         load_strength = get_alpha_value(
-            self.obs_values["load"][-1], self.env.load, 0.4, 1
+            self.obs_values["info_load"][-1], self.env.load, 0.4, 1
         )
 
         self.indicator_load.set_alpha(1 - load_strength)
 
         battery_cont = float(
-            self.obs_values["battery_cont"][-1] / self.env.battery.size
+            self.obs_values["info_battery_cont"][-1] / self.env.battery.size
         )
 
         ba_height = 80 * battery_cont
@@ -420,11 +430,11 @@ class EnvPlotter:
                     )
 
             # update battery content fill below curve
-            self.obs_lines_fills["battery_cont"].remove()
-            self.obs_lines_fills["battery_cont"] = self.obs_axs[1].fill_between(
+            self.obs_lines_fills["info_battery_cont"].remove()
+            self.obs_lines_fills["info_battery_cont"] = self.obs_axs[1].fill_between(
                 self.line_x,
                 np.array(
-                    self.obs_values["battery_cont"][-self.visible_steps :]
+                    self.obs_values["info_battery_cont"][-self.visible_steps :]
                 ).flatten(),
                 color="white",
                 alpha=0.5,
@@ -478,6 +488,10 @@ class EnvPlotter:
                 "charging_power": self.env.get_action_from_power(
                     info["charging_power"]
                 ),
+                "info_load": info["load"],
+                "info_pv_gen": info["pv_gen"],
+                "info_battery_cont": info["battery_cont"],
+                "info_cost": -info["cost"],
             }
         )
         self.reward += reward
@@ -491,6 +505,10 @@ class EnvPlotter:
             "optimal_action": np.array([0], dtype=float),
             "net_load": np.array([0], dtype=float),
             "charging_power": np.array([0], dtype=float),
+            "info_pv_gen": np.array([0], dtype=float),
+            "info_load": np.array([0], dtype=float),
+            "info_battery_cont": np.array([0], dtype=float),
+            "info_cost": np.array([0], dtype=float),
         }
         self.obs_values = {
             key: [np.array([0], dtype=float)] * (self.visible_steps + 1)
