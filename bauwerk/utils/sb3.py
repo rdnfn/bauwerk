@@ -6,6 +6,8 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.logger import Image
 import gym
 import bauwerk.eval
+import bauwerk
+import bauwerk.utils.plotting
 import matplotlib.pyplot as plt
 import matplotlib.figure
 import numpy as np
@@ -300,5 +302,74 @@ class DistPerfPlotCallback(BaseCallback):
         self.logger.record(
             "perf_cross_distribution",
             Image(image, "HWC"),
+            exclude=("stdout", "log", "json", "csv"),
+        )
+
+
+class TrajectoryPlotCallback(BaseCallback):
+    """Save plot of trajectory on eval env."""
+
+    def __init__(
+        self,
+        eval_env: gym.Env,
+        eval_freq: int = 24 * 7,
+        visible_h: float = 24.0,
+        verbose: int = 0,
+    ):
+        """Eval callback that repeatedly evaluates model during training.
+
+        Args:
+            eval_env (gym.Env): environment to evaluate on.
+            eval_len (int): how long to evaluate in eval env.
+            eval_freq (int, optional): How often to evaluate in training env steps.
+                Defaults to 24*7.
+            verbose (int, optional): How verbose the callback should be.
+                Defaults to 0.
+        """
+        super().__init__(verbose)
+        self.eval_freq = eval_freq
+        self.eval_env = eval_env
+        self.first_training_start = True
+        self.visible_h = visible_h
+
+        enable_wandb_plot_logging()
+        logger.warning(
+            (
+                "Changed matplotlib global settings to be able to log plots to"
+                " wandb. This may prevent plots from showing inside jupyter notebooks."
+            )
+        )
+
+    def _on_training_start(self) -> None:
+        """
+        This method is called before the first rollout starts.
+        """
+        if self.first_training_start:
+            self._log_image()
+
+    def _on_step(self) -> bool:
+        if self.num_timesteps % self.eval_freq == 0:
+            self._log_image()
+        return True
+
+    def _log_image(self) -> None:
+        initial_obs = self.eval_env.reset()
+        plotter = bauwerk.utils.plotting.EnvPlotter(
+            initial_obs, self.eval_env, visible_h=self.visible_h
+        )
+        for _ in range(int(self.visible_h / self.eval_env.cfg.time_step_len)):
+            action, _ = self.model.predict(initial_obs)
+            step_return = self.eval_env.step(action)
+            plotter.add_step_data(action=action, step_return=step_return)
+
+        plotter.update_figure()
+
+        img_data = np.frombuffer(plotter.fig.canvas.tostring_rgb(), dtype=np.uint8)
+        img_data = img_data.reshape(plotter.fig.canvas.get_width_height()[::-1] + (3,))
+        plt.close(plotter.fig)
+
+        self.logger.record(
+            "example_trajectory",
+            Image(img_data, "HWC"),
             exclude=("stdout", "log", "json", "csv"),
         )
