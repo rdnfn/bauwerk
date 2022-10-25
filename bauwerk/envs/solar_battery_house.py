@@ -332,6 +332,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         info["charging_power"] = charging_power
         info["cost"] = cost
         info["battery_cont"] = battery_cont
+        info["time_step"] = int(self.time_step)
 
         info = {**info, **self.grid.get_info()}
 
