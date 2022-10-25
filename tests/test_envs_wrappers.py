@@ -63,7 +63,7 @@ def test_infeasible_control_wrapper():
     assert env.step(zero_action)[2] == test_env.step(zero_action)[2]
 
     # check that impossible action leads to differing reward
-    assert env.step(impossible_action)[2] < test_env.step(impossible_action)[2]
+    assert env.step(impossible_action)[1] < test_env.step(impossible_action)[1] - 0.5
 
 
 def test_obs_normalisation_wrapper():

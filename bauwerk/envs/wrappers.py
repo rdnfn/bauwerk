@@ -156,7 +156,7 @@ class InfeasControlPenalty(gym.Wrapper):
     def step(self, action: object) -> Tuple[object, float, bool, Dict[str, Any]]:
         step_return = list(super().step(action))
         info = step_return[-1]
-        reward = step_return[2]
-        reward -= info["power_diff"]
-        step_return[2] = reward
+        reward = step_return[1]
+        reward -= info["power_diff"] * self.penalty_factor
+        step_return[1] = reward
         return tuple(step_return)
