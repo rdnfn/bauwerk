@@ -115,16 +115,17 @@ def run(cfg: DictConfig):
 
         if cfg.normalize_obs:
             env = bauwerk.envs.wrappers.NormalizeObs(env)
+
         return env
 
-    train_env = apply_train_eval_wrappers(build_dist.make_env())
+    train_env = apply_train_eval_wrappers(build_dist.make_env(), train=True)
 
-    def get_eval_env(task=None):
+    def get_eval_env(task=None, same_as_train=False):
         """Create new eval environment"""
         env = build_dist.make_env()
         if task is not None:
             env.set_task(task)
-        env = apply_train_eval_wrappers(env)
+        env = apply_train_eval_wrappers(env, train=same_as_train)
         return env
 
     model_cls = getattr(sb3, cfg.sb3_alg)
@@ -179,7 +180,7 @@ def run(cfg: DictConfig):
         if cfg.save_trajectory_figures:
             callbacks.append(
                 bauwerk.utils.sb3.bauwerk.utils.sb3.TrajectoryPlotCallback(
-                    eval_env=get_eval_env(task),
+                    eval_env=get_eval_env(task, same_as_train=True),
                     eval_freq=cfg.traj_fig_freq,
                     visible_h=cfg.traj_visible_h,
                 )
