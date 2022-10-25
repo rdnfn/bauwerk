@@ -55,6 +55,7 @@ class ExpConfig:
     normalize_obs: bool = True
     # whether to add infeasible control penalty
     infeasible_control_penalty: bool = False
+    penalty_factor: float = 1.0
 
     # evaluation
     eval_freq: int = 24 * 7  # evaluate model performance at this frequency
@@ -111,7 +112,9 @@ def run(cfg: DictConfig):
         Those wrappers that affect reward will only be applied to train env."""
         if train is True:
             if cfg.infeasible_control_penalty:
-                env = bauwerk.envs.wrappers.InfeasControlPenalty(env)
+                env = bauwerk.envs.wrappers.InfeasControlPenalty(
+                    env, penalty_factor=cfg.penalty_factor
+                )
 
         if cfg.normalize_obs:
             env = bauwerk.envs.wrappers.NormalizeObs(env)
