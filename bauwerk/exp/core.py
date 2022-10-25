@@ -56,7 +56,11 @@ class ExpConfig:
 
     # evaluation
     eval_freq: int = 24 * 7  # evaluate model performance at this frequency
+    save_dist_figures: bool = True
     dist_fig_freq: int = 24 * 7 * 4  # frequency of saving distribution evaluation plots
+    save_trajectory_figures: bool = True
+    traj_fig_freq: int = 24 * 7 * 4
+    traj_visible_h: float = 24 * 7
 
     # logging & experiment tracking
     log_level: str = "INFO"
@@ -100,6 +104,7 @@ def run(cfg: DictConfig):
     train_env = build_dist.make_env()
     eval_env = build_dist.make_env()
     eval_env_dist = build_dist.make_env()
+    eval_env_traj = build_dist.make_env()
 
     # applying wrappers
     # (those that affect reward will only be applied to train env)
@@ -147,13 +152,22 @@ def run(cfg: DictConfig):
                 eval_freq=cfg.eval_freq,
             )
         )
-        callbacks.append(
-            bauwerk.utils.sb3.bauwerk.utils.sb3.DistPerfPlotCallback(
-                eval_env=eval_env_dist,
-                eval_len=cfg.task_len,
-                eval_freq=cfg.dist_fig_freq,
+        if cfg.save_dist_figures:
+            callbacks.append(
+                bauwerk.utils.sb3.bauwerk.utils.sb3.DistPerfPlotCallback(
+                    eval_env=eval_env_dist,
+                    eval_len=cfg.task_len,
+                    eval_freq=cfg.dist_fig_freq,
+                )
             )
-        )
+        if cfg.save_trajectory_figures:
+            callbacks.append(
+                bauwerk.utils.sb3.bauwerk.utils.sb3.TrajectoryPlotCallback(
+                    eval_env=eval_env_traj,
+                    eval_freq=cfg.traj_fig_freq,
+                    visible_h=cfg.traj_visible_h,
+                )
+            )
         callbacks.append(
             wandb.integration.sb3.WandbCallback(
                 verbose=2,
@@ -171,6 +185,7 @@ def run(cfg: DictConfig):
         train_env.set_task(task)
         eval_env.set_task(task)
         eval_env_dist.set_task(task)
+        eval_env_traj.set_task(task)
 
         if cfg.train_procedure == "separate_models" or i < 1:
             model, callbacks = create_model()
