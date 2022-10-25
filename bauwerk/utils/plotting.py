@@ -36,7 +36,7 @@ class EnvPlotter:
         initial_obs: dict,
         env: bauwerk.HouseEnv,
         visible_h=24,
-        fig_height: int = 400,
+        fig_height: int = 600,
         debug_mode: bool = False,
         include_house_figure: bool = False,
         alternative_plotting: bool = True,
@@ -168,6 +168,12 @@ class EnvPlotter:
                     color="red",
                 )
 
+                self.obs_lines["net_load"] = self.obs_axs[0].plot(
+                    self.line_x[:-1],
+                    self.obs_values["net_load"][-self.visible_steps + 1 :],
+                    color="yellow",
+                )
+
                 self.obs_lines["pv_gen"] = self.obs_axs[0].plot(
                     self.line_x,
                     self.obs_values["pv_gen"][-self.visible_steps :],
@@ -182,9 +188,14 @@ class EnvPlotter:
                     color="lightblue",
                 )
 
-                self.obs_axs[0].set_title("PV generation (blue) and load (red)")
+                self.obs_axs[0].set_title(
+                    (
+                        "PV generation (blue), residential load (red)"
+                        ", and net load (yellow)"
+                    )
+                )
                 self.obs_axs[0].set_ylim(
-                    -0.5, max(self.env.solar.max_value, self.env.load.max_value) + 0.5
+                    -2.5, max(self.env.solar.max_value, self.env.load.max_value) + 1.0
                 )
                 self.obs_axs[0].set_ylabel("kW")
 
@@ -214,8 +225,8 @@ class EnvPlotter:
                                 -self.visible_steps + 1 :
                             ],
                             color="white",
-                            linestyle=":",
-                            linewidth=3,
+                            linestyle=(0, (1, 1)),
+                            linewidth=2,
                             alpha=1,
                         )
                     self.obs_lines["action"] = self.obs_axs[2].plot(
@@ -224,9 +235,7 @@ class EnvPlotter:
                         color="white",
                     )
 
-                    self.obs_axs[2].set_title(
-                        "Control action (optimal shown as dotted line)"
-                    )
+                    self.obs_axs[2].set_title("Control action (dotted line: optimal)")
                     if not self.rescale_action:
                         self.obs_axs[2].set_ylim(
                             -0.5 + self.env.action_space.low,
@@ -390,7 +399,7 @@ class EnvPlotter:
                 axs.autoscale_view(True, True, True)
         else:
             for key, value in self.obs_lines.items():
-                if not key in ["action", "optimal_action"]:
+                if not key in ["action", "optimal_action", "net_load"]:
                     value[0].set_data(
                         self.line_x, self.obs_values[key][-self.visible_steps :]
                     )
@@ -447,15 +456,19 @@ class EnvPlotter:
     def add_step_data(self, step_return, action):
         observation = step_return[0]
         reward = step_return[1]
+        info = step_return[-1]
 
         self._add_obs(
             {
                 **observation,
                 self.reward_label: reward,
                 "action": action,
-                "optimal_action": self.optimal_acts[step_return[-1]["time_step"] - 1],
+                "optimal_action": self.optimal_acts[info["time_step"] - 1],
+                "net_load": info["net_load"],
             }
         )
+        self.reward += reward
+        self.current_step += 1
 
     def reset(self, obs):
         obs = {
@@ -463,6 +476,7 @@ class EnvPlotter:
             self.reward_label: np.array([0], dtype=float),
             "action": np.array([0], dtype=float),
             "optimal_action": np.array([0], dtype=float),
+            "net_load": np.array([0], dtype=float),
         }
         self.obs_values = {
             key: [np.array([0], dtype=float)] * (self.visible_steps + 1)
