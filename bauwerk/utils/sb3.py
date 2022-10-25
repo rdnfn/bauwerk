@@ -38,7 +38,7 @@ def eval_model(model: object, env: gym.Env, eval_len: int) -> float:
     model_actions = []
     obs = env.reset()
     for _ in range(eval_len):
-        action, _ = model.predict(obs)
+        action, _ = model.predict(obs, deterministic=True)
         model_actions.append(action)
         obs, _, _, _ = env.step(action)
 
@@ -361,7 +361,7 @@ class TrajectoryPlotCallback(BaseCallback):
         )
         obs = initial_obs
         for _ in range(int(self.visible_h / self.eval_env.cfg.time_step_len)):
-            action, _ = self.model.predict(obs)
+            action, _ = self.model.predict(obs, deterministic=True)
             step_return = self.eval_env.step(action)
             obs = step_return[0]
             plotter.add_step_data(action=action, step_return=step_return)
