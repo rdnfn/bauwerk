@@ -213,7 +213,7 @@ class EnvPlotter:
                             self.obs_values["optimal_action"][
                                 -self.visible_steps + 1 :
                             ],
-                            color="lightblue",
+                            color="white",
                             linestyle=":",
                             linewidth=3,
                             alpha=1,
@@ -224,7 +224,9 @@ class EnvPlotter:
                         color="white",
                     )
 
-                    self.obs_axs[2].set_title("Control action")
+                    self.obs_axs[2].set_title(
+                        "Control action (optimal shown as dotted line)"
+                    )
                     if not self.rescale_action:
                         self.obs_axs[2].set_ylim(
                             -0.5 + self.env.action_space.low,
