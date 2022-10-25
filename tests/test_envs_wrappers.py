@@ -1,6 +1,7 @@
 """Test for env wrappers."""
 
 import bauwerk
+import bauwerk.benchmarks
 import bauwerk.envs.wrappers
 import bauwerk.utils.testing
 import numpy as np
@@ -63,3 +64,18 @@ def test_infeasible_control_wrapper():
 
     # check that impossible action leads to differing reward
     assert env.step(impossible_action)[2] < test_env.step(impossible_action)[2]
+
+
+def test_obs_normalisation_wrapper():
+    env = gym.make("bauwerk/House-v0")
+    env = bauwerk.envs.wrappers.NormalizeObs(env)
+
+    assert env.observation_space["pv_gen"].high == 1.0
+    assert env.observation_space["pv_gen"].low == -1.0
+    assert env.unwrapped.observation_space["pv_gen"].high != 1.0
+    assert env.unwrapped.observation_space["pv_gen"].low != -1.0
+
+    obs = env.reset()
+    obs2 = env.step(env.action_space.sample())[0]
+    assert env.observation_space.contains(obs)
+    assert env.observation_space.contains(obs2)

@@ -4,6 +4,7 @@ from typing import Any, Dict, Tuple
 import gym
 import numpy as np
 import copy
+import bauwerk
 
 
 class TaskParamObs(gym.ObservationWrapper):
@@ -60,6 +61,39 @@ class TaskParamObs(gym.ObservationWrapper):
             [getattr(self.env.cfg, key) for key in self.task_param_names]
         )
         return super().reset(*args, **kwargs)
+
+
+class NormalizeObs(gym.ObservationWrapper):
+    """Normalise Bauwerk environment's observations."""
+
+    def __init__(self, env: bauwerk.HouseEnv):
+        """Normalise Bauwerk environment's observations.
+
+        Args:
+            env (bauwerk.HouseEnv): environment to wrap.
+        """
+        super().__init__(env)
+        self.observation_space = gym.spaces.Dict(
+            {
+                key: (
+                    gym.spaces.Box(
+                        low=-1, high=1, shape=(1,), dtype=self.unwrapped.cfg.dtype
+                    )
+                    if space.shape == (1,)
+                    else space
+                )
+                for key, space in self.unwrapped.observation_space.items()
+            }
+        )
+
+    def observation(self, obs: dict) -> dict:
+        new_obs = {}
+        for key, value in obs.items():
+            old_act_space = self.unwrapped.observation_space[key]
+            low = old_act_space.low
+            high = old_act_space.high
+            new_obs[key] = (value - low) / (high - low)
+        return new_obs
 
 
 class ClipReward(gym.RewardWrapper):
