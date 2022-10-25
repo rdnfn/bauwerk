@@ -207,20 +207,23 @@ class EnvPlotter:
                 self.obs_axs[1].set_ylabel("kWh")
 
                 if self.plot_actions:
-                    self.obs_lines["action"] = self.obs_axs[2].plot(
-                        self.line_x[:-1],
-                        self.obs_values["action"][-self.visible_steps + 1 :],
-                        color="white",
-                    )
                     if self.plot_optimal_acts:
                         self.obs_lines["optimal_action"] = self.obs_axs[2].plot(
                             self.line_x[:-1],
                             self.obs_values["optimal_action"][
                                 -self.visible_steps + 1 :
                             ],
-                            color="white",
-                            linestyle="--",
+                            color="lightblue",
+                            linestyle=":",
+                            linewidth=3,
+                            alpha=1,
                         )
+                    self.obs_lines["action"] = self.obs_axs[2].plot(
+                        self.line_x[:-1],
+                        self.obs_values["action"][-self.visible_steps + 1 :],
+                        color="white",
+                    )
+
                     self.obs_axs[2].set_title("Control action")
                     if not self.rescale_action:
                         self.obs_axs[2].set_ylim(
