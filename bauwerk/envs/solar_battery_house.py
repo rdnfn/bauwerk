@@ -346,6 +346,8 @@ class SolarBatteryHouseCoreEnv(gym.Env):
 
         info["net_load"] = net_load
         info["charging_power"] = charging_power
+        info["load"] = self.state["load"]
+        info["pv_gen"] = self.state["pv_gen"]
         info["cost"] = cost
         info["battery_cont"] = battery_cont
         info["time_step"] = int(self.time_step)
