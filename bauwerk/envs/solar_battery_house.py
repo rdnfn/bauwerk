@@ -8,6 +8,7 @@ from loguru import logger
 import gym
 import gym.utils.seeding
 import numpy as np
+import copy
 
 import bauwerk.utils.logging
 import bauwerk.utils.gym
@@ -229,6 +230,27 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         }
         return comps_factory
 
+    def get_power_from_action(self, action: object) -> object:
+        if self.cfg.action_space_type == "relative":
+            # Actions are proportion of max/min charging power, hence scale up
+            if action > 0:
+                action *= self.max_charge_power
+            else:
+                action *= -self.min_charge_power
+
+        return action
+
+    def get_action_from_power(self, power: object) -> object:
+        action = power
+        if self.cfg.action_space_type == "relative":
+            # Actions are proportion of max/min charging power, hence scale up
+            if action > 0:
+                action /= self.max_charge_power
+            else:
+                action /= -self.min_charge_power
+
+        return action
+
     def step(self, action: object) -> Tuple[object, float, bool, dict]:
         """Run one timestep of the environment's dynamics.
 
@@ -260,14 +282,8 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         cum_load = self.state["cum_load"]
         cum_pv_gen = self.state["cum_pv_gen"]
 
-        if self.cfg.action_space_type == "relative":
-            # Actions are proportion of max/min charging power, hence scale up
-            if action > 0:
-                action *= self.max_charge_power
-            else:
-                action *= -self.min_charge_power
-
-        attempted_action = action
+        action = self.get_power_from_action(action)
+        attempted_action = copy.copy(action)
 
         if not self.cfg.grid_charging:
             # If charging from grid not enabled, limit charging to solar generation

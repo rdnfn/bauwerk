@@ -218,6 +218,11 @@ class EnvPlotter:
                 self.obs_axs[1].set_ylabel("kWh")
 
                 if self.plot_actions:
+                    self.obs_lines["charging_power"] = self.obs_axs[2].plot(
+                        self.line_x[:-1],
+                        self.obs_values["charging_power"][-self.visible_steps + 1 :],
+                        color="red",
+                    )
                     if self.plot_optimal_acts:
                         self.obs_lines["optimal_action"] = self.obs_axs[2].plot(
                             self.line_x[:-1],
@@ -399,7 +404,12 @@ class EnvPlotter:
                 axs.autoscale_view(True, True, True)
         else:
             for key, value in self.obs_lines.items():
-                if not key in ["action", "optimal_action", "net_load"]:
+                if not key in [
+                    "action",
+                    "optimal_action",
+                    "net_load",
+                    "charging_power",
+                ]:
                     value[0].set_data(
                         self.line_x, self.obs_values[key][-self.visible_steps :]
                     )
@@ -465,6 +475,9 @@ class EnvPlotter:
                 "action": action,
                 "optimal_action": self.optimal_acts[info["time_step"] - 1],
                 "net_load": info["net_load"],
+                "charging_power": self.env.get_action_from_power(
+                    info["charging_power"]
+                ),
             }
         )
         self.reward += reward
@@ -477,6 +490,7 @@ class EnvPlotter:
             "action": np.array([0], dtype=float),
             "optimal_action": np.array([0], dtype=float),
             "net_load": np.array([0], dtype=float),
+            "charging_power": np.array([0], dtype=float),
         }
         self.obs_values = {
             key: [np.array([0], dtype=float)] * (self.visible_steps + 1)
