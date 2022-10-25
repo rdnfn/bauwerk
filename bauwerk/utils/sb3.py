@@ -289,6 +289,7 @@ class DistPerfPlotCallback(BaseCallback):
         """
         if self.first_training_start:
             self._log_image()
+            self.first_training_start = False
 
     def _on_step(self) -> bool:
         if self.num_timesteps % self.eval_freq == 0:
@@ -346,6 +347,7 @@ class TrajectoryPlotCallback(BaseCallback):
         """
         if self.first_training_start:
             self._log_image()
+            self.first_training_start = False
 
     def _on_step(self) -> bool:
         if self.num_timesteps % self.eval_freq == 0:
@@ -357,9 +359,11 @@ class TrajectoryPlotCallback(BaseCallback):
         plotter = bauwerk.utils.plotting.EnvPlotter(
             initial_obs, self.eval_env, visible_h=self.visible_h
         )
+        obs = initial_obs
         for _ in range(int(self.visible_h / self.eval_env.cfg.time_step_len)):
-            action, _ = self.model.predict(initial_obs)
+            action, _ = self.model.predict(obs)
             step_return = self.eval_env.step(action)
+            obs = step_return[0]
             plotter.add_step_data(action=action, step_return=step_return)
 
         plotter.update_figure()
