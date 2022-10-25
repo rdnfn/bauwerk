@@ -115,13 +115,13 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         obs_spaces = {
             "load": gym.spaces.Box(
                 low=0,
-                high=np.finfo(self.cfg.dtype).max,
+                high=max(self.load.data),
                 shape=(1,),
                 dtype=self.cfg.dtype,
             ),
             "pv_gen": gym.spaces.Box(
                 low=0,
-                high=np.finfo(self.cfg.dtype).max,
+                high=max(self.solar.data),
                 shape=(1,),
                 dtype=self.cfg.dtype,
             ),
