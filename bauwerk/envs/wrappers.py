@@ -158,5 +158,5 @@ class InfeasControlPenalty(gym.Wrapper):
         info = step_return[-1]
         reward = step_return[1]
         reward -= info["power_diff"] * self.penalty_factor
-        step_return[1] = reward
+        step_return[1] = float(reward)
         return tuple(step_return)
