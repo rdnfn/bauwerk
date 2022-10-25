@@ -35,9 +35,6 @@ class ExpConfig:
     train_steps_per_task: int = 8760  # 24 * 365
     task_len: int = 24 * 30  # total length of task
 
-    # whether to add infeasible control penalty
-    infeasible_control_penalty: bool = False
-
     env_mode: str = "single_env"  # or "benchmark"
     env_cfg: bauwerk.EnvConfig = bauwerk.EnvConfig()
 
@@ -53,6 +50,11 @@ class ExpConfig:
     # depending on algorithm
     # see https://github.com/DLR-RM/stable-baselines3/issues/263
     sb3_alg_kwargs: Sb3Config = Sb3Config()
+
+    # wrappers
+    normalize_obs: bool = True
+    # whether to add infeasible control penalty
+    infeasible_control_penalty: bool = False
 
     # evaluation
     eval_freq: int = 24 * 7  # evaluate model performance at this frequency
@@ -101,15 +103,29 @@ def run(cfg: DictConfig):
         bauwerk.benchmarks, cfg.benchmark
     )(seed=1, env_kwargs=cfg.benchmark_env_kwargs, episode_len=cfg.task_len)
 
-    train_env = build_dist.make_env()
-    eval_env = build_dist.make_env()
-    eval_env_dist = build_dist.make_env()
-    eval_env_traj = build_dist.make_env()
+    # environment creation pipelines (wrappers etc.)
 
-    # applying wrappers
-    # (those that affect reward will only be applied to train env)
-    if cfg.infeasible_control_penalty:
-        train_env = bauwerk.envs.wrappers.InfeasControlPenalty(train_env)
+    def apply_train_eval_wrappers(env: bauwerk.HouseEnv, train: bool = False):
+        """applying wrappers
+
+        Those wrappers that affect reward will only be applied to train env."""
+        if train is True:
+            if cfg.infeasible_control_penalty:
+                env = bauwerk.envs.wrappers.InfeasControlPenalty(env)
+
+        if cfg.normalize_obs:
+            env = bauwerk.envs.wrappers.NormalizeObs(env)
+        return env
+
+    train_env = apply_train_eval_wrappers(build_dist.make_env())
+
+    def get_eval_env(task=None):
+        """Create new eval environment"""
+        env = build_dist.make_env()
+        if task is not None:
+            env.set_task(task)
+        env = apply_train_eval_wrappers(env)
+        return env
 
     model_cls = getattr(sb3, cfg.sb3_alg)
 
@@ -135,7 +151,7 @@ def run(cfg: DictConfig):
         monitor_gym=True,
     )
 
-    def create_model():
+    def create_model(task):
         """Create model and set up logging."""
 
         model = model_cls(
@@ -147,7 +163,7 @@ def run(cfg: DictConfig):
         callbacks = []
         callbacks.append(
             bauwerk.utils.sb3.EvalCallback(
-                eval_env=eval_env,
+                eval_env=get_eval_env(task),
                 eval_len=cfg.task_len,
                 eval_freq=cfg.eval_freq,
             )
@@ -155,7 +171,7 @@ def run(cfg: DictConfig):
         if cfg.save_dist_figures:
             callbacks.append(
                 bauwerk.utils.sb3.bauwerk.utils.sb3.DistPerfPlotCallback(
-                    eval_env=eval_env_dist,
+                    eval_env=get_eval_env(task),
                     eval_len=cfg.task_len,
                     eval_freq=cfg.dist_fig_freq,
                 )
@@ -163,7 +179,7 @@ def run(cfg: DictConfig):
         if cfg.save_trajectory_figures:
             callbacks.append(
                 bauwerk.utils.sb3.bauwerk.utils.sb3.TrajectoryPlotCallback(
-                    eval_env=eval_env_traj,
+                    eval_env=get_eval_env(task),
                     eval_freq=cfg.traj_fig_freq,
                     visible_h=cfg.traj_visible_h,
                 )
@@ -178,17 +194,14 @@ def run(cfg: DictConfig):
     logger.info("Starting training loop.")
 
     # training per task
-    trained_models = []
-    opt_perfs = []
     for i, task in enumerate(tasks):
         logger.info(f"Training on task {i + 1} out of {len(tasks)} tasks.")
         train_env.set_task(task)
-        eval_env.set_task(task)
-        eval_env_dist.set_task(task)
-        eval_env_traj.set_task(task)
 
         if cfg.train_procedure == "separate_models" or i < 1:
-            model, callbacks = create_model()
+            model, callbacks = create_model(
+                task
+            )  # task is only used for model eval callbacks
 
         model.learn(
             total_timesteps=cfg.train_steps_per_task,
@@ -201,14 +214,6 @@ def run(cfg: DictConfig):
             # tb_log_name=f"run-{cfg.sb3_alg}-{wandb_run.id}",
             # reset_num_timesteps=False,
             progress_bar=True,
-        )
-
-        trained_models.append(model)
-        opt_perfs.append(
-            bauwerk.eval.get_optimal_perf(
-                eval_env,
-                eval_len=cfg.task_len,
-            )
         )
 
     wandb_run.finish()
