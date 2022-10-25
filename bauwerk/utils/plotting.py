@@ -10,7 +10,9 @@ import bauwerk
 def plot_optimal_actions(env: bauwerk.HouseEnv, max_num_acts=None):
 
     initial_obs = env.reset()
-    plotter = EnvPlotter(initial_obs, env)
+    plotter = EnvPlotter(
+        initial_obs, env, visible_h=max_num_acts / env.cfg.time_step_len
+    )
     opt_acts, _ = bauwerk.solve(env)
 
     if max_num_acts is None:
@@ -34,19 +36,24 @@ class EnvPlotter:
         initial_obs: dict,
         env: bauwerk.HouseEnv,
         visible_h=24,
-        fig_height: int = 350,
+        fig_height: int = 400,
         debug_mode: bool = False,
         include_house_figure: bool = False,
         alternative_plotting: bool = True,
         include_clock_in_house_figure: bool = True,
         score_currency: str = "€",
         background: Optional[str] = "white",
+        plot_grid_threshold: bool = True,
+        plot_actions: bool = True,
+        rescale_action: bool = True,
+        plot_optimal_acts: bool = True,
     ) -> None:
         """Plotting class for Bauwerk environments."""
 
-        self.reward_label = "reward (payment)"
+        self.reward_label = "Reward (payment)"
         self.score_currency = score_currency
-        self.visible_steps = int(visible_h / env.cfg.time_step_len)
+        self.visible_h = visible_h
+        self.visible_steps = int(visible_h / env.cfg.time_step_len) + 1
         self.fig_height = fig_height
         self.debug_mode = debug_mode
         self.include_house_figure = include_house_figure
@@ -54,6 +61,13 @@ class EnvPlotter:
         self.include_clock = include_clock_in_house_figure
         self.env = env
         self.background = background
+        self.plot_grid_threshold = plot_grid_threshold
+        self.plot_actions = plot_actions
+        self.rescale_action = rescale_action
+        self.plot_optimal_acts = plot_optimal_acts
+
+        if self.plot_optimal_acts:
+            self.optimal_acts = bauwerk.solve(env)[0]
 
         self.reset(initial_obs)
         self._set_up_figure()
@@ -122,7 +136,7 @@ class EnvPlotter:
             # (or main figure if not house figure)
             # This create observation data plots
 
-            self.line_x = np.linspace(0, self.visible_steps, self.visible_steps)
+            self.line_x = np.linspace(0, self.visible_h, self.visible_steps)
 
             if not self.alternative_plotting:
                 self.obs_lines = []
@@ -139,7 +153,11 @@ class EnvPlotter:
             else:
                 # plt.style.use("dark_background")
                 # subfigs[1].set_facecolor("black")
-                self.obs_axs = right_handside.subplots(3)
+                num_subplots = 3
+                if self.plot_actions:
+                    num_subplots += 1
+
+                self.obs_axs = right_handside.subplots(num_subplots, sharex=True)
                 self.obs_lines = {}
                 self.obs_lines_fills = {}
 
@@ -155,11 +173,20 @@ class EnvPlotter:
                     self.obs_values["pv_gen"][-self.visible_steps :],
                     color="lightskyblue",
                 )
+                self.obs_axs[0].hlines(
+                    self.env.cfg.grid_peak_threshold,
+                    0,
+                    len(self.line_x),
+                    label="No charging",
+                    linestyle="--",
+                    color="lightblue",
+                )
 
                 self.obs_axs[0].set_title("PV generation (blue) and load (red)")
                 self.obs_axs[0].set_ylim(
                     -0.5, max(self.env.solar.max_value, self.env.load.max_value) + 0.5
                 )
+                self.obs_axs[0].set_ylabel("kW")
 
                 # battery content plot
                 self.obs_lines["battery_cont"] = self.obs_axs[1].plot(
@@ -177,12 +204,39 @@ class EnvPlotter:
                     color="white",
                     alpha=0.5,
                 )
+                self.obs_axs[1].set_ylabel("kWh")
 
-                self.obs_lines[self.reward_label] = self.obs_axs[2].plot(
+                if self.plot_actions:
+                    self.obs_lines["action"] = self.obs_axs[2].plot(
+                        self.line_x[:-1],
+                        self.obs_values["action"][-self.visible_steps + 1 :],
+                        color="white",
+                    )
+                    if self.plot_optimal_acts:
+                        self.obs_lines["optimal_action"] = self.obs_axs[2].plot(
+                            self.line_x[:-1],
+                            self.obs_values["optimal_action"][
+                                -self.visible_steps + 1 :
+                            ],
+                            color="white",
+                            linestyle="--",
+                        )
+                    self.obs_axs[2].set_title("Control action")
+                    if not self.rescale_action:
+                        self.obs_axs[2].set_ylim(
+                            -0.5 + self.env.action_space.low,
+                            self.env.action_space.high + 0.5,
+                        )
+                    self.obs_axs[2].set_ylabel("Prop. of size")
+
+                self.obs_lines[self.reward_label] = self.obs_axs[-1].plot(
                     self.line_x,
                     self.obs_values[self.reward_label][-self.visible_steps :],
+                    color="lightgreen",
                 )
-                self.obs_axs[2].set_title(self.reward_label)
+                self.obs_axs[-1].set_title(self.reward_label)
+                self.obs_axs[-1].set_ylabel(self.score_currency)
+                self.obs_axs[-1].set_xlabel("Time (h)")
 
                 for ax in self.obs_axs:
                     ax.set_facecolor("black")
@@ -331,9 +385,15 @@ class EnvPlotter:
                 axs.autoscale_view(True, True, True)
         else:
             for key, value in self.obs_lines.items():
-                value[0].set_data(
-                    self.line_x, self.obs_values[key][-self.visible_steps :]
-                )
+                if not key in ["action", "optimal_action"]:
+                    value[0].set_data(
+                        self.line_x, self.obs_values[key][-self.visible_steps :]
+                    )
+                else:
+                    value[0].set_data(
+                        self.line_x[:-1],
+                        self.obs_values[key][-self.visible_steps + 1 :],
+                    )
 
             # update battery content fill below curve
             self.obs_lines_fills["battery_cont"].remove()
@@ -347,9 +407,15 @@ class EnvPlotter:
             )
 
             # rescale reward
-            axs = self.obs_axs[2]
+            axs = self.obs_axs[-1]
             axs.relim()
             axs.autoscale_view(True, True, True)
+
+            if self.rescale_action:
+                # rescale action
+                axs = self.obs_axs[2]
+                axs.relim()
+                axs.autoscale_view(True, False, True)
 
         if hasattr(self, "score_text"):
             self.score_text.set_text(f"Score: {self.reward:.2f}{self.score_currency}")
@@ -377,12 +443,24 @@ class EnvPlotter:
         observation = step_return[0]
         reward = step_return[1]
 
-        self._add_obs({**observation, self.reward_label: reward, "action": action})
+        self._add_obs(
+            {
+                **observation,
+                self.reward_label: reward,
+                "action": action,
+                "optimal_action": self.optimal_acts[step_return[-1]["time_step"] - 1],
+            }
+        )
 
     def reset(self, obs):
-        obs = {**obs, self.reward_label: np.array([0], dtype=float)}
+        obs = {
+            **obs,
+            self.reward_label: np.array([0], dtype=float),
+            "action": np.array([0], dtype=float),
+            "optimal_action": np.array([0], dtype=float),
+        }
         self.obs_values = {
-            key: [np.array([0], dtype=float)] * self.visible_steps
+            key: [np.array([0], dtype=float)] * (self.visible_steps + 1)
             for key in obs.keys()
             if key not in ["time_step", "time_of_day"]
         }
