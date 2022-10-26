@@ -66,28 +66,30 @@ def solve_solar_battery_house(env: SolarBatteryHouseCoreEnv) -> np.array:
 
     # Variables that are being optimised over
 
-    power_direct = cp.Variable(num_timesteps)  # Power flowing directly from PV and grid
+    power_direct = cp.Variable(
+        num_timesteps, name="power_direct"
+    )  # Power flowing directly from PV and grid
     # to meet the load or be sold at time t (kW) (P_dir)
     power_charge = cp.Variable(
-        num_timesteps
+        num_timesteps, name="power_charge"
     )  # Power used to charge the ESD at time t (kW) (P_c)
     power_discharge = cp.Variable(
-        num_timesteps
+        num_timesteps, name="power_discharge"
     )  # Power from the ESD at time t (kW) (P_d)
     power_grid = cp.Variable(
-        num_timesteps
+        num_timesteps, name="power_grid"
     )  # Power drawn from the grid at time t (kW) (P_g)
     power_sell = cp.Variable(
-        num_timesteps
+        num_timesteps, name="power_sell"
     )  # Power sold to the grid at timet(kW) (P_sell)
     power_over_thres = cp.Variable(
-        num_timesteps
+        num_timesteps, name="power_over_thresh"
     )  #  Purchased power that exceeds Γ at time t (not in notation table) (P_over)
 
     # Implicitly defined variable (not in paper in "given" or "optimized over"
     # set of variables)
     energy_battery = cp.Variable(
-        num_timesteps + 1
+        num_timesteps + 1, name="energy_battery"
     )  # the  energy  content  of  the  ESD  at  the  beginning  of  interval t (E_ESD)
 
     ###########################
@@ -114,7 +116,7 @@ def solve_solar_battery_house(env: SolarBatteryHouseCoreEnv) -> np.array:
         grid_constraints += [power_sell == 0]  # stopping selling to the grid
 
     battery_constraints = [
-        energy_battery[0] == 0,
+        energy_battery[0] == env.cfg.battery_start_charge * env.cfg.battery_size,
         energy_battery[1:]
         == energy_battery[:-1]
         + eta_c * power_charge * T_u
@@ -150,5 +152,6 @@ def solve_solar_battery_house(env: SolarBatteryHouseCoreEnv) -> np.array:
     optimal_actions = (
         power_charge.value / max_charge_power + power_discharge.value / min_charge_power
     )
+    optimal_actions = optimal_actions.reshape((-1, 1)).astype("float32")
 
     return optimal_actions, cvxpy_problem

@@ -107,3 +107,8 @@ ENV/
 
 # Notebooks
 notebooks/tests/
+
+# Experiment outputs
+outputs
+wandb
+multirun

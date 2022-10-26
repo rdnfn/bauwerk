@@ -23,6 +23,7 @@ class DataComponent(EnvComponent):
     def __init__(
         self,
         data_path: str = None,
+        data_time_step_len: float = 1,
         time_step_len: float = 1,
         num_steps: int = 24,
         data_start_index: int = None,
@@ -46,6 +47,20 @@ class DataComponent(EnvComponent):
 
         if scaling_factor != 1.0:
             self.data *= scaling_factor
+
+        # Interpolate data
+        if time_step_len != data_time_step_len:
+            # new x values in h
+            x = np.arange(0, len(self.data) * data_time_step_len, time_step_len)
+            # old x values
+            xp = np.arange(
+                0,
+                len(self.data) * data_time_step_len,
+                data_time_step_len,
+            )
+            new_data = np.interp(x=x, xp=xp, fp=self.data)
+            self.data = new_data
+
         self.num_steps = num_steps
         self.time_step_len = time_step_len
         self.fix_start(data_start_index)

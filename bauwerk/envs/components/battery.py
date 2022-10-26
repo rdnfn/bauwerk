@@ -15,7 +15,13 @@ class BatteryModel(EnvComponent):
 class LithiumIonBattery(BatteryModel):
     """Class modelling lithium-ion battery."""
 
-    def __init__(self, size: float, chemistry: str, time_step_len: float):
+    def __init__(
+        self,
+        size: float = 10,
+        chemistry: str = "LTO",
+        time_step_len: float = 1.0,
+        start_charge: float = 0.5,
+    ):
         """Class modelling lithium-ion battery.
 
         This class was originally written and kindly provided by Fiodar Kazhamiaka.
@@ -35,6 +41,7 @@ class LithiumIonBattery(BatteryModel):
         self.size = size
         self.chemistry = chemistry
         self.time_step_len = time_step_len
+        self.start_charge = start_charge
 
         # declare battery model parameters
         self.num_cells = None
@@ -56,10 +63,7 @@ class LithiumIonBattery(BatteryModel):
 
         self.set_parameters()
 
-        # battery energy content
-        self.b = np.array(
-            [self.v1_bar], dtype=np.float32
-        )  # pylint: disable=invalid-name
+        self.reset()
 
     def set_parameters(self):
         """Set battery model parameters according to specified Li-Ion chemistry."""
@@ -109,30 +113,38 @@ class LithiumIonBattery(BatteryModel):
     def calc_max_charging(self, power: float) -> float:
         """Calculate the maximum amount of charging possible.
 
-        Decrease the applied (charging) power by increments of (1/30) until the power is
-        low enough to avoid violating the upper energy limit constraint.
-        Could speed these functions up with a binary search instead of linear search,
-        or a lookup table.
-
         Args:
             power (float): applied charging power (in kW)
 
         Returns:
             float: max amount of power that can be charged.
         """
-        # Implements constraint (4)
-        for c in np.linspace(power, 0, num=30):  # pylint: disable=invalid-name
-            upper_lim = self.u2 * (c / self.nominal_voltage_c) + self.v2_bar
-            b_temp = self.b + c * self.eta_c * self.time_step_len
-            if b_temp <= upper_lim:
-                return c
-        return 0
+        # Implements constraint (4): orginal code
+        # for c in np.linspace(power, 0, num=30):  # pylint: disable=invalid-name
+        #    upper_lim = self.u2 * (c / self.nominal_voltage_c) + self.v2_bar
+        #    b_temp = self.b + c * self.eta_c * self.time_step_len
+        #    if b_temp <= upper_lim:
+        #        return c
+        #
+        # Derivation of explicit expression
+        #
+        # self.b + c * self.eta_c * self.time_step_len =
+        # self.u2 * (c / self.nominal_voltage_c) + self.v2_bar
+        #
+        # c * self.eta_c * self.time_step_len - self.u2 * (c / self.nominal_voltage_c)
+        #  =  + self.v2_bar - self.b
+        #
+        # c * (self.eta_c * self.time_step_len - self.u2 / self.nominal_voltage_c)
+        #  =  + self.v2_bar - self.b
+
+        c = (self.v2_bar - self.b) / (
+            self.eta_c * self.time_step_len - self.u2 / self.nominal_voltage_c
+        )
+        c = max(0, c)
+        return min(c, power)
 
     def calc_max_discharging(self, power: float) -> float:
         """Calculate the maximum amount of discharging possible.
-
-        Decrease the applied (discharging) power by increments of (1/30) until the power
-        is low enough to avoid violating the lower energy limit constraint.
 
         Args:
             power (float): power to be discharged (kW)
@@ -141,12 +153,18 @@ class LithiumIonBattery(BatteryModel):
             float: max power that can be discharged.
         """
         # Implements constraint (4)
-        for d in np.linspace(power, 0, num=30):  # pylint: disable=invalid-name
-            lower_lim = self.u1 * (d / self.nominal_voltage_d) + self.v1_bar
-            b_temp = self.b - d * self.eta_d * self.time_step_len
-            if b_temp >= lower_lim:
-                return d
-        return 0
+        # for d in np.linspace(power, 0, num=30):  # pylint: disable=invalid-name
+        #    lower_lim = self.u1 * (d / self.nominal_voltage_d) + self.v1_bar
+        #    b_temp = self.b - d * self.eta_d * self.time_step_len
+        #    if b_temp >= lower_lim:
+        #        return d
+        # return 0
+
+        d = (self.v1_bar - self.b) / (
+            self.eta_d * self.time_step_len * -1 - self.u1 / self.nominal_voltage_d
+        )
+        d = max(0, d)
+        return min(d, power)
 
     def get_charging_limits(self) -> Tuple[float, float]:
         """Get general maximum and minimum charging constraints."""
@@ -203,7 +221,7 @@ class LithiumIonBattery(BatteryModel):
     def reset(self) -> None:
         """Reset battery energy content."""
         self.b = np.array(
-            [self.v1_bar], dtype=np.float32
+            [self.size * self.start_charge], dtype=np.float32
         )  # pylint: disable=invalid-name
 
     def get_contraints(

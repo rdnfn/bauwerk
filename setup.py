@@ -10,7 +10,12 @@ with open("README.rst", encoding="UTF-8") as readme_file:
 with open("HISTORY.rst", encoding="UTF-8") as history_file:
     history = history_file.read()
 
-requirements = ["gym", "numpy", "loguru", "importlib-resources;python_version<'3.9'"]
+requirements = [
+    "gym",
+    "numpy>=1.20",
+    "loguru",
+    "importlib-resources;python_version<'3.9'",
+]
 
 test_requirements = [
     "pytest>=3",
@@ -19,6 +24,7 @@ test_requirements = [
 extras_require = {
     "cvxpy": ["cvxpy"],
     "widget": ["ipympl"],
+    "exp": ["hydra-core", "stable-baselines3"],
 }
 
 setup(
@@ -47,6 +53,9 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/rdnfn/bauwerk",
-    version="0.2.1",
+    version="0.3.0",
     zip_safe=False,
+    entry_points={
+        "console_scripts": ["bauwerk-exp=bauwerk.exp.core:run"],
+    },
 )

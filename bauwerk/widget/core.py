@@ -31,11 +31,16 @@ class Game(widgets.VBox):
         env: gym.Env = None,
         log_level: str = "error",
         height: int = 500,
-        step_time=0.1,
+        step_time=0.5,
+        time_step_len=1 / 12,
         automatic_stepping=True,
-        visible_steps=24,
-        episode_len=168,
+        visible_h=24,
+        episode_len=12 * 24 * 2,
         debug_mode=False,
+        score_currency="€",
+        score_scale=10.0,
+        include_clock=True,
+        alternative_plotting=True,
     ):
         """Bauwerk building control game widget.
 
@@ -55,10 +60,21 @@ class Game(widgets.VBox):
         self.automatic_stepping = automatic_stepping
         self.step_time = step_time
         self.fig_height = height - 150
-        self.visible_steps = visible_steps
+        self.visible_steps = int(visible_h / time_step_len)
         self.reward_label = "reward (payment)"
-        self.cfg = bauwerk.envs.solar_battery_house.EnvConfig(episode_len=episode_len)
+        self.cfg = bauwerk.envs.solar_battery_house.EnvConfig(
+            episode_len=episode_len,
+            time_step_len=time_step_len,
+        )
         self.debug_mode = debug_mode
+        self.score_currency = score_currency
+        self.include_clock = include_clock
+        self.alternative_plotting = alternative_plotting
+
+        # Apply scaling factor
+        self.cfg.grid_peak_price *= score_scale
+        self.cfg.grid_base_price *= score_scale
+        self.cfg.grid_sell_price *= score_scale
 
         # Set up menu screens
         self.game_logo_img = bauwerk.utils.data.access_package_data(
@@ -83,7 +99,7 @@ class Game(widgets.VBox):
         action_low = self.env.action_space.low[0]
 
         self.control = widgets.FloatSlider(
-            description="Battery",
+            description="Charging",
             orientation="vertical",
             min=action_low,
             max=action_high,
@@ -219,6 +235,9 @@ class Game(widgets.VBox):
             px = 1 / plt.rcParams["figure.dpi"]
             fig_height = self.fig_height * px * 1  # in inches
 
+            plt.rcParams["font.family"] = "monospace"
+            # plt.rcParams["font.weight"] = "bold"
+
             self.fig = plt.figure(
                 constrained_layout=True,
                 figsize=(7, fig_height),  # dpi=50
@@ -234,6 +253,7 @@ class Game(widgets.VBox):
 
             plt.rcParams.update({"font.size": 10})
 
+            # split canvas into left and right subfigures
             subfigs = self.fig.subfigures(1, 2, wspace=0.07, width_ratios=[1, 2])
 
             # Left handside of plt animation
@@ -244,28 +264,84 @@ class Game(widgets.VBox):
             axs_left[1].axis("off")
             self.score_text = axs_left[1].text(
                 x=0.1,
-                y=0.7,
-                s="Score: 0",
+                y=0.5,
+                s=f"Score: 0.00{self.score_currency}",
                 # animated=True,
                 fontfamily="monospace",
-                fontsize=16,
+                fontsize=15,
+                fontweight="bold",
+                color="white",
+                bbox={"boxstyle": "Round", "facecolor": "black", "linewidth": 2.5},
             )
 
             # Right handside of plt animation
             # Create observation data plots
-            self.obs_axs = subfigs[1].subplots(len(self.obs_values))
 
-            self.obs_lines = []
             self.line_x = np.linspace(0, self.visible_steps, self.visible_steps)
 
-            for i, (obs_name, obs_part) in enumerate(self.obs_values.items()):
-                self.obs_lines.append(
-                    self.obs_axs[i].plot(
-                        self.line_x,
-                        obs_part[-self.visible_steps :],
+            if not self.alternative_plotting:
+                self.obs_lines = []
+                self.obs_axs = subfigs[1].subplots(len(self.obs_values))
+
+                for i, (obs_name, obs_part) in enumerate(self.obs_values.items()):
+                    self.obs_lines.append(
+                        self.obs_axs[i].plot(
+                            self.line_x,
+                            obs_part[-self.visible_steps :],
+                        )
                     )
+                    self.obs_axs[i].set_title(obs_name.replace("_", " "))
+            else:
+                # plt.style.use("dark_background")
+                # subfigs[1].set_facecolor("black")
+                self.obs_axs = subfigs[1].subplots(3)
+                self.obs_lines = {}
+                self.obs_lines_fills = {}
+
+                # adding pv gen and load to one plot
+                self.obs_lines["load"] = self.obs_axs[0].plot(
+                    self.line_x,
+                    self.obs_values["load"][-self.visible_steps :],
+                    color="red",
                 )
-                self.obs_axs[i].set_title(obs_name.replace("_", " "))
+
+                self.obs_lines["pv_gen"] = self.obs_axs[0].plot(
+                    self.line_x,
+                    self.obs_values["pv_gen"][-self.visible_steps :],
+                    color="lightskyblue",
+                )
+
+                self.obs_axs[0].set_title("PV generation (blue) and load (red)")
+                self.obs_axs[0].set_ylim(
+                    -0.5, max(self.env.solar.max_value, self.env.load.max_value) + 0.5
+                )
+
+                # battery content plot
+                self.obs_lines["battery_cont"] = self.obs_axs[1].plot(
+                    self.line_x,
+                    self.obs_values["battery_cont"][-self.visible_steps :],
+                    color="white",
+                )
+                self.obs_axs[1].set_title("Battery content")
+                self.obs_axs[1].set_ylim(-0.5, self.cfg.battery_size + 0.5)
+                self.obs_lines_fills["battery_cont"] = self.obs_axs[1].fill_between(
+                    self.line_x,
+                    np.array(
+                        self.obs_values["battery_cont"][-self.visible_steps :]
+                    ).flatten(),
+                    color="white",
+                    alpha=0.5,
+                )
+
+                self.obs_lines[self.reward_label] = self.obs_axs[2].plot(
+                    self.line_x,
+                    self.obs_values[self.reward_label][-self.visible_steps :],
+                )
+                self.obs_axs[2].set_title(self.reward_label)
+
+                for ax in self.obs_axs:
+                    ax.set_facecolor("black")
+
             for ax in self.obs_axs:
                 ax.label_outer()
 
@@ -316,6 +392,34 @@ class Game(widgets.VBox):
         )
         img_ax.add_patch(self.indicator_battery_side)
 
+        clock_face = (1, 240 / 255, 195 / 255)
+
+        if self.include_clock:
+
+            self.time_day_text = img_ax.text(
+                x=290,
+                y=110,
+                s="Day 1",
+                # animated=True,
+                fontfamily="monospace",
+                fontsize=9,
+                fontweight="bold",
+                color="white",
+                bbox={"boxstyle": "Round", "facecolor": "black", "linewidth": 2.5},
+            )
+
+            self.time_text = img_ax.text(
+                x=275,
+                y=60,
+                s="00:00",
+                # animated=True,
+                fontfamily="monospace",
+                fontsize=14,
+                fontweight="bold",
+                color="black",
+                bbox={"boxstyle": "Round", "facecolor": clock_face, "linewidth": 2.5},
+            )
+
         img_ax.imshow(self.img_house)
 
     def _update_house_figure(self):
@@ -360,22 +464,57 @@ class Game(widgets.VBox):
         )
         self.indicator_battery_side.set_xy(new_xy)
 
-    def _update_figure(self):
-        for i, obs_part in enumerate(self.obs_values.values()):
-            # setting new data
-            self.obs_lines[i][0].set_data(self.line_x, obs_part[-self.visible_steps :])
+        if self.include_clock:
+            days = self.current_step * self.cfg.time_step_len // 24 + 1
+            hours = (self.current_step * self.cfg.time_step_len) % 24
+            mins = (hours % 1) * 60
+            self.time_text.set_text(f"{int(hours):02d}:{round(mins):02d}")
+            self.time_day_text.set_text(f"Day {int(days)}")
 
-            # rescaling y axis
-            # based on https://stackoverflow.com/a/7198623
-            axs = self.obs_axs[i]
+    def _update_figure(self):
+        if not self.alternative_plotting:
+            for i, obs_part in enumerate(self.obs_values.values()):
+                # setting new data
+                self.obs_lines[i][0].set_data(
+                    self.line_x, obs_part[-self.visible_steps :]
+                )
+
+                # rescaling y axis
+                # based on https://stackoverflow.com/a/7198623
+                axs = self.obs_axs[i]
+                axs.relim()
+                axs.autoscale_view(True, True, True)
+        else:
+            for key, value in self.obs_lines.items():
+                value[0].set_data(
+                    self.line_x, self.obs_values[key][-self.visible_steps :]
+                )
+
+            # update battery content fill below curve
+            self.obs_lines_fills["battery_cont"].remove()
+            self.obs_lines_fills["battery_cont"] = self.obs_axs[1].fill_between(
+                self.line_x,
+                np.array(
+                    self.obs_values["battery_cont"][-self.visible_steps :]
+                ).flatten(),
+                color="white",
+                alpha=0.5,
+            )
+
+            # rescale reward
+            axs = self.obs_axs[2]
             axs.relim()
             axs.autoscale_view(True, True, True)
 
-            self.score_text.set_text(f"Score: {self.reward:.2f}")
-            if self.game_finished:
-                self.score_text.set_text(f"Game finished.\nScore: {self.reward:.2f}")
+        self.score_text.set_text(f"Score: {self.reward:.2f}{self.score_currency}")
 
-            self._update_house_figure()
+        if self.game_finished:
+            self.score_text.set_text(
+                f"Game finished\nScore: {self.reward:.2f}" f"{self.score_currency}"
+            )
+            self.score_text.set_backgroundcolor("darkolivegreen")
+
+        self._update_house_figure()
 
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
@@ -433,7 +572,7 @@ class Game(widgets.VBox):
         if not self.game_finished:
 
             action = self.control.value
-            action = np.array([action], dtype=np.float32)
+            action = np.array([action], dtype=self.env.cfg.dtype)
 
             # pylint: disable=unused-variable
             # Note: using old step API to ensure compatibility
@@ -446,6 +585,7 @@ class Game(widgets.VBox):
             self.add_obs({**observation, self.reward_label: reward})
 
             self.reward += reward
+            self.current_step += 1
 
             if done:
                 self.game_finished = True
@@ -460,15 +600,21 @@ class Game(widgets.VBox):
         else:
             obs = self.env.reset()
 
-        obs = {**obs, self.reward_label: np.array([0], dtype=np.float32)}
+        obs = {**obs, self.reward_label: np.array([0], dtype=float)}
         self.obs_values = {
-            key: [np.array([0], dtype=np.float32)] * self.visible_steps
+            key: [np.array([0], dtype=float)] * self.visible_steps
             for key in obs.keys()
             if key not in ["time_step", "time_of_day"]
         }
         self.add_obs(obs)
         self.reward = 0
         self.game_finished = False
+        self.current_step = 0
+
+        if hasattr(self, "score_text"):
+            # changing back the score text to black
+            # on white background
+            self.score_text.set_backgroundcolor("black")
 
         if hasattr(self, "control"):
             self.control.set_trait("disabled", False)

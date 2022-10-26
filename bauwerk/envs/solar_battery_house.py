@@ -3,29 +3,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import pathlib
-from typing import TYPE_CHECKING, Optional, Tuple, Union, Any, Dict
+from typing import Optional, Tuple, Union, Any
 from loguru import logger
 import gym
 import gym.utils.seeding
 import numpy as np
+import copy
 
 import bauwerk.utils.logging
+import bauwerk.utils.gym
 import bauwerk.envs.components.solar
 import bauwerk.envs.components.load
 import bauwerk.envs.components.grid
 import bauwerk.envs.components.battery
-from bauwerk.constants import (
-    GYM_COMPAT_MODE,
-    GYM_NEW_RESET_API_ACTIVE,
-    GYM_NEW_STEP_API_ACTIVE,
-    GYM_RESET_INFO_DEFAULT,
-)
-
-if TYPE_CHECKING:
-    from bauwerk.envs.components.battery import BatteryModel
-    from bauwerk.envs.components.grid import GridModel
-    from bauwerk.envs.components.load import LoadModel
-    from bauwerk.envs.components.solar import PVModel
 
 
 @dataclass
@@ -34,21 +24,27 @@ class EnvConfig:
 
     # general config params
     time_step_len: float = 1.0  # in hours
-    episode_len: float = 24 * 365 - 1  # in no of timesteps (-1 bc of available obs)
+    episode_len: int = 24 * 365 - 1  # in no of timesteps (-1 bc of available obs)
     grid_charging: bool = True  # whether grid charging is allowed
     infeasible_control_penalty: bool = False  # whether penalty added for inf. control
     obs_keys: list = field(
         default_factory=lambda: ["load", "pv_gen", "battery_cont", "time_of_day"]
     )
+    action_space_type: str = (
+        "relative"  # either relative (to battery size) or absolute (kW)
+    )
+    dtype: str = "float32"  # note that SB3 requires np.float32 action space.
 
     # component params
     battery_size: float = 7.5  # kWh
     battery_chemistry: str = "NMC"
-    solar_data: Union[str, pathlib.Path] = None
-    solar_scaling_factor: float = 3.5  # kW (max performance)
-    load_data: Union[str, pathlib.Path] = None
-    load_scaling_factor: float = 4.5  # kW (max demand)
+    battery_start_charge: float = 0.0  # 0.5  # perc. of size that should begin with.
+
     data_start_index: int = 0  # starting index for data-based components (solar & load)
+    solar_data: Optional[Union[str, pathlib.Path]] = None
+    solar_scaling_factor: float = 3.5  # kW (max performance)
+    load_data: Optional[Union[str, pathlib.Path]] = None
+    load_scaling_factor: float = 4.5  # kW (max demand)
 
     grid_peak_threshold: float = 4.0  # kW
     grid_base_price: float = 0.25  # Euro
@@ -59,10 +55,10 @@ class EnvConfig:
     # optional custom component models
     # (if these are set, component params above will
     # be ignored for the custom components set)
-    solar: PVModel = None
-    battery: BatteryModel = None
-    load: LoadModel = None
-    grid: GridModel = None
+    solar: Any = None
+    battery: Any = None
+    load: Any = None
+    grid: Any = None
 
 
 class SolarBatteryHouseCoreEnv(gym.Env):
@@ -71,6 +67,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
     def __init__(
         self,
         cfg: Union[EnvConfig, dict] = None,
+        force_task_setting=False,
     ) -> None:
         """A gym environment for controlling a house with solar and battery.
 
@@ -84,53 +81,77 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             cfg = EnvConfig()
         elif isinstance(cfg, dict):
             cfg = EnvConfig(**cfg)
-        self.cfg = cfg
+        self.cfg: EnvConfig = cfg
+        self.force_task_setting = force_task_setting
+        self._task_is_set = False
 
         self._setup_components()
 
         self.data_len = min(len(self.load.data), len(self.solar.data))
 
         # Setting up action and observation space
+        if self.cfg.action_space_type == "absolute":
+            (
+                act_low,
+                act_high,
+            ) = self.battery.get_charging_limits()
+        elif self.cfg.action_space_type == "relative":
+            act_low = -1
+            act_high = 1
+        else:
+            raise ValueError(
+                (
+                    f"cfg.action_space_type ({self.cfg.action_space_type} invalid)."
+                    " Must be one of either 'relative' or 'absolute'."
+                )
+            )
+
         self.action_space = gym.spaces.Box(
-            low=-1,
-            high=1,
+            low=act_low,
+            high=act_high,
             shape=(1,),
-            dtype=np.float32,
+            dtype=self.cfg.dtype,
         )
         obs_spaces = {
             "load": gym.spaces.Box(
-                low=0, high=np.finfo(np.float32).max, shape=(1,), dtype=np.float32
+                low=0,
+                high=max(self.load.data),
+                shape=(1,),
+                dtype=self.cfg.dtype,
             ),
             "pv_gen": gym.spaces.Box(
-                low=0, high=np.finfo(np.float32).max, shape=(1,), dtype=np.float32
+                low=0,
+                high=max(self.solar.data),
+                shape=(1,),
+                dtype=self.cfg.dtype,
             ),
             "battery_cont": gym.spaces.Box(
-                low=0, high=self.battery.size, shape=(1,), dtype=np.float32
+                low=0, high=self.battery.size, shape=(1,), dtype=self.cfg.dtype
             ),
             "time_step": gym.spaces.Discrete(self.cfg.episode_len + 1),
             "time_step_cont": gym.spaces.Box(
-                low=0, high=self.cfg.episode_len + 1, shape=(1,), dtype=np.float32
+                low=0, high=self.cfg.episode_len + 1, shape=(1,), dtype=self.cfg.dtype
             ),
             "cum_load": gym.spaces.Box(
-                low=0, high=np.finfo(np.float32).max, shape=(1,), dtype=np.float32
+                low=0, high=np.finfo(float).max, shape=(1,), dtype=self.cfg.dtype
             ),
             "cum_pv_gen": gym.spaces.Box(
-                low=0, high=np.finfo(np.float32).max, shape=(1,), dtype=np.float32
+                low=0, high=np.finfo(float).max, shape=(1,), dtype=self.cfg.dtype
             ),
             "load_change": gym.spaces.Box(
-                low=np.finfo(np.float32).min,
-                high=np.finfo(np.float32).max,
+                low=np.finfo(float).min,
+                high=np.finfo(float).max,
                 shape=(1,),
-                dtype=np.float32,
+                dtype=self.cfg.dtype,
             ),
             "pv_change": gym.spaces.Box(
-                low=np.finfo(np.float32).min,
-                high=np.finfo(np.float32).max,
+                low=np.finfo(float).min,
+                high=np.finfo(float).max,
                 shape=(1,),
-                dtype=np.float32,
+                dtype=self.cfg.dtype,
             ),
             "time_of_day": gym.spaces.Box(
-                low=-1.0, high=1.0, shape=(2,), dtype=np.float32
+                low=-1.0, high=1.0, shape=(2,), dtype=self.cfg.dtype
             ),
         }
 
@@ -138,14 +159,9 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         obs_spaces = {key: obs_spaces[key] for key in self.cfg.obs_keys}
         self.observation_space = gym.spaces.Dict(obs_spaces)
 
-        (
-            self.min_charge_power,
-            self.max_charge_power,
-        ) = self.battery.get_charging_limits()
-
         self.logger = logger
         bauwerk.utils.logging.setup_log_print_options()
-        self.logger.info("Environment initialised.")
+        self.logger.debug("Environment initialised.")
 
         self.state = None
 
@@ -187,18 +203,21 @@ class SolarBatteryHouseCoreEnv(gym.Env):
                 size=self.cfg.battery_size,
                 chemistry=self.cfg.battery_chemistry,
                 time_step_len=self.cfg.time_step_len,
+                start_charge=self.cfg.battery_start_charge,
             ),
             "solar": lambda: bauwerk.envs.components.solar.DataPV(
                 data_path=self.cfg.solar_data,
                 data_start_index=self.cfg.data_start_index,
                 num_steps=self.cfg.episode_len,
                 scaling_factor=self.cfg.solar_scaling_factor,
+                time_step_len=self.cfg.time_step_len,
             ),
             "load": lambda: bauwerk.envs.components.load.DataLoad(
                 data_path=self.cfg.load_data,
                 data_start_index=self.cfg.data_start_index,
                 num_steps=self.cfg.episode_len,
                 scaling_factor=self.cfg.load_scaling_factor,
+                time_step_len=self.cfg.time_step_len,
             ),
             "grid": lambda: bauwerk.envs.components.grid.PeakGrid(
                 peak_threshold=self.cfg.grid_peak_threshold,
@@ -206,9 +225,31 @@ class SolarBatteryHouseCoreEnv(gym.Env):
                 peak_price=self.cfg.grid_peak_price,
                 sell_price=self.cfg.grid_sell_price,
                 selling_allowed=self.cfg.grid_selling_allowed,
+                time_step_len=self.cfg.time_step_len,
             ),
         }
         return comps_factory
+
+    def get_power_from_action(self, action: object) -> object:
+        if self.cfg.action_space_type == "relative":
+            # Actions are proportion of max/min charging power, hence scale up
+            if action > 0:
+                action *= self.max_charge_power
+            else:
+                action *= -self.min_charge_power
+
+        return action
+
+    def get_action_from_power(self, power: object) -> object:
+        action = power
+        if self.cfg.action_space_type == "relative":
+            # Actions are proportion of max/min charging power, hence scale up
+            if action > 0:
+                action /= self.max_charge_power
+            else:
+                action /= -self.min_charge_power
+
+        return action
 
     def step(self, action: object) -> Tuple[object, float, bool, dict]:
         """Run one timestep of the environment's dynamics.
@@ -241,13 +282,8 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         cum_load = self.state["cum_load"]
         cum_pv_gen = self.state["cum_pv_gen"]
 
-        # Actions are proportion of max/min charging power, hence scale up
-        if action > 0:
-            action *= self.max_charge_power
-        else:
-            action *= -self.min_charge_power
-
-        attempted_action = action
+        action = self.get_power_from_action(action)
+        attempted_action = copy.copy(action)
 
         if not self.cfg.grid_charging:
             # If charging from grid not enabled, limit charging to solar generation
@@ -269,11 +305,12 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         reward = -cost
 
         # Add impossible control penalty to cost
+        info["power_diff"] = np.abs(charging_power - float(attempted_action))
         if self.cfg.infeasible_control_penalty:
-            power_diff = np.abs(charging_power - float(attempted_action))
-            reward -= power_diff
-            self.logger.debug("step - cost: %6.3f, power_diff: %6.3f", cost, power_diff)
-            info["power_diff"] = power_diff
+            reward -= info["power_diff"]
+            self.logger.debug(
+                "step - cost: %6.3f, power_diff: %6.3f", cost, info["power_diff"]
+            )
 
         # Get load and PV generation for next time step
         new_load = self.load.get_next_load()
@@ -291,15 +328,15 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         self.time_step += 1
 
         self.state = {
-            "load": np.array([load], dtype=np.float32),
-            "pv_gen": np.array([pv_generation], dtype=np.float32),
-            "battery_cont": np.array(battery_cont, dtype=np.float32),
+            "load": np.array([load], dtype=self.cfg.dtype),
+            "pv_gen": np.array([pv_generation], dtype=self.cfg.dtype),
+            "battery_cont": np.array(battery_cont, dtype=self.cfg.dtype),
             "time_step": int(self.time_step),
-            "time_step_cont": self.time_step.astype(np.float32),
+            "time_step_cont": self.time_step.astype(self.cfg.dtype),
             "cum_load": cum_load,
             "cum_pv_gen": cum_pv_gen,
-            "load_change": np.array([load_change], dtype=np.float32),
-            "pv_change": np.array([pv_change], dtype=np.float32),
+            "load_change": np.array([load_change], dtype=self.cfg.dtype),
+            "pv_change": np.array([pv_change], dtype=self.cfg.dtype),
             "time_of_day": self._get_time_of_day(step=self.time_step),
         }
 
@@ -309,8 +346,11 @@ class SolarBatteryHouseCoreEnv(gym.Env):
 
         info["net_load"] = net_load
         info["charging_power"] = charging_power
+        info["load"] = self.state["load"]
+        info["pv_gen"] = self.state["pv_gen"]
         info["cost"] = cost
         info["battery_cont"] = battery_cont
+        info["time_step"] = int(self.time_step)
 
         info = {**info, **self.grid.get_info()}
 
@@ -353,11 +393,12 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             np.array: array of shape (2,) that uniquely represents the time of day
                 in circular fashion.
         """
-        time_of_day = np.concatenate(
-            [
+        time_of_day = np.concatenate(  # pylint: disable=unexpected-keyword-arg
+            (
                 np.cos(2 * np.pi * step * self.cfg.time_step_len / 24),
                 np.sin(2 * np.pi * step * self.cfg.time_step_len / 24),
-            ],
+            ),
+            dtype=self.cfg.dtype,
         )
         return time_of_day
 
@@ -373,15 +414,27 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         Returns:
             observation (object): the initial observation.
         """
+        if self.force_task_setting and not self._task_is_set:
+            raise RuntimeError(
+                "No task set, but force_task_setting active. Have you set the task"
+                " using `env.set_task(...)`?"
+            )
         if seed is not None:
             self._np_random, seed = gym.utils.seeding.np_random(seed)
 
         self.time_step = np.array([0])
 
+        # make sure we have current type of battery
+        # (relevant if task was changed)
+        (
+            self.min_charge_power,
+            self.max_charge_power,
+        ) = self.battery.get_charging_limits()
+
         if not self.cfg.data_start_index:
             start = np.random.randint((self.data_len // 24) - 1) * 24
         else:
-            start = self.cfg_start_index
+            start = self.cfg.data_start_index
 
         self.battery.reset()
         self.load.reset(start=start)
@@ -391,15 +444,17 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         pv_gen = self.solar.get_next_generation()
 
         self.state = {
-            "load": np.array([load], dtype=np.float32),
-            "pv_gen": np.array([pv_gen], dtype=np.float32),
-            "battery_cont": np.array([0.0], dtype=np.float32),
+            "load": np.array([load], dtype=self.cfg.dtype),
+            "pv_gen": np.array([pv_gen], dtype=self.cfg.dtype),
+            "battery_cont": np.array(
+                self.battery.get_energy_content(), dtype=self.cfg.dtype
+            ),
             "time_step": 0,
-            "time_step_cont": np.array([0.0], dtype=np.float32),
-            "cum_load": np.array([0.0], dtype=np.float32),
-            "cum_pv_gen": np.array([0.0], dtype=np.float32),
-            "load_change": np.array([0.0], dtype=np.float32),
-            "pv_change": np.array([0.0], dtype=np.float32),
+            "time_step_cont": np.array([0.0], dtype=self.cfg.dtype),
+            "cum_load": np.array([0.0], dtype=self.cfg.dtype),
+            "cum_pv_gen": np.array([0.0], dtype=self.cfg.dtype),
+            "load_change": np.array([0.0], dtype=self.cfg.dtype),
+            "pv_change": np.array([0.0], dtype=self.cfg.dtype),
             "time_of_day": self._get_time_of_day(self.time_step),
         }
 
@@ -479,37 +534,39 @@ class SolarBatteryHouseCoreEnv(gym.Env):
 
         return [seed]
 
+    def set_task(self, task: Any) -> object:
+        """Sets a new House control task, i.e. changes the building parameters."""
 
-class GymCompatEnv(SolarBatteryHouseCoreEnv):
-    """Compatiblity environment for v0.21<=Gym<=v0.25.
-
-    After Gym v0.21 a number of breaking API changes were introduced.
-    Bauwerk adopts this new API but aims to be compatible with
-    Gym v0.21 as well. This version is used by Stable-Baselines 3.
-    """
-
-    def reset(self) -> Any:
-        """Reset the environment and return the initial observation."""
-        if not GYM_NEW_RESET_API_ACTIVE:
-            # Before v0.22 no info return could be done,
-            # Thus this only returns the observation
-            return super().reset(return_info=False)
+        # check task cfg type
+        if task.cfg is None:
+            cfg = EnvConfig()
+        elif isinstance(task.cfg, dict):
+            cfg = EnvConfig(**task.cfg)
+        elif isinstance(task.cfg, EnvConfig):
+            cfg = task.cfg
         else:
-            # The return info default changed between v0.25 and v0.26
-            # from False to True
-            return super().reset(return_info=GYM_RESET_INFO_DEFAULT)
+            raise ValueError(
+                f"Task config type not recognised ({type(task.cfg)}"
+                "is not an instance of None, dict and EnvConfig.)"
+            )
 
-    def step(self, action: Any) -> Tuple[Any, float, bool, Dict]:
-        """Run one timestep of the environment's dynamics."""
-        if not GYM_NEW_STEP_API_ACTIVE:
-            obs, reward, terminated, truncated, info = super().step(action)
-            done = terminated or truncated
-            return obs, reward, done, info
-        else:
-            return super().step(action)
+        if self.cfg.episode_len != cfg.episode_len:
+            self.logger.warning(
+                (
+                    f"Setting task with differing episode_len ({cfg.episode_len})"
+                    f" from prior episode_len set in env ({self.cfg.episode_len})."
+                    " This may lead to unexpected behaviour."
+                )
+            )
+
+        self.cfg = cfg
+        self._setup_components()
+        self._task_is_set = True
+        self.reset()
+
+        # TODO: add change of observation space according to cfg changed
 
 
-if GYM_COMPAT_MODE:
-    SolarBatteryHouseEnv = GymCompatEnv
-else:
-    SolarBatteryHouseEnv = SolarBatteryHouseCoreEnv
+SolarBatteryHouseEnv = bauwerk.utils.gym.make_old_gym_api_compatible(
+    SolarBatteryHouseCoreEnv
+)
