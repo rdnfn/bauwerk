@@ -2,26 +2,28 @@
 History
 =======
 
-0.2.2 (2022-09-00)
+0.2.2 (2022-10-26)
 ------------------
 
 * Features
 
-  * Add support for much slower speed in game widget.
-  * Add benchmarks.
-  * Add support for setting tasks in environment.
+  * Add experiment script
+  * Add extensive evaluation features
+  * Add support for much slower speed in game widget
+  * Add benchmarks
+  * Add support for setting tasks in environment
   * Add wrappers:
 
     *  that add task parameters to observation space.
     *  that clip the reward
     *  that clip the action space
+    *  that normalise observation space
 
 * Improvements
 
-  * Add clock and day to game widget.
-  * Design improvements for game widget.
-  * Add evaluation module.
-  * Action spaces dtype can now be set in env cfg.
+  * Add clock and day to game widget
+  * Design improvements for game widget
+  * Action spaces dtype can now be set in env cfg
 
 
 0.2.1 (2022-09-12)
