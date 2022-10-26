@@ -53,7 +53,7 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/rdnfn/bauwerk",
-    version="0.2.1",
+    version="0.3.0",
     zip_safe=False,
     entry_points={
         "console_scripts": ["bauwerk-exp=bauwerk.exp.core:run"],
