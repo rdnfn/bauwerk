@@ -34,7 +34,7 @@ def test_opt_acts_plotting():
 
 def test_x_axis():
     env = gym.make("bauwerk/House-v0")
-    initial_obs = env.reset()
+    initial_obs = bauwerk.utils.gym.force_old_reset(env.reset())
     plotter = bauwerk.utils.plotting.EnvPlotter(
         initial_obs=initial_obs, env=env, alternative_plotting=True
     )

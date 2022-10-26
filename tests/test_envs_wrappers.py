@@ -4,6 +4,7 @@ import bauwerk
 import bauwerk.benchmarks
 import bauwerk.envs.wrappers
 import bauwerk.utils.testing
+import bauwerk.utils.gym
 import numpy as np
 import gym
 
@@ -75,7 +76,7 @@ def test_obs_normalisation_wrapper():
     assert env.unwrapped.observation_space["pv_gen"].high != 1.0
     assert env.unwrapped.observation_space["pv_gen"].low != -1.0
 
-    obs = env.reset()
+    obs = bauwerk.utils.gym.force_old_reset(env.reset())
     obs2 = env.step(env.action_space.sample())[0]
     assert env.observation_space.contains(obs)
     assert env.observation_space.contains(obs2)
