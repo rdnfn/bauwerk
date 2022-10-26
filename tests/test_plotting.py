@@ -10,7 +10,7 @@ import bauwerk.utils.data
 def test_core_plotting():
 
     env = gym.make("bauwerk/House-v0")
-    initial_obs = env.reset()
+    initial_obs = list(env.reset())[0]
     _ = bauwerk.utils.plotting.EnvPlotter(
         initial_obs=initial_obs,
         env=env,
