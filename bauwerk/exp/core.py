@@ -42,7 +42,7 @@ class ExpConfig:
     benchmark: str = "BuildDistB"  # benchmark to run experiment on
     benchmark_env_kwargs: Optional[Dict] = None
     train_procedure: str = "consecutive"
-    num_train_tasks: int = 1  # will sample
+    num_train_tasks: int = 10  # will sample
 
     # algorithm params
     sb3_alg: str = "SAC"
@@ -200,6 +200,7 @@ def run(cfg: DictConfig):
     # training per task
     for i, task in enumerate(tasks):
         logger.info(f"Training on task {i + 1} out of {len(tasks)} tasks.")
+        logger.info(f"Current task: {task}")
         train_env.set_task(task)
 
         if cfg.train_procedure == "separate_models" or i < 1:
@@ -215,8 +216,8 @@ def run(cfg: DictConfig):
             log_interval=1,
             # the last two configs prevent the log from being split up
             # between learn calls
-            # tb_log_name=f"run-{cfg.sb3_alg}-{wandb_run.id}",
-            # reset_num_timesteps=False,
+            tb_log_name=f"run-{cfg.sb3_alg}-{wandb_run.id}",
+            reset_num_timesteps=False,
             progress_bar=True,
         )
 
