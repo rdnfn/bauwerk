@@ -52,3 +52,25 @@ def make_old_gym_api_compatible(env_class) -> gym.Env:
                     return super().step(action)
 
         return GymCompatEnv
+
+
+def force_old_reset(reset_return):
+    if isinstance(reset_return, tuple):
+        return reset_return[0]
+    else:
+        return reset_return
+
+
+def force_old_step(step_return):
+
+    if len(step_return) == 5:
+        observation, reward, terminated, truncated, info = step_return
+        done = terminated or truncated
+    elif len(step_return) == 4:
+        observation, reward, done, info = step_return
+    else:
+        raise ValueError(
+            f"Expected either 4 or 5 return values in tuple, but got {step_return}."
+        )
+
+    return observation, reward, done, info

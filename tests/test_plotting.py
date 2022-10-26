@@ -5,12 +5,13 @@ import numpy as np
 import bauwerk
 import bauwerk.utils.plotting
 import bauwerk.utils.data
+import bauwerk.utils.gym
 
 
 def test_core_plotting():
 
     env = gym.make("bauwerk/House-v0")
-    initial_obs = list(env.reset())[0]
+    initial_obs = bauwerk.utils.gym.force_old_reset(env.reset())
     _ = bauwerk.utils.plotting.EnvPlotter(
         initial_obs=initial_obs,
         env=env,

@@ -5,11 +5,12 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
 import bauwerk
+import bauwerk.utils.gym
 
 
 def plot_optimal_actions(env: bauwerk.HouseEnv, max_num_acts=None):
 
-    initial_obs = env.reset()
+    initial_obs = bauwerk.utils.gym.force_old_reset(env.reset())
     plotter = EnvPlotter(
         initial_obs, env, visible_h=max_num_acts / env.cfg.time_step_len
     )
