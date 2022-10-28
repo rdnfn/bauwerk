@@ -251,5 +251,6 @@ class BuildDistB(BuildDist):
                 fn=np.random.uniform,
             ),
             episode_len=24 * 30,
+            grid_peak_threshold=2.0,
         )
         super().__init__(**kwargs, cfg_dist=cfg_dist)
