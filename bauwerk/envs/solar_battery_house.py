@@ -46,7 +46,7 @@ class EnvConfig:
     load_data: Optional[Union[str, pathlib.Path]] = None
     load_scaling_factor: float = 4.5  # kW (max demand)
 
-    grid_peak_threshold: float = 4.0  # kW
+    grid_peak_threshold: float = 2.0  # kW
     grid_base_price: float = 0.25  # Euro
     grid_peak_price: float = 1.25  # Euro
     grid_sell_price: float = 0.05  # Euro

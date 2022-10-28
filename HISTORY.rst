@@ -7,7 +7,7 @@ History
 
 * Environment & distribution changes (*may affect experimental results*)
 
-  * Parameter `grid_peak_threshold` changed from 3.0kW to 2.0kW in building distribution B environments.
+  * Parameter default of `grid_peak_threshold` changed from 4.0kW to 2.0kW in all environments, including those of building distribution B.
 
 
 
