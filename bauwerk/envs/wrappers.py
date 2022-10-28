@@ -82,14 +82,14 @@ class NormalizeObs(gym.ObservationWrapper):
                     if space.shape == (1,)
                     else space
                 )
-                for key, space in self.unwrapped.observation_space.items()
+                for key, space in self.env.observation_space.items()
             }
         )
 
     def observation(self, obs: dict) -> dict:
         new_obs = {}
         for key, value in obs.items():
-            old_act_space = self.unwrapped.observation_space[key]
+            old_act_space = self.env.observation_space[key]
             low = old_act_space.low
             high = old_act_space.high
             new_obs[key] = (value - low) / (high - low)
