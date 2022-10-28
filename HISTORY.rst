@@ -2,10 +2,12 @@
 History
 =======
 
-0.3.1 (2022-10-00)
+0.3.1 (2022-11-00)
 ------------------
 
-* Features
+* Environment & distribution changes (*may affect experimental results*)
+
+  * Parameter `grid_peak_threshold` changed from 3.0kW to 2.0kW in building distribution B environments.
 
 
 
