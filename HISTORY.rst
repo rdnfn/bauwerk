@@ -5,6 +5,10 @@ History
 0.3.1 (2022-11-00)
 ------------------
 
+* Features
+
+  * New *Building Distribution C* that varies battery size, solar and load scale.
+
 * Environment & distribution changes (*may affect experimental results*)
 
   * Parameter default of ``grid_peak_threshold`` changed from 4.0kW to 2.0kW in all environments, including those of building distribution B.
