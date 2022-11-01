@@ -11,20 +11,20 @@ import copy
 import numpy as np
 
 
-def test_build_dist_b_metaworld_api():
+def test_build_dist_metaworld_api(build_dist_cls):
     """Test compatiblity with Meta-World API of building distribution B.
 
     This test follows the standard API as described in Meta-World's main readme:
     https://github.com/rlworkgroup/metaworld#readme
     """
     # Construct the benchmark, sampling tasks
-    build_dist_b = bauwerk.benchmarks.BuildDistB()
+    build_dist = build_dist_cls()
 
     training_envs = []
-    for name, env_cls in build_dist_b.train_classes.items():
+    for name, env_cls in build_dist.train_classes.items():
         env = env_cls()
         task = random.choice(
-            [task for task in build_dist_b.train_tasks if task.env_name == name]
+            [task for task in build_dist.train_tasks if task.env_name == name]
         )
         env.set_task(task)
         training_envs.append(env)
@@ -35,13 +35,12 @@ def test_build_dist_b_metaworld_api():
         env.step(act)
 
 
-def test_simple_api():
+def test_simple_api(build_dist_cls):
     """Test simplified API custom to Bauwerk."""
-    build_dist_b = bauwerk.benchmarks.BuildDistB()
-
+    build_dist = build_dist_cls()
     training_envs = []
-    for task in build_dist_b.train_tasks:
-        env = build_dist_b.make_env()
+    for task in build_dist.train_tasks:
+        env = build_dist.make_env()
         env.set_task(task)
         training_envs.append(env)
 
@@ -51,15 +50,15 @@ def test_simple_api():
         env.step(act)
 
 
-def test_task_enforcing():
+def test_task_enforcing(build_dist_cls):
+    build_dist = build_dist_cls()
     with pytest.raises(RuntimeError):
-        build_dist_b = bauwerk.benchmarks.BuildDistB()
-        env = build_dist_b.make_env()
+        env = build_dist.make_env()
         # env.set_task(build_dist_b.train_tasks[0])
         env.reset()
 
 
-def test_battery_size_impact():
+def test_battery_size_impact_build_dist_b():
 
     # Create SolarBatteryHouse environment
     build_dist_b = bauwerk.benchmarks.BuildDistB(seed=100)
@@ -255,9 +254,9 @@ def test_action_space_types():
     assert env.action_space.high == 20.0
 
 
-def test_benchmark_env_params():
+def test_benchmark_env_params(build_dist_cls):
 
-    build_dist = bauwerk.benchmarks.BuildDistB(
+    build_dist = build_dist_cls(
         env_kwargs={"action_space_type": "absolute", "dtype": "float64"}
     )
 
