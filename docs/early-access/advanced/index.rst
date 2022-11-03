@@ -8,3 +8,4 @@ Advanced features
    distributions
    wrappers
    experiments
+   plotting
