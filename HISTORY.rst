@@ -2,7 +2,7 @@
 History
 =======
 
-0.3.1 (2022-11-00)
+0.3.1 (2022-11-03)
 ------------------
 
 * Features
@@ -18,7 +18,9 @@ History
   * **!** Parameter default of ``grid_peak_threshold`` changed from 4.0kW to 2.0kW in all environments, including those of building distribution B.
   * The load and solar traces in ``HouseEnv`` now can be augmented with irreducible noise. This is set via the ``solar/load_noise_magnitude`` parameter of the ``EnvConfig``.
 
+* Improvements
 
+  * Update to docs on distributions, wrappers and more.
 
 0.3.0 (2022-10-26)
 ------------------
