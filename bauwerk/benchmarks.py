@@ -257,10 +257,35 @@ class BuildDistB(BuildDist):
 
 
 class BuildDistC(BuildDist):
-    """Bauwerk building distribution C: varying battery sizes, load and pv scales."""
+    """Bauwerk building distribution C: varying solar installation and battery size."""
 
     def __init__(self, **kwargs):
         """Bauwerk building distribution C.
+
+        Varying battery and solar size. This distribution is
+        effectively like different sized houses."""
+        cfg_dist = CfgDist(
+            battery_size=ContParamDist(
+                low=0.5,
+                high=20,
+                fn=np.random.uniform,
+            ),
+            solar_scaling_factor=ContParamDist(
+                low=0.5,
+                high=5,
+                fn=np.random.uniform,
+            ),
+            episode_len=24 * 30,
+            grid_peak_threshold=2.0,
+        )
+        super().__init__(**kwargs, cfg_dist=cfg_dist)
+
+
+class BuildDistD(BuildDist):
+    """Bauwerk building distribution D: varying battery sizes, load and pv scales."""
+
+    def __init__(self, **kwargs):
+        """Bauwerk building distribution D.
 
         Varying battery sizes, load and pv scales. This distribution is
         effectively like different sized houses."""
