@@ -1,6 +1,6 @@
-===========
-Early acess
-===========
+============
+Early access
+============
 
 Docs for experimental features currently under development.
 
