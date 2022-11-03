@@ -309,3 +309,35 @@ class BuildDistD(BuildDist):
             grid_peak_threshold=2.0,
         )
         super().__init__(**kwargs, cfg_dist=cfg_dist)
+
+
+class BuildDistE(BuildDist):
+    """Bauwerk building distribution E: adding irreducible noise to BuildDistD."""
+
+    def __init__(self, **kwargs):
+        """Bauwerk building distribution D.
+
+        Varying battery sizes, load and pv scales. This distribution is
+        effectively like different sized houses."""
+        cfg_dist = CfgDist(
+            battery_size=ContParamDist(
+                low=0.5,
+                high=20,
+                fn=np.random.uniform,
+            ),
+            solar_scaling_factor=ContParamDist(
+                low=0.5,
+                high=5,
+                fn=np.random.uniform,
+            ),
+            load_scaling_factor=ContParamDist(
+                low=0.5,
+                high=5,
+                fn=np.random.uniform,
+            ),
+            load_noise_magnitude=2.0,
+            solar_noise_magnitude=2.0,
+            episode_len=24 * 30,
+            grid_peak_threshold=2.0,
+        )
+        super().__init__(**kwargs, cfg_dist=cfg_dist)
