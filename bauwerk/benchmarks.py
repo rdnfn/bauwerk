@@ -239,6 +239,19 @@ class BuildDist(Benchmark):
         return env
 
 
+class BuildDistA(BuildDist):
+    """Bauwerk building distribution A: a single home."""
+
+    def __init__(self, **kwargs):
+        """Bauwerk building distribution A: a single home."""
+        cfg_dist = CfgDist(
+            battery_size=7.5,
+            episode_len=24 * 30,
+            grid_peak_threshold=2.0,
+        )
+        super().__init__(**kwargs, cfg_dist=cfg_dist)
+
+
 class BuildDistB(BuildDist):
     """Bauwerk building distribution B: varying battery sizes."""
 
