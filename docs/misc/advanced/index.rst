@@ -6,3 +6,4 @@ Advanced usage
    :maxdepth: 1
 
    distributions
+   wrappers
