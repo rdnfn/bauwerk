@@ -58,4 +58,11 @@ Benchmarks only have a single environment class.
 Available distributions
 -----------------------
 
-Currently only one distribution is available, ``bauwerk.benchmarks.BuildDistB``.
+Bauwerk provides a number of building distributions, each with increasing technical difficulty. The first and easiest distribution, A, always samples the same identical building. The next distribution, B, samples houses with different battery sizes, but keeps the house otherwise identical. The other distributions follow a similar pattern, each adding a bit more complexity to the problem. See the descriptions below for more details on each distribution.
+
+
+.. autofunction:: bauwerk.benchmarks.BuildDistA
+.. autofunction:: bauwerk.benchmarks.BuildDistB
+.. autofunction:: bauwerk.benchmarks.BuildDistC
+.. autofunction:: bauwerk.benchmarks.BuildDistD
+.. autofunction:: bauwerk.benchmarks.BuildDistE
