@@ -63,6 +63,10 @@ Available distributions
 
 Bauwerk provides a number of building distributions, each with increasing technical difficulty. The first and easiest distribution, A, always samples the same identical building. The next distribution, B, samples houses with different battery sizes, but keeps the house otherwise identical. The other distributions follow a similar pattern, each adding a bit more complexity to the problem. See the descriptions below for more details on each distribution.
 
+.. figure:: /assets/bauwerk_build_dist_abcd.png
+
+    Illustration of Bauwerk distributions *A*, *B*, *C* and *D* in building parameter space. Each adds one dimension of variability. Distribution *A* samples always the same home, *B* samples from a line (of varying battery sizes), and so on.
+
 .. warning::
 
     Bauwerk is at an early stage of development and the specific configurations of these distributions may change. Always mention the Bauwerk version when reporting results on Bauwerk benchmarks.
