@@ -57,7 +57,7 @@ class CfgDist:
     variable_params: Dict[str, ParamDist]
     fixed_params: Optional[Dict] = None
 
-    def sample(self):
+    def sample(self) -> bauwerk.EnvConfig:
         variable_params_dict = dict(
             (name, dist.sample()) for name, dist in self.variable_params.items()
         )
@@ -153,10 +153,14 @@ class BuildDist(Benchmark):
         """Building distribution.
 
         Args:
-            cfg_dist (CfgDist): distribution over bauwerk env configs.
-            seed (Optional[int], optional): Random seed. Defaults to None.
-            num_train_tasks (int, optional): Number of training tasks. Defaults to 20.
-            num_test_tasks (int, optional): Number of test tasks. Defaults to 10.
+            cfg_dist (CfgDist): distribution over bauwerk
+                env configs.
+            seed (Optional[int], optional): Random seed.
+                Defaults to None.
+            num_train_tasks (int, optional): Number of training tasks.
+                Defaults to 20.
+            num_test_tasks (int, optional): Number of test tasks.
+                Defaults to 10.
             episode_len: (int, optional): Length of episode in distribution
                 environments. If not set, defaults to distribution configuration.
             dtype (Union[str, np.dtype], optional): data type to be returned and
@@ -165,6 +169,7 @@ class BuildDist(Benchmark):
             env_kwargs (dict, optional): parameters to pass when creating environment.
                 This should not be used when evaluating on pre-defined benchmark.
                 Defaults to None.
+
         """
         super().__init__()
 
@@ -240,10 +245,12 @@ class BuildDist(Benchmark):
 
 
 class BuildDistA(BuildDist):
-    """Bauwerk building distribution A: a single home."""
+    """Bauwerk building distribution A: identical houses, no variation."""
 
     def __init__(self, **kwargs):
-        """Bauwerk building distribution A: a single home."""
+        """Bauwerk building distribution A:
+
+        Identical houses, no variation."""
         cfg_dist = CfgDist(
             battery_size=7.5,
             episode_len=24 * 30,
@@ -253,10 +260,12 @@ class BuildDistA(BuildDist):
 
 
 class BuildDistB(BuildDist):
-    """Bauwerk building distribution B: varying battery sizes."""
+    """Bauwerk building distribution B:"""
 
     def __init__(self, **kwargs):
-        """Bauwerk building distribution B: varying battery sizes."""
+        """Bauwerk building distribution B:
+
+        Houses with varying battery size (0.5kWh to 20kWh)."""
         cfg_dist = CfgDist(
             battery_size=ContParamDist(
                 low=0.5,
@@ -270,13 +279,13 @@ class BuildDistB(BuildDist):
 
 
 class BuildDistC(BuildDist):
-    """Bauwerk building distribution C: varying solar installation and battery size."""
+    """Bauwerk building distribution C:"""
 
     def __init__(self, **kwargs):
         """Bauwerk building distribution C.
 
-        Varying battery and solar size. This distribution is
-        effectively like different sized houses."""
+        Houses with varying solar (multiplier: 0.5 to 5) and
+        battery sizes (0.5 to 20kWh)."""
         cfg_dist = CfgDist(
             battery_size=ContParamDist(
                 low=0.5,
@@ -295,13 +304,15 @@ class BuildDistC(BuildDist):
 
 
 class BuildDistD(BuildDist):
-    """Bauwerk building distribution D: varying battery sizes, load and pv scales."""
+    """Bauwerk building distribution D: varying battery, load and solar sizes."""
 
     def __init__(self, **kwargs):
         """Bauwerk building distribution D.
 
-        Varying battery sizes, load and pv scales. This distribution is
-        effectively like different sized houses."""
+        Houses with varying battery (0.5 to 20kWh),
+        load (multiplier: 0.5 to 5) and solar sizes
+        (multiplier: 0.5 to 5).
+        This distribution is effectively like differently sized houses."""
         cfg_dist = CfgDist(
             battery_size=ContParamDist(
                 low=0.5,
@@ -325,13 +336,13 @@ class BuildDistD(BuildDist):
 
 
 class BuildDistE(BuildDist):
-    """Bauwerk building distribution E: adding irreducible noise to BuildDistD."""
+    """Bauwerk building distribution E."""
 
     def __init__(self, **kwargs):
-        """Bauwerk building distribution D.
+        """Bauwerk building distribution E.
 
-        Varying battery sizes, load and pv scales. This distribution is
-        effectively like different sized houses."""
+        Same as Bauwerk building distribution D,
+        other than adding irreducible noise."""
         cfg_dist = CfgDist(
             battery_size=ContParamDist(
                 low=0.5,
