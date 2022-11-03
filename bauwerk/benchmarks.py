@@ -47,23 +47,6 @@ class ContParamDist(ParamDist):
         return self.fn(low=self.low, high=self.high)
 
 
-@dataclass
-class CfgDist:
-    """Distribution over env configurations.
-
-    Made up of ParamDist's.
-    """
-
-    variable_params: Dict[str, ParamDist]
-    fixed_params: Optional[Dict] = None
-
-    def sample(self) -> bauwerk.EnvConfig:
-        variable_params_dict = dict(
-            (name, dist.sample()) for name, dist in self.variable_params.items()
-        )
-        return bauwerk.EnvConfig(**variable_params_dict, **self.fixed_params)
-
-
 def sample_cfg_dist(self) -> bauwerk.EnvConfig:
     """Sample from CfgDist."""
 
@@ -155,7 +138,7 @@ class BuildDist(Benchmark):
         Args:
             cfg_dist (CfgDist): distribution over bauwerk
                 env configs.
-            seed (Optional[int], optional): Random seed.
+            seed (int, optional): Random seed.
                 Defaults to None.
             num_train_tasks (int, optional): Number of training tasks.
                 Defaults to 20.
