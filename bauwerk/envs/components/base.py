@@ -28,6 +28,7 @@ class DataComponent(EnvComponent):
         num_steps: int = 24,
         data_start_index: int = None,
         scaling_factor: float = 1.0,
+        noise_magnitude: float = 0.0,
         _package_data_path=None,
     ) -> None:
         """Component model that samples from data."""
@@ -63,6 +64,10 @@ class DataComponent(EnvComponent):
 
         self.num_steps = num_steps
         self.time_step_len = time_step_len
+        self.noise_magnitude = noise_magnitude
+
+        self.max_value = max(self.data) + noise_magnitude
+        self.min_value = 0
         self.fix_start(data_start_index)
 
         self.reset()
@@ -87,8 +92,8 @@ class DataComponent(EnvComponent):
 
         end = start + self.num_steps + 1
         self.episode_values = self.data[start:end]
-        self.max_value = max(self.episode_values)
-        self.min_value = min(self.episode_values)
+        self.ep_max_value = max(self.episode_values)
+        self.ep_min_value = min(self.episode_values)
 
     def step(self) -> None:
         """Step in time."""
@@ -102,6 +107,10 @@ class DataComponent(EnvComponent):
             float: next value
         """
         next_value = self.episode_values[self.time_step]
+        if self.noise_magnitude != 0:
+            # draw noise and clip it to noise magnitude
+            noise = np.random.default_rng().normal(0, self.noise_magnitude)
+            next_value = np.clip(next_value + noise, self.min_value, self.max_value)
         self.step()
         return next_value
 

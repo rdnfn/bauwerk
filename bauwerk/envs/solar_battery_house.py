@@ -12,6 +12,7 @@ import copy
 
 import bauwerk.utils.logging
 import bauwerk.utils.gym
+import bauwerk.eval
 import bauwerk.envs.components.solar
 import bauwerk.envs.components.load
 import bauwerk.envs.components.grid
@@ -38,13 +39,18 @@ class EnvConfig:
     # component params
     battery_size: float = 7.5  # kWh
     battery_chemistry: str = "NMC"
-    battery_start_charge: float = 0.0  # 0.5  # perc. of size that should begin with.
+    battery_start_charge: float = 0.0  # perc. of size that should begin with.
 
     data_start_index: int = 0  # starting index for data-based components (solar & load)
     solar_data: Optional[Union[str, pathlib.Path]] = None
     solar_scaling_factor: float = 3.5  # kW (max performance)
+    # amount of noise to add to solar data
+    # This noise will be drawn N(0,magnitude), the data will be clipped
+    # at max(data) + magnitude and 0.
+    solar_noise_magnitude: float = 0.0
     load_data: Optional[Union[str, pathlib.Path]] = None
     load_scaling_factor: float = 4.5  # kW (max demand)
+    load_noise_magnitude: float = 0.0  # same as solar noise magnitude above
 
     grid_peak_threshold: float = 2.0  # kW
     grid_base_price: float = 0.25  # Euro
@@ -114,14 +120,14 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         )
         obs_spaces = {
             "load": gym.spaces.Box(
-                low=0,
-                high=max(self.load.data),
+                low=self.load.min_value,
+                high=self.load.max_value,
                 shape=(1,),
                 dtype=self.cfg.dtype,
             ),
             "pv_gen": gym.spaces.Box(
-                low=0,
-                high=max(self.solar.data),
+                low=self.solar.min_value,
+                high=self.solar.max_value,
                 shape=(1,),
                 dtype=self.cfg.dtype,
             ),
@@ -211,6 +217,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
                 num_steps=self.cfg.episode_len,
                 scaling_factor=self.cfg.solar_scaling_factor,
                 time_step_len=self.cfg.time_step_len,
+                noise_magnitude=self.cfg.solar_noise_magnitude,
             ),
             "load": lambda: bauwerk.envs.components.load.DataLoad(
                 data_path=self.cfg.load_data,
@@ -218,6 +225,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
                 num_steps=self.cfg.episode_len,
                 scaling_factor=self.cfg.load_scaling_factor,
                 time_step_len=self.cfg.time_step_len,
+                noise_magnitude=self.cfg.load_noise_magnitude,
             ),
             "grid": lambda: bauwerk.envs.components.grid.PeakGrid(
                 peak_threshold=self.cfg.grid_peak_threshold,
