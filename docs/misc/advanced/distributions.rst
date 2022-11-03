@@ -54,6 +54,9 @@ Benchmarks only have a single environment class.
         act = env.action_space.sample()
         env.step(act)
 
+Each distribution implements (and accept arguments of) the following class
+
+.. autoclass:: bauwerk.benchmarks.BuildDist
 
 Available distributions
 -----------------------
@@ -61,8 +64,8 @@ Available distributions
 Bauwerk provides a number of building distributions, each with increasing technical difficulty. The first and easiest distribution, A, always samples the same identical building. The next distribution, B, samples houses with different battery sizes, but keeps the house otherwise identical. The other distributions follow a similar pattern, each adding a bit more complexity to the problem. See the descriptions below for more details on each distribution.
 
 
-.. autofunction:: bauwerk.benchmarks.BuildDistA
-.. autofunction:: bauwerk.benchmarks.BuildDistB
-.. autofunction:: bauwerk.benchmarks.BuildDistC
-.. autofunction:: bauwerk.benchmarks.BuildDistD
-.. autofunction:: bauwerk.benchmarks.BuildDistE
+.. autoclass:: bauwerk.benchmarks.BuildDistA
+.. autoclass:: bauwerk.benchmarks.BuildDistB
+.. autoclass:: bauwerk.benchmarks.BuildDistC
+.. autoclass:: bauwerk.benchmarks.BuildDistD
+.. autoclass:: bauwerk.benchmarks.BuildDistE
