@@ -19,10 +19,10 @@ Bauwerk provides custom plotting functionality via the :class:`bauwerk.utils.plo
     for _ in range(24):
         action = env.action_space.sample()
         step_return = env.step(action)
-        obs = step_return[0]
         plotter.add_step_data(action=action, step_return=step_return)
 
-    plotter.figure.show()
+    plotter.update_figure()
+    plotter.fig
 
 Detailed plotting API
 ---------------------
