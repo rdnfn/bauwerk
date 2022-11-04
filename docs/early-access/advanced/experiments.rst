@@ -4,6 +4,14 @@ Experiment script
 
 Bauwerk provides an experiment script that allows us to evaluate SB3-based agents on Bauwerk distributions. This script can be used as a starting point for your experiments.
 
+.. note::
+
+    In order to run this script you will need to install the relevant dependencies using:
+
+    .. code-block::
+
+        pip install bauwerk[exp]
+
 Usage
 -----
 
