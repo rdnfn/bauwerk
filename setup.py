@@ -22,7 +22,7 @@ test_requirements = [
 ]
 
 extras_require = {
-    "cvxpy": ["cvxpy"],
+    "opt": ["cvxpy"],
     "widget": ["ipympl"],
     "exp": ["hydra-core", "stable-baselines3"],
 }
