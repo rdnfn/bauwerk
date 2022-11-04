@@ -52,7 +52,8 @@ class ExpConfig:
     sb3_alg_kwargs: Sb3Config = Sb3Config()
 
     # wrappers
-    normalize_obs: bool = True
+    normalize_obs: bool = True  # whether to normalise obs
+    add_param_obs: bool = False  # whether to add building params to obs
     # whether to add infeasible control penalty
     infeasible_control_penalty: bool = False
     penalty_factor: float = 1.0
@@ -115,6 +116,15 @@ def run(cfg: DictConfig):
                 env = bauwerk.envs.wrappers.InfeasControlPenalty(
                     env, penalty_factor=cfg.penalty_factor
                 )
+
+        if cfg.add_param_obs:
+            env = bauwerk.envs.wrappers.TaskParamObs(
+                env,
+                task_param_names=["battery_size"],
+                task_param_low=build_dist.cfg_dist.battery_size.low,
+                task_param_high=build_dist.cfg_dist.battery_size.high,
+                normalize=cfg.normalize_obs,
+            )
 
         if cfg.normalize_obs:
             env = bauwerk.envs.wrappers.NormalizeObs(env)

@@ -225,3 +225,21 @@ def test_dtype_of_obs():
 
     for observation in obs.values():
         assert observation.dtype == np.float64
+
+
+def test_noise_magnitude_param():
+    """Test the noise_magnitude cfg param of the House env."""
+
+    env = gym.make(
+        "bauwerk/House-v0",
+        cfg={"solar_noise_magnitude": 11, "load_noise_magnitude": 9},
+    )
+
+    assert env.observation_space["load"].high == env.load.max_value
+    assert env.observation_space["load"].high == 9 + max(env.load.data)
+    assert env.observation_space["pv_gen"].high == 11 + max(env.solar.data)
+
+    env.reset()
+    step_return = env.step(env.action_space.sample())
+
+    assert env.observation_space.contains(step_return[0])

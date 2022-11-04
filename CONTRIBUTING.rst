@@ -117,9 +117,6 @@ $ pytest tests.test_bauwerk
 Deploying
 ---------
 
-Deploying
----------
-
 A reminder for the maintainers on how to deploy. Follow this checklist (inspired by `this checklist <https://gist.github.com/audreyfeldroy/5990987>`_ and `this packaging tutorial <https://packaging.python.org/en/latest/tutorials/packaging-projects/>`_):
 
 1. Update ``HISTORY.rst`` and commit with message like "aux: add changelog for upcoming release 0.1.0"

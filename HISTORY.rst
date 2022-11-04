@@ -2,7 +2,27 @@
 History
 =======
 
-0.2.2 (2022-10-26)
+0.3.1 (2022-11-03)
+------------------
+
+* Features
+
+  * New building distributions:
+
+      * *Building Distribution C*: varies battery and solar installation size.
+      * *Building Distribution D*: varies battery, solar installation and load consumption size/scale.
+      * *Building distribution E*: varies same as above, and adds irreducible noise to load and solar traces.
+
+* Environment & distribution changes (*! indicates that the change may affect experimental results*)
+
+  * **!** Parameter default of ``grid_peak_threshold`` changed from 4.0kW to 2.0kW in all environments, including those of building distribution B.
+  * The load and solar traces in ``HouseEnv`` now can be augmented with irreducible noise. This is set via the ``solar/load_noise_magnitude`` parameter of the ``EnvConfig``.
+
+* Improvements
+
+  * Update to docs on distributions, wrappers and more.
+
+0.3.0 (2022-10-26)
 ------------------
 
 * Features

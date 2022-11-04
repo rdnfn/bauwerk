@@ -13,6 +13,8 @@ import matplotlib.figure
 import numpy as np
 from loguru import logger
 
+plt.rcParams["font.family"] = "monospace"
+
 
 def enable_wandb_plot_logging():
     """Enable wandb plot logging.
@@ -188,6 +190,7 @@ def evaluate_and_plot_on_multiple_battery_sizes(
     model: object,
     task_len: int,
     fix_y_limits: bool = True,
+    time_step: int = None,
 ) -> None:
     """Plot performance of sb3 model
 
@@ -237,6 +240,11 @@ def evaluate_and_plot_on_multiple_battery_sizes(
         color="lightblue",
     )
     axs.legend()
+
+    title = "Distribution performance"
+    if time_step is not None:
+        title += f" (step {time_step})"
+    axs.set_title(title)
 
     fig.canvas.draw()
 
@@ -298,7 +306,10 @@ class DistPerfPlotCallback(BaseCallback):
 
     def _log_image(self) -> None:
         image = evaluate_and_plot_on_multiple_battery_sizes(
-            env=self.eval_env, model=self.model, task_len=self.eval_len
+            env=self.eval_env,
+            model=self.model,
+            task_len=self.eval_len,
+            time_step=self.num_timesteps,
         )
         self.logger.record(
             "perf_cross_distribution",

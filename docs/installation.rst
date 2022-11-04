@@ -20,6 +20,12 @@ This is the preferred method to install bauwerk, as it will always install the m
 
     All Bauwerk dependencies will be automatically installed via pip, no further installation steps are required. Bauwerk does not rely on external building simulation engines such as EnergyPlus.
 
+If you want to use some of the advanced features you can use the following pip install commands with extras to get the relevant dependencies:
+
+- ``pip install bauwerk[opt]``: all optimisation code (e.g. if you want to use ``bauwerk.solve()``).
+- ``pip install bauwerk[widget]``: anything to do with the game widget.
+- ``pip install bauwerk[exp]``: for running experiments using the ``bauwerk-exp`` script.
+
 If you don't have `pip`_ installed, this `Python installation guide`_ can guide
 you through the process.
 

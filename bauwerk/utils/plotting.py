@@ -49,7 +49,36 @@ class EnvPlotter:
         rescale_action: bool = True,
         plot_optimal_acts: bool = True,
     ) -> None:
-        """Plotting class for Bauwerk environments."""
+        """Plotting class for Bauwerk environments.
+
+        Args:
+            initial_obs (dict): initial observations
+            env (bauwerk.HouseEnv): environment to plot trajectories from.
+            visible_h (int, optional): hours of trajectory visible in plot.
+                Defaults to 24.
+            fig_height (int, optional): height of figure in px. Defaults to 600.
+            debug_mode (bool, optional): whether to run in debug mode. Defaults to
+                False.
+            include_house_figure (bool, optional): whether to include figure of house.
+                Mostly useful in the context of interactive plotting as
+                part of Bauwerk game.
+                Defaults to False.
+            alternative_plotting (bool, optional): Two variations of plotting are
+                available. The second (alternative) variation is recommended and the
+                default. Defaults to True.
+            include_clock_in_house_figure (bool, optional): whether to include a
+                clock in the house figure (if this one is active). Defaults to True.
+            score_currency (str, optional): currency shown in score. Defaults to "€".
+            background (Optional[str], optional): background color.
+                Defaults to "white".
+            plot_grid_threshold (bool, optional): whether to plot peak demand pricing
+                threshold of grid. Defaults to True.
+            plot_actions (bool, optional): whether to plot actions. Defaults to True.
+            rescale_action (bool, optional): whether to rescale actions.
+                Defaults to True.
+            plot_optimal_acts (bool, optional): whether to include a
+                plot of the optimal actions. Defaults to True.
+        """
 
         self.reward_label = "Reward (payment)"
         self.score_currency = score_currency
@@ -401,6 +430,8 @@ class EnvPlotter:
             self.time_day_text.set_text(f"Day {int(days)}")
 
     def update_figure(self):
+        """Update the figure to current data."""
+
         if not self.alternative_plotting:
             for i, obs_part in enumerate(self.obs_values.values()):
                 # setting new data
@@ -474,7 +505,14 @@ class EnvPlotter:
 
         self.update_figure()
 
-    def add_step_data(self, step_return, action):
+    def add_step_data(self, step_return: tuple, action: np.array) -> None:
+        """Add data from stepping in the environment.
+
+        Args:
+            step_return (tuple): value returned by stepping
+                in environment (i.e. by ``env.step(action)``).
+            action (np.array): action that was given to ``env.step()``.
+        """
         observation = step_return[0]
         reward = step_return[1]
         info = step_return[-1]
@@ -498,7 +536,12 @@ class EnvPlotter:
         self.reward += reward
         self.current_step += 1
 
-    def reset(self, obs):
+    def reset(self, obs: dict) -> None:
+        """Reset figure with observation returned by ``env.reset()``.
+
+        Args:
+            obs (dict): initial observations returned by ``env.reset()``.
+        """
         obs = {
             **obs,
             self.reward_label: np.array([0], dtype=float),

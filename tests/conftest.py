@@ -2,6 +2,21 @@
 
 
 import pytest
+import bauwerk.benchmarks
+
+
+@pytest.fixture(
+    scope="module",
+    params=[
+        bauwerk.benchmarks.BuildDistA,
+        bauwerk.benchmarks.BuildDistB,
+        bauwerk.benchmarks.BuildDistC,
+        bauwerk.benchmarks.BuildDistD,
+        bauwerk.benchmarks.BuildDistE,
+    ],
+)
+def build_dist_cls(request):
+    return request.param
 
 
 def pytest_addoption(parser):

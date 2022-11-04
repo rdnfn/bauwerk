@@ -12,13 +12,23 @@ class TaskParamObs(gym.ObservationWrapper):
 
     def __init__(
         self,
-        env,
+        env: bauwerk.HouseEnv,
         task_param_names: list,
         task_param_low: np.array,
         task_param_high: np.array,
         normalize=False,
     ):
-        """Wrapper that adds task parameters to observation space."""
+        """Wrapper that adds task parameters to observation space.
+
+        Args:
+            env (bauwerk.HouseEnv): environment to wrap.
+            task_param_names (list): list of names of task parameters. Each
+                name should be a attribute of the environment's config.
+            task_param_low (np.array): lower bound of task parameters.
+            task_param_high (np.array): upper bound of the task parameters.
+            normalize (bool, optional): whether to normalise the task
+                parameters. Defaults to False.
+        """
         super().__init__(env)
 
         shape = (len(task_param_names),)  # shape of task param obs space
@@ -82,14 +92,14 @@ class NormalizeObs(gym.ObservationWrapper):
                     if space.shape == (1,)
                     else space
                 )
-                for key, space in self.unwrapped.observation_space.items()
+                for key, space in self.env.observation_space.items()
             }
         )
 
     def observation(self, obs: dict) -> dict:
         new_obs = {}
         for key, value in obs.items():
-            old_act_space = self.unwrapped.observation_space[key]
+            old_act_space = self.env.observation_space[key]
             low = old_act_space.low
             high = old_act_space.high
             new_obs[key] = (value - low) / (high - low)
@@ -149,7 +159,22 @@ class ClipActions(gym.ActionWrapper):
 class InfeasControlPenalty(gym.Wrapper):
     """Add penalty to reward when agents tries infeasible control actions."""
 
-    def __init__(self, env: gym.Env, penalty_factor: float = 1.0) -> None:
+    def __init__(self, env: bauwerk.HouseEnv, penalty_factor: float = 1.0) -> None:
+        """Add penalty to reward when agents tries infeasible control actions.
+
+        The penalty is computed based on the absolute difference between the
+        (dis)charging power that the agent last tried to apply to the battery,
+        and the power that was actually discharged after accounting for the
+        physics of the system.
+
+        Args:
+            env (bauwerk.HouseEnv): environment to wrap.
+            penalty_factor (float, optional): multiplicative factor that is
+                applied to the power difference. Similar to a price on
+                infeasible control. The scale should be adapted to the pricing
+                scheme in your control problem, as this factor effectively
+                determines the "price" of infeasible control. Defaults to 1.0.
+        """
         self.penalty_factor = penalty_factor
         super().__init__(env)
 
