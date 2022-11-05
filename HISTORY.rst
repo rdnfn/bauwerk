@@ -9,9 +9,9 @@ History
 
   * New building distributions:
 
-      * *Building Distribution C*: varies battery and solar installation size.
-      * *Building Distribution D*: varies battery, solar installation and load consumption size/scale.
-      * *Building distribution E*: varies same as above, and adds irreducible noise to load and solar traces.
+    * *Building Distribution C*: varies battery and solar installation size.
+    * *Building Distribution D*: varies battery, solar installation and load consumption size/scale.
+    * *Building distribution E*: varies same as above, and adds irreducible noise to load and solar traces.
 
 * Environment & distribution changes (*! indicates that the change may affect experimental results*)
 
