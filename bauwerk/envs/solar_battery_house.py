@@ -456,12 +456,13 @@ class SolarBatteryHouseCoreEnv(gym.Env):
                 "No task set, but force_task_setting active. Have you set the task"
                 " using `env.set_task(...)`?"
             )
+
         if seed is not None:
             self._np_random, seed = gym.utils.seeding.np_random(seed)
 
         self.time_step = np.array([0])
 
-        # make sure we have current type of battery
+        # Make sure we have current type of battery
         # (relevant if task was changed)
         (
             self.min_charge_power,
@@ -473,10 +474,12 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         else:
             start = self.cfg.data_start_index
 
+        # Resetting components
         self.battery.reset()
         self.load.reset(start=start)
         self.solar.reset(start=start)
 
+        # Set up initial state of simulation
         load = self.load.get_next_load()
         pv_gen = self.solar.get_next_generation()
 
@@ -487,22 +490,32 @@ class SolarBatteryHouseCoreEnv(gym.Env):
                 self.battery.get_energy_content(), dtype=self.cfg.dtype
             ),
             "time_step": 0,
-            "time_step_cont": np.array([0.0], dtype=self.cfg.dtype),
-            "cum_load": np.array([0.0], dtype=self.cfg.dtype),
-            "cum_pv_gen": np.array([0.0], dtype=self.cfg.dtype),
-            "load_change": np.array([0.0], dtype=self.cfg.dtype),
-            "pv_change": np.array([0.0], dtype=self.cfg.dtype),
+            "time_step_cont": None,
+            "cum_load": None,
+            "cum_pv_gen": None,
+            "load_change": None,
+            "pv_change": None,
             "time_of_day": self._get_time_of_day(self.time_step),
+            "charging_power": None,
+            "power_diff": None,
+            "net_load": None,
         }
+
+        self.state = {
+            key: (np.array([0.0], dtype=self.cfg.dtype) if value is None else value)
+            for key, value in self.state.items()
+        }
+
+        # Set up return values
 
         observation = self._get_obs_from_state(self.state)
 
-        self.logger.debug("Environment reset.")
-
         if return_info:
-            return_val = (observation, {})
+            return_val = (observation, self.state)
         else:
             return_val = observation
+
+        self.logger.debug("Environment reset.")
 
         return return_val
 
