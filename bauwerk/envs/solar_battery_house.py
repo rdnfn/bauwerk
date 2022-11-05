@@ -73,7 +73,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
     def __init__(
         self,
         cfg: Union[EnvConfig, dict] = None,
-        force_task_setting=False,
+        force_task_setting: bool = False,
     ) -> None:
         """A gym environment representing a house with battery and solar installation.
 
