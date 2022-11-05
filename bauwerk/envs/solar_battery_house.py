@@ -316,36 +316,42 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         cum_load = self.state["cum_load"]
         cum_pv_gen = self.state["cum_pv_gen"]
 
+        ### Computation of taking action in simulation ###
+
+        ## Action conversion
         action = float(action)  # getting the float value
         action = self.get_power_from_action(action)
         attempted_action = copy.copy(action)
-
         if not self.cfg.grid_charging:
             # If charging from grid not enabled, limit charging to solar generation
             action = np.minimum(action, pv_generation)
 
+        ## Action application (to battery)
         charging_power = self.battery.charge(power=action)
 
-        # Get the net load after accounting for power stream of battery and PV
+        ## Ensuring all energy needs outside of battery are met
+        # Get the net load after accounting for power usage/generation
+        # of battery and PV
         net_load = load + charging_power - pv_generation
-
+        # If no grid selling allowed surplus power is lost
         if not self.grid.selling_allowed:
             net_load = np.maximum(net_load, 0)
-
-        self.logger.debug("step - net load: %s", net_load)
-
         # Draw remaining net load from grid and get price paid
         cost = self.grid.draw_power(power=net_load)
 
+        ## Computation of reward (including optional penalty)
         reward = -cost
-
         # Add impossible control penalty to cost
         power_diff = np.abs(charging_power - float(attempted_action))
         if self.cfg.infeasible_control_penalty:
             reward -= power_diff
             self.logger.debug("step - cost: %6.3f, power_diff: %6.3f", cost, power_diff)
 
-        # Get load and PV generation for next time step
+        # Getting battery state after applying action to simulation
+        battery_cont = self.battery.get_energy_content()
+
+        ### Setting up new state ###
+
         new_load = self.load.get_next_load()
         load_change = load - new_load
         load = new_load
@@ -353,8 +359,6 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         new_pv_generation = self.solar.get_next_generation()
         pv_change = pv_generation - new_pv_generation
         pv_generation = new_pv_generation
-
-        battery_cont = self.battery.get_energy_content()
 
         cum_load += load
         cum_pv_gen += pv_generation
@@ -375,6 +379,8 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             "pv_change": np.array([pv_change], dtype=self.cfg.dtype),
             "time_of_day": self._get_time_of_day(step=self.time_step),
         }
+
+        ### Setting up return values ###
 
         observation = self._get_obs_from_state(self.state)
         terminated = bool(self.time_step >= self.cfg.episode_len)
