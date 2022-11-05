@@ -9,3 +9,4 @@ Advanced features
    wrappers
    experiments
    plotting
+   plotting.ipynb
