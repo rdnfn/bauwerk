@@ -206,14 +206,11 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             setattr(self, cmp_name, cmp_val)
             self.components.append(cmp_val)
 
-    def _get_default_component_factory(self) -> object:
+    def _get_default_component_factory(self) -> dict:
         """Get default components with params set in env.cfg.
 
-        Args:
-            component_name (str): name of component (e.g. 'solar')
-
         Returns:
-            object: component instance
+            dict: dictionary with functions that create components based on env cfg.
         """
         comps_factory = {
             "battery": lambda: bauwerk.envs.components.battery.LithiumIonBattery(
@@ -307,19 +304,19 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             info (dict): contains auxiliary diagnostic information
                 (helpful for debugging, and sometimes learning)
         """
+
+        self.logger.debug("step - action: %1.3f", action)
         assert self.action_space.contains(action), f"{action} ({type(action)}) invalid"
 
-        info = {}
+        self.time_step += 1
 
-        action = float(action)  # getting the float value
-        self.logger.debug("step - action: %1.3f", action)
-
-        # Get old state
+        # Get old state from previous time step
         load = self.state["load"]
         pv_generation = self.state["pv_gen"]
         cum_load = self.state["cum_load"]
         cum_pv_gen = self.state["cum_pv_gen"]
 
+        action = float(action)  # getting the float value
         action = self.get_power_from_action(action)
         attempted_action = copy.copy(action)
 
@@ -343,12 +340,10 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         reward = -cost
 
         # Add impossible control penalty to cost
-        info["power_diff"] = np.abs(charging_power - float(attempted_action))
+        power_diff = np.abs(charging_power - float(attempted_action))
         if self.cfg.infeasible_control_penalty:
-            reward -= info["power_diff"]
-            self.logger.debug(
-                "step - cost: %6.3f, power_diff: %6.3f", cost, info["power_diff"]
-            )
+            reward -= power_diff
+            self.logger.debug("step - cost: %6.3f, power_diff: %6.3f", cost, power_diff)
 
         # Get load and PV generation for next time step
         new_load = self.load.get_next_load()
@@ -363,14 +358,17 @@ class SolarBatteryHouseCoreEnv(gym.Env):
 
         cum_load += load
         cum_pv_gen += pv_generation
-        self.time_step += 1
 
         self.state = {
             "load": np.array([load], dtype=self.cfg.dtype),
             "pv_gen": np.array([pv_generation], dtype=self.cfg.dtype),
             "battery_cont": np.array(battery_cont, dtype=self.cfg.dtype),
+            "cost": cost,
             "time_step": int(self.time_step),
             "time_step_cont": self.time_step.astype(self.cfg.dtype),
+            "charging_power": charging_power,
+            "power_diff": power_diff,
+            "net_load": net_load,
             "cum_load": cum_load,
             "cum_pv_gen": cum_pv_gen,
             "load_change": np.array([load_change], dtype=self.cfg.dtype),
@@ -379,33 +377,19 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         }
 
         observation = self._get_obs_from_state(self.state)
-
         terminated = bool(self.time_step >= self.cfg.episode_len)
-
-        info["net_load"] = net_load
-        info["charging_power"] = charging_power
-        info["load"] = self.state["load"]
-        info["pv_gen"] = self.state["pv_gen"]
-        info["cost"] = cost
-        info["battery_cont"] = battery_cont
-        info["time_step"] = int(self.time_step)
-
-        info = {**info, **self.grid.get_info()}
-
-        self.logger.debug("step - info %s", info)
+        truncated = False  # No support for episode truncation, added for new gym API
 
         self.logger.debug(
             "step return: obs: %s, rew: %6.3f, terminated: %s",
             observation,
             reward,
             terminated,
+            truncated,
+            self.state,
         )
 
-        # No support for episode truncation
-        # But added to complete new gym step API
-        truncated = False
-
-        return observation, float(reward), terminated, truncated, info
+        return observation, float(reward), terminated, truncated, self.state
 
     def _get_obs_from_state(self, state: dict) -> dict:
         """Get observation from state dict.
