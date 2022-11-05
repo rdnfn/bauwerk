@@ -1,4 +1,4 @@
-"""Module with battery control environment of a photovoltaic installation."""
+"""Module with main Bauwerk environment."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
