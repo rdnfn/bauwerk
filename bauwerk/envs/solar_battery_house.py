@@ -56,7 +56,7 @@ class EnvConfig:
     grid_base_price: float = 0.25  # Euro
     grid_peak_price: float = 1.25  # Euro
     grid_sell_price: float = 0.05  # Euro
-    grid_selling_allowed: bool = True
+    grid_selling_allowed: bool = True  # whether selling to the grid is allowed.
 
     # optional custom component models
     # (if these are set, component params above will
@@ -68,34 +68,45 @@ class EnvConfig:
 
 
 class SolarBatteryHouseCoreEnv(gym.Env):
-    """A gym environment for controlling a house with solar installation and battery."""
+    """A gym environment representing a house with battery and solar installation."""
 
     def __init__(
         self,
         cfg: Union[EnvConfig, dict] = None,
         force_task_setting=False,
     ) -> None:
-        """A gym environment for controlling a house with solar and battery.
+        """A gym environment representing a house with battery and solar installation.
 
-        This class inherits from the main OpenAI Gym class. The initial
-        non-implemented skeleton methods are copied from the original gym
-        class:
-        https://github.com/openai/gym/blob/master/gym/core.py
+        This environment allows the control of the battery in a house with solar
+        installation, residential load and grid connection. All configuration is done
+        via the `cfg` argument.
+
+        The initial non-implemented skeleton methods are copied from the original gym
+        class: https://github.com/openai/gym/blob/master/gym/core.py
+
+        Args:
+            cfg (Union[EnvConfig, dict], optional): configuration of environment.
+                Defaults to None.
+            force_task_setting (bool, optional): whether to enforce setting a task
+                in environment before calling reset. Defaults to False.
         """
 
+        # setup env config
         if cfg is None:
             cfg = EnvConfig()
         elif isinstance(cfg, dict):
             cfg = EnvConfig(**cfg)
         self.cfg: EnvConfig = cfg
+
         self.force_task_setting = force_task_setting
         self._task_is_set = False
 
+        # set up components (solar installation, load, battery, grid connection)
         self._setup_components()
 
         self.data_len = min(len(self.load.data), len(self.solar.data))
 
-        # Setting up action and observation space
+        # Setup of action and observation spaces
         if self.cfg.action_space_type == "absolute":
             (
                 act_low,
@@ -161,16 +172,16 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             ),
         }
 
-        # Selecting the subset of obs spaces selected
+        # Selecting the subset of obs spaces set in cfg
         obs_spaces = {key: obs_spaces[key] for key in self.cfg.obs_keys}
         self.observation_space = gym.spaces.Dict(obs_spaces)
 
+        # Set up logging
         self.logger = logger
         bauwerk.utils.logging.setup_log_print_options()
         self.logger.debug("Environment initialised.")
 
-        self.state = None
-
+        # Reset env
         self.reset()
 
     def _setup_components(self) -> None:
@@ -238,7 +249,16 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         }
         return comps_factory
 
-    def get_power_from_action(self, action: object) -> object:
+    def get_power_from_action(self, action: np.array) -> np.array:
+        """Convert action given to environment to (dis)charging power in kW.
+
+        Args:
+            action (np.array): action given to environment. Note that this may
+                already be in kW, then no further change is done.
+
+        Returns:
+            np.array: action in kW.
+        """
         if self.cfg.action_space_type == "relative":
             # Actions are proportion of max/min charging power, hence scale up
             if action > 0:
@@ -248,7 +268,15 @@ class SolarBatteryHouseCoreEnv(gym.Env):
 
         return action
 
-    def get_action_from_power(self, power: object) -> object:
+    def get_action_from_power(self, power: np.array) -> np.array:
+        """Convert (dis)charging rate of battery in kW into corresponding action.
+
+        Args:
+            power (np.array): (dis)charging rate of battery in kW.
+
+        Returns:
+            np.array: action that would result in this (dis)charging rate of battery.
+        """
         action = power
         if self.cfg.action_space_type == "relative":
             # Actions are proportion of max/min charging power, hence scale up
@@ -259,12 +287,14 @@ class SolarBatteryHouseCoreEnv(gym.Env):
 
         return action
 
-    def step(self, action: object) -> Tuple[object, float, bool, dict]:
+    def step(self, action: object) -> Tuple[object, float, bool, bool, dict]:
         """Run one timestep of the environment's dynamics.
 
         When end of episode is reached, you are responsible for calling `reset()`
         to reset this environment's state. Accepts an action and returns a tuple
-        (observation, reward, terminated, truncated, info).
+        (observation, reward, terminated, truncated, info). Note that Bauwerk
+        environments are automatically wrapped in a compatibility layer should
+        an older gym version with different step API be installed (i.e. gym v0.21).
 
         Args:
             action (object): an action provided by the agent
@@ -416,11 +446,20 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         return_info: bool = True,
         seed: Optional[int] = None,
         options: Optional[dict] = None,  # pylint: disable=unused-argument
-    ) -> object:
+    ) -> Union[dict, Tuple[dict, dict]]:
         """Resets environment to initial state and returns an initial observation.
 
         Returns:
-            observation (object): the initial observation.
+            observation (object):
+
+        Args:
+            return_info (bool, optional): whether to return also an info dict.
+                Defaults to True.
+            seed (Optional[int], optional): random seed. Defaults to None.
+            options (Optional[dict], optional): not used in Bauwerk. Defaults to None.
+
+        Returns:
+            Union[dict, Tuple[dict, dict]]: the initial observation.
         """
         if self.force_task_setting and not self._task_is_set:
             raise RuntimeError(
@@ -520,7 +559,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         garbage collected or when the program exits.
         """
 
-    def seed(self, seed: int = None) -> None:
+    def seed(self, seed: int = None) -> list[int]:
         """Sets the seed for this env's random number generator(s).
 
         Note:
@@ -529,7 +568,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             there aren't accidental correlations between multiple generators.
 
         Returns:
-            list<bigint>: Returns the list of seeds used in this env's random
+            list[int]: Returns the list of seeds used in this env's random
               number generators. The first value in the list should be the
               "main" seed, or the value which a reproducer should pass to
               'seed'. Often, the main seed equals the provided 'seed', but
@@ -542,8 +581,16 @@ class SolarBatteryHouseCoreEnv(gym.Env):
 
         return [seed]
 
-    def set_task(self, task: Any) -> object:
-        """Sets a new House control task, i.e. changes the building parameters."""
+    def set_task(self, task: Any) -> None:
+        """Sets a new House control task, i.e. changes the building parameters.
+
+        Note that task setting does not change the observation or action space.
+        Therefore, task setting is not always equivalent to instantiating a new
+        environment with the task's environment config.
+
+        Args:
+            task (Any): Bauwerk control task, corresponds to one building.
+        """
 
         # check task cfg type
         if task.cfg is None:
@@ -572,9 +619,8 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         self._task_is_set = True
         self.reset()
 
-        # TODO: add change of observation space according to cfg changed
 
-
+# Add compatiblity wrapper if necessary
 SolarBatteryHouseEnv = bauwerk.utils.gym.make_old_gym_api_compatible(
     SolarBatteryHouseCoreEnv
 )
