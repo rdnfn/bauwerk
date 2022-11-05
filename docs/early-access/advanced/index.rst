@@ -8,5 +8,4 @@ Advanced features
    distributions
    wrappers
    experiments
-   plotting
-   plottingnb.ipynb
+   plotting.ipynb
