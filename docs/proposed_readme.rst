@@ -5,7 +5,7 @@
 .. image:: https://raw.githubusercontent.com/rdnfn/bauwerk/40684d5cd2ac70984f80670346dddb550d3b050a/docs/img/logo_v0.png
         :align: center
         :width: 120 px
-        :alt: Beobench
+        :alt: Logo
 
 .. raw:: html
 

@@ -2,7 +2,7 @@
 Wrappers
 ======================
 
-Beobench provides a number of wrappers for its environments based on the `OpenAI Gym wrappers <https://www.gymlibrary.dev/api/wrappers/>`_. To use one of the wrappers, simply apply it to a Bauwerk environment. For example:
+Bauwerk provides a number of wrappers for its environments based on the `OpenAI Gym wrappers <https://www.gymlibrary.dev/api/wrappers/>`_. To use one of the wrappers, simply apply it to a Bauwerk environment. For example:
 
 .. code-block:: python
 
