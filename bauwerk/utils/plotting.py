@@ -52,6 +52,25 @@ class EnvPlotter:
     ) -> None:
         """Plotting class for Bauwerk environments.
 
+        Additional information about the plot:
+
+        * The blue dashed line in the top plot
+            represents the power threshold above which
+            energy costs more than below.
+        * The net load in the top plot is the load
+            that has be covered using energy from the
+            grid. It's the negative residential load
+            plus battery (dis)charge plus PV generation.
+        * In the third plot from the top, a red line is
+            shown if the action taken by the agent is
+            not feasible, and has to be corrected
+            inside the environment.
+        * In the bottom plot, the dotted line is only
+            shown if a penalty is actually applied
+            (this may not be case either because the
+            actions are all feasible or because the
+            penalty is not activated).
+
         Args:
             initial_obs (dict): initial observations
             env (bauwerk.HouseEnv): environment to plot trajectories from.
