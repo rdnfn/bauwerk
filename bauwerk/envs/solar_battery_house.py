@@ -8,7 +8,6 @@ from loguru import logger
 import gym
 import gym.utils.seeding
 import numpy as np
-import copy
 
 import bauwerk.utils.logging
 import bauwerk.utils.gym
@@ -107,6 +106,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         self.data_len = min(len(self.load.data), len(self.solar.data))
 
         # Setup of action and observation spaces
+        # TODO: replace this if statement with enum
         if self.cfg.action_space_type == "absolute":
             (
                 act_low,
@@ -122,7 +122,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
                     " Must be one of either 'relative' or 'absolute'."
                 )
             )
-
+        # TODO: create two functions for creating spaces
         self.action_space = gym.spaces.Box(
             low=act_low,
             high=act_high,
@@ -274,17 +274,17 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         Returns:
             np.array: action that would result in this (dis)charging rate of battery.
         """
-        action = power
         if self.cfg.action_space_type == "relative":
             # Actions are proportion of max/min charging power, hence scale up
-            if action > 0:
-                action /= self.max_charge_power
+            if power > 0:
+                power /= self.max_charge_power
             else:
-                action /= -self.min_charge_power
+                # TODO: why is this not max_discharge_power
+                power /= -self.min_charge_power
 
-        return action
+        return power
 
-    def step(self, action: object) -> Tuple[object, float, bool, bool, dict]:
+    def step(self, action: np.array) -> Tuple[dict, float, bool, bool, dict]:
         """Run one timestep of the environment's dynamics.
 
         When end of episode is reached, you are responsible for calling `reset()`
@@ -294,9 +294,9 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         an older gym version with different step API be installed (i.e. gym v0.21).
 
         Args:
-            action (object): an action provided by the agent
+            action (np.array): an action provided by the agent
         Returns:
-            observation (object): agent's observation of the current environment
+            observation (dict): agent's observation of the current environment
             reward (float) : amount of reward returned after previous action
             terminated (bool): whether the episode has ended, in which case further
                 step() calls will return undefined results.
@@ -306,6 +306,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         """
 
         self.logger.debug("step - action: %1.3f", action)
+        # TODO: is this necessary?
         assert self.action_space.contains(action), f"{action} ({type(action)}) invalid"
 
         self.time_step += 1
@@ -319,11 +320,13 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         ### Computation of taking action in simulation ###
 
         ## Action conversion
+        # TODO: think about this float conv, and consider whether it is necessary
         action = float(action)  # getting the float value
         action = self.get_power_from_action(action)
-        attempted_action = copy.copy(action)
+        attempted_action = np.copy(action)
         if not self.cfg.grid_charging:
             # If charging from grid not enabled, limit charging to solar generation
+            # TODO: check whether this is accounted for in penalty
             action = np.minimum(action, pv_generation)
 
         ## Action application (to battery)
@@ -343,6 +346,8 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         reward = -cost
         # Add impossible control penalty to cost
         power_diff = np.abs(charging_power - float(attempted_action))
+        # TODO: remove this legacy penalty term cfg param and implementation
+        # (wrapper now)
         if self.cfg.infeasible_control_penalty:
             reward -= power_diff
             self.logger.debug("step - cost: %6.3f, power_diff: %6.3f", cost, power_diff)
@@ -353,6 +358,8 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         ### Setting up new state ###
 
         new_load = self.load.get_next_load()
+        # TODO: do we need to compute this every time even
+        # if we don't use some of these (?)
         load_change = load - new_load
         load = new_load
 
@@ -386,6 +393,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         terminated = bool(self.time_step >= self.cfg.episode_len)
         truncated = False  # No support for episode truncation, added for new gym API
 
+        # TODO: potentially add config to allow logging this every x steps
         self.logger.debug(
             "step return: obs: %s, rew: %6.3f, terminated: %s",
             observation,
@@ -394,7 +402,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             truncated,
             self.state,
         )
-
+        # TODO: ensure that float casting is necessary and add comment on gym API
         return observation, float(reward), terminated, truncated, self.state
 
     def _get_obs_from_state(self, state: dict) -> dict:
