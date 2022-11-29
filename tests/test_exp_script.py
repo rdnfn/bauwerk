@@ -1,14 +1,15 @@
 """Test experiment script."""
 
 
-from omegaconf import OmegaConf
 import pytest
 
 
 @pytest.mark.sb3
 def test_default_run():
     """Run experiment script with default experiment configuration."""
+    # below are only available in sb3 test env
     # pylint: disable=import-outside-toplevel
+    from omegaconf import OmegaConf
     import bauwerk.exp.core
 
     # Only difference to default is that wandb is deactivated to avoid sign-in issues.
