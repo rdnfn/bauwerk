@@ -2,8 +2,10 @@
 
 import bauwerk.exp.core
 from omegaconf import OmegaConf
+import pytest
 
 
+@pytest.mark.sb3
 def test_default_run():
     """Run experiment script with default experiment configuration."""
 
