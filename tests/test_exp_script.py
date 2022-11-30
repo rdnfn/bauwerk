@@ -3,7 +3,7 @@
 import pytest
 
 
-@pytest.mark.sb3
+@pytest.mark.exp
 def test_default_run():
     """Run experiment script with default experiment configuration."""
     # below are only available in sb3 test env

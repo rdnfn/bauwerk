@@ -29,11 +29,18 @@ def pytest_addoption(parser):
         default=False,
         help="run stable-baseline3-based tests",
     )
+    parser.addoption(
+        "--exp",
+        action="store_true",
+        default=False,
+        help="run experiment script tests",
+    )
 
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "slow: mark test as slow to run")
     config.addinivalue_line("markers", "sb3: mark test to be sb3 based")
+    config.addinivalue_line("markers", "exp: mark test to be on exp script")
 
 
 def pytest_collection_modifyitems(config, items):
