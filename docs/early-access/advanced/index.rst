@@ -6,6 +6,7 @@ Advanced features
    :maxdepth: 1
 
    distributions
+   evaluation.ipynb
    wrappers
    experiments
    plotting.ipynb
