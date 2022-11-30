@@ -12,6 +12,11 @@ import matplotlib
 matplotlib.use("nbAgg")
 
 import bauwerk.widget.core
+
+# With experiment script dependencies installed, likely an older version of
+# a matplotlib-related library is used, and the import below must
+# be included. Must be after Bauwerk widget import.
+import ipympl  # pylint: disable=unused-import
 import time
 
 
