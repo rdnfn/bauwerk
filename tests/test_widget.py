@@ -7,16 +7,15 @@
 # This is usually done with the `%matplotlib widget` magic command.
 # This adresses `The 'center' trait of an AppLayout instance expected a Widget or
 # None, not the FigureCanvasNbAgg` error.
+# Note that if other matplotlib figure have been drawn earlier
+# this may no longer work. Thus it is recommended to
+# run this test separately from the exp script tests.
+# See https://github.com/rdnfn/bauwerk/issues/29.
 import matplotlib
 
 matplotlib.use("nbAgg")
 
 import bauwerk.widget.core
-
-# With experiment script dependencies installed, likely an older version of
-# a matplotlib-related library is used, and the import below must
-# be included. Must be after Bauwerk widget import.
-import ipympl  # pylint: disable=unused-import
 import time
 
 
