@@ -1,4 +1,14 @@
 """Test experiment script."""
+# pylint: disable=wrong-import-position
+
+# Change the backend of matplotlib to notebook version (nbAgg)
+# in order to enable testing widget functionality.
+# This is usually done with the `%matplotlib widget` magic command.
+# This adresses `The 'center' trait of an AppLayout instance expected a Widget or
+# None, not the FigureCanvasNbAgg` error.
+import matplotlib
+
+matplotlib.use("nbAgg")
 
 
 import pytest
