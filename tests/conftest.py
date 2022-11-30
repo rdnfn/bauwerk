@@ -44,13 +44,10 @@ def pytest_configure(config):
 
 
 def pytest_collection_modifyitems(config, items):
-    if not config.getoption("--runslow"):
-        skip_slow = pytest.mark.skip(reason="need --runslow option to run")
-        for item in items:
-            if "slow" in item.keywords:
-                item.add_marker(skip_slow)
-    if not config.getoption("--sb3"):
-        skip_sb3 = pytest.mark.skip(reason="need --sb3 option to run")
-        for item in items:
-            if "sb3" in item.keywords:
-                item.add_marker(skip_sb3)
+    """Ensure some markers are skipped by default."""
+    for marker in ["exp", "sb3", "runslow"]:
+        if not config.getoption(f"--{marker}"):
+            skip = pytest.mark.skip(reason=f"need --{marker} option to run")
+            for item in items:
+                if marker in item.keywords:
+                    item.add_marker(skip)
