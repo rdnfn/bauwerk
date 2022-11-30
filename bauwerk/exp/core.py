@@ -69,6 +69,7 @@ class ExpConfig:
     # logging & experiment tracking
     log_level: str = "INFO"
     wandb_project: str = "bauwerk"
+    wandb_mode: str = "online"
 
     def __post_init__(self):
         if self.env_mode == "single_env":
@@ -163,6 +164,7 @@ def run(cfg: DictConfig):
         id=run_id,
         save_code=True,
         monitor_gym=True,
+        mode=cfg.wandb_mode,
     )
 
     def create_model(task):

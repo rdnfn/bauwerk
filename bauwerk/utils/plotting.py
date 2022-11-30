@@ -48,8 +48,28 @@ class EnvPlotter:
         plot_actions: bool = True,
         rescale_action: bool = True,
         plot_optimal_acts: bool = True,
+        interactive_mode: bool = False,
     ) -> None:
         """Plotting class for Bauwerk environments.
+
+        Additional information about the plot:
+
+        * The blue dashed line in the top plot
+            represents the power threshold above which
+            energy costs more than below.
+        * The net load in the top plot is the load
+            that has be covered using energy from the
+            grid. It's the negative residential load
+            plus battery (dis)charge plus PV generation.
+        * In the third plot from the top, a red line is
+            shown if the action taken by the agent is
+            not feasible, and has to be corrected
+            inside the environment.
+        * In the bottom plot, the dotted line is only
+            shown if a penalty is actually applied
+            (this may not be case either because the
+            actions are all feasible or because the
+            penalty is not activated).
 
         Args:
             initial_obs (dict): initial observations
@@ -78,6 +98,8 @@ class EnvPlotter:
                 Defaults to True.
             plot_optimal_acts (bool, optional): whether to include a
                 plot of the optimal actions. Defaults to True.
+            interactive_mode (bool, optional): whether Figures should be redrawn for
+                interactive usage, like in Bauwerk game. Defaults to False.
         """
 
         self.reward_label = "Reward (payment)"
@@ -95,6 +117,7 @@ class EnvPlotter:
         self.plot_actions = plot_actions
         self.rescale_action = rescale_action
         self.plot_optimal_acts = plot_optimal_acts
+        self.interactive_mode = interactive_mode
 
         if self.plot_optimal_acts:
             self.optimal_acts = bauwerk.solve(env)[0]
@@ -494,8 +517,10 @@ class EnvPlotter:
         if self.include_house_figure:
             self._update_house_figure()
 
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
+        # https://matplotlib.org/stable/users/explain/interactive_guide.html
+        if self.interactive_mode:
+            self.fig.canvas.draw_idle()
+            self.fig.canvas.flush_events()
 
     def step(self, action, observation, reward):
         self._add_obs({**observation, self.reward_label: reward, "action": action})

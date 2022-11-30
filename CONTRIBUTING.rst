@@ -113,6 +113,7 @@ To run a subset of tests::
 
 $ pytest tests.test_bauwerk
 
+To make a jupyter cell an rst cell for nbsphinx first set it to "raw" in the bottom right corner. Then, press "Edit cell tags (JSON)" in the three dot menu of the cell, and add ``"raw_mimetype": "text/restructuredtext"`` to the metadata section.
 
 Deploying
 ---------
