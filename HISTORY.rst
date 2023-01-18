@@ -10,6 +10,10 @@ History
 
   * Add information on evaluation to docs.
 
+* Fixes
+
+  * Improve plotting/widget code to comply with stricter shape testing in newer matplotlib versions
+
 0.3.1 (2022-11-03)
 ------------------
 
