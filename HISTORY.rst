@@ -2,6 +2,14 @@
 History
 =======
 
+
+0.3.2 (2022-12-00)
+------------------
+
+* Improvements
+
+  * Add information on evaluation to docs.
+
 0.3.1 (2022-11-03)
 ------------------
 
