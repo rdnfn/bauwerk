@@ -5,8 +5,7 @@
 	"build": {
 		"dockerfile": "Dockerfile",
 		"context": "..",
-		"args": {
-		}
+		"args": {}
 	},
 	"workspaceFolder": "/bauwerk",
 	// "workspaceMount": "source=remote-workspace,target=/workspace,type=volume",
@@ -17,7 +16,7 @@
 	//	"source=${localEnv:HOME}/.gitconfig,target=/root/.gitconfig,type=bind,consistency=cached",
 	//],
 	//"initializeCommand": "export DOCKER_BUILDKIT=0 && export COMPOSE_DOCKER_CLI_BUILD=0",
-	"postCreateCommand": "pip install -e .[exp] && pre-commit install",
+	"postCreateCommand": "pip install -e .[exp] && pre-commit install && conda init",
 	// Set *default* container specific settings.json values on container create.
 	"settings": {
 		"python.defaultInterpreterPath": "/opt/conda/bin/python",
