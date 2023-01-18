@@ -11,9 +11,9 @@
 # this may no longer work. Thus it is recommended to
 # run this test separately from the exp script tests.
 # See https://github.com/rdnfn/bauwerk/issues/29.
-import matplotlib
+import matplotlib.pyplot as plt
 
-matplotlib.use("nbAgg")
+plt.switch_backend("nbAgg")
 
 import bauwerk.widget.core
 import time
