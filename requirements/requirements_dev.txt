@@ -1,8 +1,10 @@
+# Bauwerk-specific tools
+cvxpy
+
+# Dev tools
 pip>=21.1
 bump2version
 wheel
-
-# Dev tools
 flake8
 tox
 coverage
