@@ -23,7 +23,13 @@
         :target: https://mybinder.org/v2/gh/rdnfn/bauwerk/main?urlpath=voila/render/notebooks/demo.ipynb
         :alt: Interactive demo
 
-Bauwerk is a Python package that provides super simple reinforcement learning environments representing controllable buildings. In each of the included buildings the charging rate of the home battery can be controlled.
+
+Bauwerk is a *meta reinforcement learning* (meta RL) benchmark with building control environments. Bauwerk aims to facilitate the development of methods that *generalise* across buildings to help scale greener building controllers to more buildings.
+
+**Background.** We use a lot of energy to operate buildings. About 30 percent of all human energy consumption are used for operating buildings. This energy runs a wide variety of devices with *heating, cooling, ventilation and air conditioning* (HVAC) systems accounting for more than half of that energy usage in many places. Shifting energy load away from carbon-intense grid energy has been suggested as a potential method to reduce the emission impact of buildings. Building control algorithms proposed in the literature often are too labour-intense during deployment to be commercially viable at scale.
+
+**Benchmark.** Bauwerk provides a standardised benchmark to evaluate the suitability of meta RL methods for building control. Bauwerk's built-in building simulation is purposefully simple to allow for rapid evaluation. Each simulated building simply has a home battery that can be used to charge low-carbon grid energy. Buildings vary in a number of parameters, including for example the size of the battery and solar photovoltaic installation.
+
 
 .. _Game: https://mybinder.org/v2/gh/rdnfn/bauwerk/main?urlpath=voila/render/notebooks/demo.ipynb
 
