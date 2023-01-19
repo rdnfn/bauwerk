@@ -379,6 +379,11 @@ class TrajectoryPlotCallback(BaseCallback):
 
         plotter.update_figure()
 
+        # Added to address error thrown (#27).
+        # Based on recommendation in the matplotlib docs:
+        # https://matplotlib.org/stable/api/backend_agg_api.html#matplotlib.backends.backend_agg.FigureCanvasAgg.tostring_rgb # pylint: disable=line-too-long
+        plotter.fig.canvas.draw()
+
         img_data = np.frombuffer(plotter.fig.canvas.tostring_rgb(), dtype=np.uint8)
         img_data = img_data.reshape(plotter.fig.canvas.get_width_height()[::-1] + (3,))
         plt.close(plotter.fig)

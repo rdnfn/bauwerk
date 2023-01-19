@@ -24,7 +24,7 @@ test_requirements = [
 extras_require = {
     "opt": ["cvxpy"],
     "widget": ["ipympl"],
-    "exp": ["hydra-core", "stable-baselines3"],
+    "exp": ["hydra-core", "stable-baselines3", "wandb"],
 }
 
 setup(
@@ -53,7 +53,7 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/rdnfn/bauwerk",
-    version="0.3.1",
+    version="0.3.2",
     zip_safe=False,
     entry_points={
         "console_scripts": ["bauwerk-exp=bauwerk.exp.core:run"],

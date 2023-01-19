@@ -2,7 +2,7 @@
 
 __author__ = """rdnfn"""
 __email__ = ""
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 
 import bauwerk.envs.registration
 import bauwerk.utils.logging

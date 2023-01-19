@@ -602,7 +602,7 @@ class Game(widgets.VBox):
 
         obs = {**obs, self.reward_label: np.array([0], dtype=float)}
         self.obs_values = {
-            key: [np.array([0], dtype=float)] * self.visible_steps
+            key: [0] * self.visible_steps
             for key in obs.keys()
             if key not in ["time_step", "time_of_day"]
         }
@@ -621,7 +621,7 @@ class Game(widgets.VBox):
 
     def add_obs(self, obs):
         for key in self.obs_values.keys():
-            self.obs_values[key].append(obs[key])
+            self.obs_values[key].append(float(obs[key]))
 
     def _go_to_game(self, change=None):
         # pylint: disable=unused-argument
