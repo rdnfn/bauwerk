@@ -1,5 +1,6 @@
 # Bauwerk-specific tools
 cvxpy
+voila
 
 # Dev tools
 pip>=21.1
