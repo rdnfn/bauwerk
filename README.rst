@@ -39,6 +39,7 @@ Use cases
 
 .. list-table::
    :header-rows: 1
+   :align: center
 
    * - 1. Meta RL benchmark
      - 2. Standard RL env
