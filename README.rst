@@ -44,7 +44,6 @@ Use cases
 
    * - .. image:: https://github.com/rdnfn/bauwerk/blob/29d3aea3cf93d5e11e2ae2b3d1b061661f4154ad/docs/assets/bauwerk_buildingcollection.png?raw=true
                 :align: center
-                :height: 70 px
                 :alt: Meta RL illustration
      - .. image:: https://raw.githubusercontent.com/rdnfn/bauwerk/270d82236da39ab6e2c7c12bb400ff6f1fadada3/docs/assets/bauwerk_single_building.png
                 :align: center
@@ -52,7 +51,6 @@ Use cases
                 :alt: Meta RL illustration
      - .. image:: https://github.com/rdnfn/bauwerk/blob/2ca459ae9c286f6c01fb97007f4974400af9b047/docs/assets/game.gif?raw=true
                 :align: center
-                :height: 120 px
                 :alt: Bauwerk game animation
    * - **1. Meta RL benchmark**
      - **2. Standard RL environment**
