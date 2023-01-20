@@ -59,7 +59,7 @@ Use cases
      - **3. Game**
    * - Bauwerk provides a new benchmark to evaluate the suitability of meta RL methods for building control. The diversity of buildings provides a challenging meta RL problem with potential to help towards real-world positive impact.
      - Even if you do not care (yet) about meta RL: Bauwerk provides a simple ``Gym`` environment for building control. Bauwerk's built-in python-based simulation makes it simpler to install than many other building frameworks: a ``pip install`` command is all you should need. A great way to get started in this space!
-     - yes, Bauwerk also comes with a little (hacky) game for humans. Helps gain some intuition about otherwise abstract building control problems. `Try it out here. <https://mybinder.org/v2/gh/rdnfn/bauwerk/main?urlpath=voila/render/notebooks/Bauwerk%20game.ipynb>`_
+     - Yes, Bauwerk also comes with a little (hacky) game for humans. Helps gain some intuition about otherwise abstract building control problems. `Try it out here. <https://mybinder.org/v2/gh/rdnfn/bauwerk/main?urlpath=voila/render/notebooks/Bauwerk%20game.ipynb>`_
 
 
 
