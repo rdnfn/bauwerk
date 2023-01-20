@@ -55,7 +55,7 @@ Use cases
                 :height: 120 px
                 :alt: Bauwerk game animation
    * - **1. Meta RL benchmark**
-     - **2. Standard RL env**
+     - **2. Standard RL environment**
      - **3. Game**
    * - Bauwerk provides a new benchmark to evaluate the suitability of meta RL methods for building control. The diversity of buildings provides a challenging meta RL problem with potential to help towards real-world positive impact.
      - Even if you do not care (yet) about meta RL: Bauwerk provides a simple ``Gym`` environment for building control. Bauwerk's built-in python-based simulation makes it simpler to install than many other building frameworks: a ``pip install`` command is all you should need. A great way to get started in this space!
