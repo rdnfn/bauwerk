@@ -60,6 +60,29 @@ Use cases
      - Yes, Bauwerk also comes with a little (hacky) game for humans. Helps gain some intuition about otherwise abstract building control problems. `Try it out here. <https://mybinder.org/v2/gh/rdnfn/bauwerk/main?urlpath=voila/render/notebooks/Bauwerk%20game.ipynb>`_
 
 
+Installation
+============
+
+To install bauwerk, run this command in your terminal:
+
+.. code-block:: console
+
+    $ pip install bauwerk
+
+This is the preferred method to install bauwerk, as it will always install the most recent stable release.
+
+..
+
+
+    **Note**
+
+    All Bauwerk dependencies will be automatically installed via pip, no further installation steps are required. Bauwerk does not rely on external building simulation engines such as EnergyPlus.
+
+If you want to use some of the advanced features you can use the following pip install commands to get the relevant dependencies:
+
+- ``pip install bauwerk[opt]``: all optimisation code (e.g. if you want to use ``bauwerk.solve()``).
+- ``pip install bauwerk[widget]``: anything to do with the game widget.
+- ``pip install bauwerk[exp]``: for running experiments using the ``bauwerk-exp`` script.
 
 Environments
 ============
