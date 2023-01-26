@@ -84,6 +84,8 @@ If you want to use some of the advanced features you can use the following pip i
 - ``pip install bauwerk[widget]``: anything to do with the game widget.
 - ``pip install bauwerk[exp]``: for running experiments using the ``bauwerk-exp`` script.
 
+Have a look at the `docs installation guide <https://bauwerk.readthedocs.io/en/latest/installation.html>`_ for more options.
+
 Environments
 ============
 
