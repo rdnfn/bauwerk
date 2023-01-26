@@ -1,5 +1,7 @@
 # Bauwerk-specific tools
 cvxpy
+voila<4.0.0 # problems with javascript breaking, likely due to widgets version
+# see https://github.com/voila-dashboards/voila/issues/1271
 
 # Dev tools
 pip>=21.1
