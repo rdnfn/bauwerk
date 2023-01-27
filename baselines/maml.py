@@ -3,6 +3,10 @@
 
 Code adapted from garage examples:
 https://raw.githubusercontent.com/rlworkgroup/garage/master/src/garage/examples/torch/maml_trpo_metaworld_ml10.py
+
+Note that the garage MAML implementation does not support GPU compute.
+
+https://github.com/rlworkgroup/garage/issues/2251#issuecomment-798601067
 """
 # pylint: disable=no-value-for-parameter
 # yapf: disable
