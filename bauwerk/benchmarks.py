@@ -179,7 +179,7 @@ class BuildDist(Benchmark):
             self.env_kwargs = {}
 
         self._train_classes = OrderedDict([(ENV_NAME, self.env_class)])
-        self._test_classes = [self.env_class]
+        self._test_classes = self._train_classes
 
         # Creating tasks
         self._train_tasks = self._create_tasks(
