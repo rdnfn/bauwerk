@@ -14,7 +14,7 @@ class GarageCompatEnv(bauwerk.envs.solar_battery_house.SolarBatteryHouseEnv):
 
         # In order to make this env compatible with rlworkgroup/garage
         # Add this parameter to determine max episode length.
-        self.max_path_length = self.cfg.episode_len
+        self.max_path_length = 720  # self.cfg.episode_len
 
         if gym.__version__ != "0.17.2":
             logger.warning(
