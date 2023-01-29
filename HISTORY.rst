@@ -12,6 +12,7 @@ History
 * Improvements
 
   * Add more expressive check of whether action is inside actions space.
+  * Bauwerk environments can now be deep copied (i.e. using ``copy.deepcopy()``). This is necessary for garage compatibility. To achieve this the class specific logger was replaced with the generic loguru logger instance, so that the logger does not need to be copied.
 
 0.3.2 (2023-01-19)
 ------------------
