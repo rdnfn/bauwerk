@@ -5,6 +5,10 @@ History
 0.3.3 (2023-01-00)
 ------------------
 
+* Features
+
+  * Experimental support for garage baseline algorithms via garage-compatiblity-mode in Bauwerk benchmarks. This in covers some of the specific requirements to use Bauwerk benchmarks with garage algorithms, like the gym version, obs and action space.
+
 * Improvements
 
   * Add more expressive check of whether action is inside actions space.

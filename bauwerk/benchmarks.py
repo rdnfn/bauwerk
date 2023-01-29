@@ -14,6 +14,7 @@ from collections import OrderedDict
 import gym
 import numpy as np
 import bauwerk.envs.solar_battery_house
+import bauwerk.utils.garage
 import bauwerk
 from loguru import logger
 
@@ -132,6 +133,7 @@ class BuildDist(Benchmark):
         episode_len: Optional[int] = None,
         dtype: Union[str, np.dtype] = None,
         env_kwargs: Optional[Dict] = None,
+        garage_compat_mode: Optional[bool] = False,
     ):
         """Building distribution.
 
@@ -152,6 +154,9 @@ class BuildDist(Benchmark):
             env_kwargs (dict, optional): parameters to pass when creating environment.
                 This should not be used when evaluating on pre-defined benchmark.
                 Defaults to None.
+            garage_compat_mode (dict, optional): whether to run in garage
+                compatibility mode. This enables running baseline experiments
+                with the rlworkgroup/garage package. Defaults to false.
 
         """
         super().__init__()
@@ -165,7 +170,10 @@ class BuildDist(Benchmark):
         if not dtype is None:
             self.cfg_dist.dtype = dtype
 
-        self.env_class = bauwerk.envs.HouseEnv
+        if not garage_compat_mode:
+            self.env_class = bauwerk.envs.HouseEnv
+        else:
+            self.env_class = bauwerk.utils.garage.GarageCompatEnv
 
         if not env_kwargs is None:
             logger.warning(
