@@ -6,6 +6,7 @@ __version__ = "0.3.2"
 
 import bauwerk.envs.registration
 import bauwerk.utils.logging
+import bauwerk.benchmarks
 from bauwerk.envs.solar_battery_house import EnvConfig
 from bauwerk.envs.solar_battery_house import SolarBatteryHouseEnv as HouseEnv
 
