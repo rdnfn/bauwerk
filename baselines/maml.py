@@ -11,12 +11,15 @@ https://github.com/rlworkgroup/garage/issues/2251#issuecomment-798601067
 # pylint: disable=no-value-for-parameter
 # yapf: disable
 import click
-import metaworld
+import bauwerk.benchmarks
 import torch
+
+# adapted scripts for Bauwerk benchmarks
+from task_sampler import MetaWorldTaskSampler
 
 from garage import wrap_experiment
 from garage.envs import MetaWorldSetTaskEnv
-from garage.experiment import (MetaEvaluator, MetaWorldTaskSampler,
+from garage.experiment import (MetaEvaluator, #MetaWorldTaskSampler,
                                SetTaskSampler)
 from garage.experiment.deterministic import set_seed
 from garage.sampler import RaySampler
@@ -49,7 +52,7 @@ def maml_trpo_metaworld_ml10(ctxt, seed, epochs, episodes_per_task, meta_batch_s
 
     """
     set_seed(seed)
-    ml10 = metaworld.ML10()
+    ml10 = bauwerk.benchmarks.BuildDistB(garage_compat_mode=True)
     tasks = MetaWorldTaskSampler(ml10, "train")
     env = tasks.sample(10)[0]()
     test_sampler = SetTaskSampler(
