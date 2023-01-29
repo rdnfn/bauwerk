@@ -181,9 +181,8 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         self.observation_space = gym.spaces.Dict(obs_spaces)
 
         # Set up logging
-        self.logger = logger
         bauwerk.utils.logging.setup_log_print_options()
-        self.logger.debug("Environment initialised.")
+        logger.debug("Environment initialised.")
 
     def _setup_components(self) -> None:
         """Setup components (devices) of house."""
@@ -306,7 +305,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
                 (helpful for debugging, and sometimes learning)
         """
 
-        self.logger.debug("step - action: %1.3f", action)
+        logger.debug("step - action: %1.3f", action)
         if self._check_action:
             assert self.action_space.contains(action), (
                 f"{action} ({type(action)} of dtype {action.dtype}) "
@@ -357,7 +356,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         # (wrapper now)
         if self.cfg.infeasible_control_penalty:
             reward -= power_diff
-            self.logger.debug("step - cost: %6.3f, power_diff: %6.3f", cost, power_diff)
+            logger.debug("step - cost: %6.3f, power_diff: %6.3f", cost, power_diff)
 
         # Getting battery state after applying action to simulation
         battery_cont = self.battery.get_energy_content()
@@ -401,7 +400,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         truncated = False  # No support for episode truncation, added for new gym API
 
         # TODO: potentially add config to allow logging this every x steps
-        self.logger.debug(
+        logger.debug(
             "step return: obs: %s, rew: %6.3f, terminated: %s",
             observation,
             reward,
@@ -530,7 +529,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         else:
             return_val = observation
 
-        self.logger.debug("Environment reset.")
+        logger.debug("Environment reset.")
 
         return return_val
 
@@ -624,7 +623,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             )
 
         if self.cfg.episode_len != cfg.episode_len:
-            self.logger.warning(
+            logger.warning(
                 (
                     f"Setting task with differing episode_len ({cfg.episode_len})"
                     f" from prior episode_len set in env ({self.cfg.episode_len})."

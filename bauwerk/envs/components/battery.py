@@ -1,8 +1,9 @@
 """Module with different types of batteries."""
 
-from typing import List, Tuple
+from typing import Tuple
 
 import numpy as np
+from loguru import logger
 
 from bauwerk.envs.components.base import EnvComponent
 
@@ -204,7 +205,7 @@ class LithiumIonBattery(BatteryModel):
         # actual amount of power applied
         actual_power = new_c - new_d
 
-        self.logger.debug(
+        logger.debug(
             "Charged {}kW (attempted {}), new content {}kWh",
             actual_power,
             power,
