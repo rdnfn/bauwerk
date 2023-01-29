@@ -37,7 +37,9 @@ from garage.trainer import Trainer
 @click.option("--episodes_per_task", default=10)
 @click.option("--meta_batch_size", default=20)
 @wrap_experiment(snapshot_mode="all")
-def maml_trpo_metaworld_ml10(ctxt, seed, epochs, episodes_per_task, meta_batch_size):
+def maml_trpo_bauwerk_build_dist_b(
+    ctxt, seed, epochs, episodes_per_task, meta_batch_size
+):
     """Set up environment and algorithm and run the task.
 
     Args:
@@ -103,4 +105,4 @@ def maml_trpo_metaworld_ml10(ctxt, seed, epochs, episodes_per_task, meta_batch_s
     )
 
 
-maml_trpo_metaworld_ml10()
+maml_trpo_bauwerk_build_dist_b()
