@@ -34,6 +34,9 @@ class EnvConfig:
         "relative"  # either relative (to battery size) or absolute (kW)
     )
     dtype: str = "float32"  # note that SB3 requires np.float32 action space.
+    check_action: bool = (
+        True  # whether to check if action is in action space in each step
+    )
 
     # component params
     battery_size: float = 7.5  # kWh
@@ -98,6 +101,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         self.cfg: EnvConfig = cfg
 
         self.force_task_setting = force_task_setting
+        self._check_action = self.cfg.check_action
         self._task_is_set = False
 
         # set up components (solar installation, load, battery, grid connection)
@@ -303,14 +307,14 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         """
 
         self.logger.debug("step - action: %1.3f", action)
-        # TODO: is this necessary?
-        assert self.action_space.contains(action), (
-            f"{action} ({type(action)} of dtype {action.dtype}) "
-            f"not valid inside action space ({self.action_space}"
-            f" with high {self.action_space.high}"
-            f", low {self.action_space.low}"
-            f" and dtype {self.action_space.dtype})."
-        )
+        if self._check_action:
+            assert self.action_space.contains(action), (
+                f"{action} ({type(action)} of dtype {action.dtype}) "
+                f"not valid inside action space ({self.action_space}"
+                f" with high {self.action_space.high}"
+                f", low {self.action_space.low}"
+                f" and dtype {self.action_space.dtype})."
+            )
 
         self.time_step += 1
 
