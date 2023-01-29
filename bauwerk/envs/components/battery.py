@@ -3,7 +3,6 @@
 from typing import List, Tuple
 
 import numpy as np
-import cvxpy as cp
 
 from bauwerk.envs.components.base import EnvComponent
 
@@ -223,36 +222,3 @@ class LithiumIonBattery(BatteryModel):
         self.b = np.array(
             [self.size * self.start_charge], dtype=np.float32
         )  # pylint: disable=invalid-name
-
-    def get_contraints(
-        self, power_episode: cp.Variable, battery_content_episode: cp.Variable
-    ) -> List:
-        """Return CVXPY-compatible list of constraints.
-
-        This follows the C/L/C model described on page 12 of
-        https://cs.stanford.edu/~fiodar/pubs/TractableLithium-ionStorageMod.pdf
-        """
-
-        # constraint in Equation (20) of paper above
-        # TODO move into constraints
-        delta_energy = cp.multiply(
-            power_episode * self.eta_c * self.time_step_len, (power_episode >= 0)
-        )
-        delta_energy += cp.multiply(
-            power_episode * self.eta_d * self.time_step_len, (power_episode < 0)
-        )
-
-        constraints = [
-            battery_content_episode[1:]
-            == battery_content_episode[:-1]
-            + delta_energy,  # constraint in Equation (19)
-            # constraint in Equation (5)
-            self.alpha_bar_d <= power_episode,
-            self.alpha_bar_c >= power_episode,
-            # constraint in Equation (22)
-            self.u1 * power_episode / self.nominal_voltage_d + self.v1_bar
-            <= battery_content_episode,
-            self.u2 * power_episode / self.nominal_voltage_c + self.v2_bar
-            >= battery_content_episode,
-        ]
-        return constraints
