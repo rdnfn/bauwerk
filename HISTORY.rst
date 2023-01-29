@@ -2,6 +2,12 @@
 History
 =======
 
+0.3.3 (2023-01-00)
+------------------
+
+* Improvements
+
+  * Add more expressive check of whether action is inside actions space.
 
 0.3.2 (2023-01-19)
 ------------------
