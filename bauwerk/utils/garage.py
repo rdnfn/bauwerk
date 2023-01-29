@@ -7,12 +7,7 @@ import bauwerk.envs.solar_battery_house
 
 
 class GarageCompatEnv(bauwerk.envs.solar_battery_house.SolarBatteryHouseEnv):
-    """Compatiblity environment for rlworkgroup/garage.
-
-    After Gym v0.21 a number of breaking API changes were introduced.
-    Bauwerk adopts this new API but aims to be compatible with
-    Gym v0.21 as well. This version is used by Stable-Baselines 3.
-    """
+    """Compatiblity environment for rlworkgroup/garage."""
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -32,6 +27,11 @@ class GarageCompatEnv(bauwerk.envs.solar_battery_house.SolarBatteryHouseEnv):
         # https://github.com/Farama-Foundation/Gymnasium/blob/a10ae1771dc50b2dc0142376c8757094e6a10c36/gymnasium/wrappers/flatten_observation.py
         self.old_obs_space = self.observation_space
         self.observation_space = gym.spaces.flatten_space(self.observation_space)
+
+        # deactivate action check as the garage policies are unclipped
+        # and would throw an error otherwise, see:
+        # https://github.com/rlworkgroup/garage/issues/710#issuecomment-497974316
+        self._check_action = False
 
     def observation(self, observation):
         return gym.spaces.flatten(self.old_obs_space, observation)
