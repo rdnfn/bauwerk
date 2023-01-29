@@ -181,6 +181,10 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         bauwerk.utils.logging.setup_log_print_options()
         self.logger.debug("Environment initialised.")
 
+        # In order to make this env compatible with rlworkgroup/garage
+        # Add this parameter to determine max episode length.
+        self.max_path_length = self.cfg.episode_len
+
         # Reset env
         self.reset()
 
