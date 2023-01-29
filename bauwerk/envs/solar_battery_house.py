@@ -311,7 +311,13 @@ class SolarBatteryHouseCoreEnv(gym.Env):
 
         self.logger.debug("step - action: %1.3f", action)
         # TODO: is this necessary?
-        assert self.action_space.contains(action), f"{action} ({type(action)}) invalid"
+        assert self.action_space.contains(action), (
+            f"{action} ({type(action)} of dtype {action.dtype}) "
+            f"not valid inside action space ({self.action_space}"
+            f" with high {self.action_space.high}"
+            f", low {self.action_space.low}"
+            f" and dtype {self.action_space.dtype})."
+        )
 
         self.time_step += 1
 
