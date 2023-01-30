@@ -642,6 +642,11 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             self._setup_components()
             self._task_is_set = True
             self.reset()
+        else:
+            logger.warning(
+                "Ignored attempt to set task in env with setting",
+                " enable_task_setting=False. Task was NOT changed.",
+            )
 
 
 # Add compatiblity wrapper if necessary
