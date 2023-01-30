@@ -41,7 +41,7 @@ class EnvConfig:
     check_action: bool = True
     # Whether to enable that env.set_task() changes env cfg.
     # No effect if set inside task cfg via env.set_task().
-    enable_task_setting: bool = False
+    enable_task_setting: bool = True
 
     # component params
     battery_size: float = 7.5  # kWh
