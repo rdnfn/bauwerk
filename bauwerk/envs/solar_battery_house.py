@@ -36,12 +36,12 @@ class EnvConfig:
 
     # implementation details
     dtype: str = "float32"  # note that SB3 requires np.float32 action space.
-    check_action: bool = (
-        True  # whether to check if action is in action space in each step
-    )
-    enable_task_setting: bool = (
-        False  # whether to enable that env.set_task() changes env cfg
-    )
+    # Whether to check if action is in action space in each step.
+    # No effect if set inside task cfg via env.set_task().
+    check_action: bool = True
+    # Whether to enable that env.set_task() changes env cfg.
+    # No effect if set inside task cfg via env.set_task().
+    enable_task_setting: bool = False
 
     # component params
     battery_size: float = 7.5  # kWh
