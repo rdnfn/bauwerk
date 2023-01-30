@@ -172,10 +172,7 @@ class BuildDist(Benchmark):
         if not dtype is None:
             self.cfg_dist.dtype = dtype
 
-        if not garage_compat_mode:
-            self.env_class = bauwerk.envs.HouseEnv
-        else:
-            self.env_class = bauwerk.utils.garage.GarageCompatEnv
+        self.env_class = get_default_env_class(garage_compat_mode)
 
         if not env_kwargs is None:
             logger.warning(
@@ -199,12 +196,12 @@ class BuildDist(Benchmark):
             seed=seed,
             num_tasks=num_train_tasks,
         )
-        self._test_tasks = self._create_tasks(
+        self._test_tasks = self._create_test_tasks(
             seed=(seed + 1 if seed is not None else seed),
             num_tasks=num_test_tasks,
         )
 
-    def _create_tasks(self, seed, num_tasks):
+    def _create_tasks(self, seed, num_tasks, env_name=ENV_NAME):
         """Create tasks representing building distribution B."""
         if seed is not None:
             old_np_state = np.random.get_state()
@@ -214,13 +211,21 @@ class BuildDist(Benchmark):
 
         for _ in range(num_tasks):
             task = Task(
-                env_name=ENV_NAME,
+                env_name=env_name,
                 cfg=self.cfg_dist.sample(),
             )
             tasks.append(task)
 
         if seed is not None:
             np.random.set_state(old_np_state)
+        return tasks
+
+    def _create_test_tasks(self, seed, num_tasks):
+        tasks = []
+        for cls_name in self._test_classes:
+            tasks += self._create_tasks(
+                seed=seed, num_tasks=num_tasks, env_name=cls_name
+            )
         return tasks
 
     def make_env(self):
@@ -240,8 +245,17 @@ class BuildDist(Benchmark):
         return env
 
 
-def create_env_class(env_class, cfg):
+def get_default_env_class(garage_compat_mode: bool):
+    if not garage_compat_mode:
+        return bauwerk.envs.HouseEnv
+    else:
+        return bauwerk.utils.garage.GarageCompatEnv
+
+
+def create_env_class(garage_compat_mode, cfg):
     """Create an env class with fixed configuration."""
+
+    env_class = get_default_env_class(garage_compat_mode)
 
     class FixedEnv(env_class):
         def __init__(self, *args, **kwargs):
@@ -269,7 +283,7 @@ class BuildDistA(BuildDist):
 class BuildDistB(BuildDist):
     """Bauwerk building distribution B:"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, garage_compat_mode=False, **kwargs):
         """Bauwerk building distribution B:
 
         Houses with varying battery size (0.5kWh to 20kWh)."""
@@ -289,10 +303,10 @@ class BuildDistB(BuildDist):
             cfg: bauwerk.EnvConfig = cfg_dist.sample()
             cfg.battery_size = battery_size
             test_classes[f"bauwerk/House-{battery_size}kWh"] = create_env_class(
-                bauwerk.HouseEnv, cfg=cfg
+                garage_compat_mode=garage_compat_mode, cfg=cfg
             )
 
-        super().__init__(**kwargs, cfg_dist=cfg_dist)
+        super().__init__(**kwargs, cfg_dist=cfg_dist, test_classes=test_classes)
 
 
 class BuildDistC(BuildDist):
