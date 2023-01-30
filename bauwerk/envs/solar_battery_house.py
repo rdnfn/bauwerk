@@ -33,9 +33,14 @@ class EnvConfig:
     action_space_type: str = (
         "relative"  # either relative (to battery size) or absolute (kW)
     )
+
+    # implementation details
     dtype: str = "float32"  # note that SB3 requires np.float32 action space.
     check_action: bool = (
         True  # whether to check if action is in action space in each step
+    )
+    enable_task_setting: bool = (
+        False  # whether to enable that env.set_task() changes env cfg
     )
 
     # component params
@@ -102,6 +107,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
 
         self.force_task_setting = force_task_setting
         self._check_action = self.cfg.check_action
+        self._enable_task_setting = self.cfg.enable_task_setting
         self._task_is_set = False
 
         # set up components (solar installation, load, battery, grid connection)
@@ -608,33 +614,34 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         Args:
             task (Any): Bauwerk control task, corresponds to one building.
         """
+        if self._enable_task_setting:
 
-        # check task cfg type
-        if task.cfg is None:
-            cfg = EnvConfig()
-        elif isinstance(task.cfg, dict):
-            cfg = EnvConfig(**task.cfg)
-        elif isinstance(task.cfg, EnvConfig):
-            cfg = task.cfg
-        else:
-            raise ValueError(
-                f"Task config type not recognised ({type(task.cfg)}"
-                "is not an instance of None, dict and EnvConfig.)"
-            )
-
-        if self.cfg.episode_len != cfg.episode_len:
-            logger.warning(
-                (
-                    f"Setting task with differing episode_len ({cfg.episode_len})"
-                    f" from prior episode_len set in env ({self.cfg.episode_len})."
-                    " This may lead to unexpected behaviour."
+            # check task cfg type
+            if task.cfg is None:
+                cfg = EnvConfig()
+            elif isinstance(task.cfg, dict):
+                cfg = EnvConfig(**task.cfg)
+            elif isinstance(task.cfg, EnvConfig):
+                cfg = task.cfg
+            else:
+                raise ValueError(
+                    f"Task config type not recognised ({type(task.cfg)}"
+                    "is not an instance of None, dict and EnvConfig.)"
                 )
-            )
 
-        self.cfg = cfg
-        self._setup_components()
-        self._task_is_set = True
-        self.reset()
+            if self.cfg.episode_len != cfg.episode_len:
+                logger.warning(
+                    (
+                        f"Setting task with differing episode_len ({cfg.episode_len})"
+                        f" from prior episode_len set in env ({self.cfg.episode_len})."
+                        " This may lead to unexpected behaviour."
+                    )
+                )
+
+            self.cfg = cfg
+            self._setup_components()
+            self._task_is_set = True
+            self.reset()
 
 
 # Add compatiblity wrapper if necessary
