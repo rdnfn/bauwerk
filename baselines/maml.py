@@ -76,7 +76,7 @@ def maml_trpo_bauwerk_build_dist_b(
 
     meta_evaluator = MetaEvaluator(
         test_task_sampler=test_sampler,
-        n_test_tasks=1,
+        n_test_tasks=5,
         n_exploration_eps=episodes_per_task,
     )
 
