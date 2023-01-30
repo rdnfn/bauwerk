@@ -246,6 +246,15 @@ class BuildDist(Benchmark):
 
 
 def get_default_env_class(garage_compat_mode: bool):
+    """Get default env class given compatibility requirements.
+
+    Args:
+        garage_compat_mode (bool): whether the benchmark is run in garage
+            compatbility mode.
+
+    Returns:
+        Env: environment
+    """
     if not garage_compat_mode:
         return bauwerk.envs.HouseEnv
     else:
