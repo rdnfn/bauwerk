@@ -14,13 +14,3 @@ def register_all() -> None:
         id="bauwerk/House-v0",
         entry_point="bauwerk.envs:HouseEnv",
     )
-
-    gym.envs.registration.register(
-        id="bauwerk/BuildDistA-v0",
-        entry_point="bauwerk.envs.distributions:BuildDistAEnv",
-    )
-
-    gym.envs.registration.register(
-        id="bauwerk/BuildDistB-v0",
-        entry_point="bauwerk.envs.distributions:BuildDistBEnv",
-    )
