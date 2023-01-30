@@ -130,6 +130,7 @@ class BuildDist(Benchmark):
         seed: Optional[int] = None,
         num_train_tasks: int = 20,
         num_test_tasks: int = 10,
+        test_classes: Optional[OrderedDict] = None,
         episode_len: Optional[int] = None,
         dtype: Union[str, np.dtype] = None,
         env_kwargs: Optional[Dict] = None,
@@ -157,6 +158,7 @@ class BuildDist(Benchmark):
             garage_compat_mode (dict, optional): whether to run in garage
                 compatibility mode. This enables running baseline experiments
                 with the rlworkgroup/garage package. Defaults to false.
+            test_classes (OrderedDict, optional): test classes to test on.
 
         """
         super().__init__()
@@ -187,7 +189,10 @@ class BuildDist(Benchmark):
             self.env_kwargs = {}
 
         self._train_classes = OrderedDict([(ENV_NAME, self.env_class)])
-        self._test_classes = self._train_classes
+        if test_classes is None:
+            self._test_classes = self._train_classes
+        else:
+            self._test_classes = test_classes
 
         # Creating tasks
         self._train_tasks = self._create_tasks(
@@ -235,6 +240,17 @@ class BuildDist(Benchmark):
         return env
 
 
+def create_env_class(env_class, cfg):
+    """Create an env class with fixed configuration."""
+
+    class FixedEnv(env_class):
+        def __init__(self, *args, **kwargs):
+            cfg.enable_task_setting = False
+            super().__init__(cfg=cfg)
+
+    return FixedEnv
+
+
 class BuildDistA(BuildDist):
     """Bauwerk building distribution A: identical houses, no variation."""
 
@@ -266,6 +282,16 @@ class BuildDistB(BuildDist):
             episode_len=24 * 30,
             grid_peak_threshold=2.0,
         )
+
+        # create test classes
+        test_classes = OrderedDict()
+        for battery_size in [1, 5, 10, 15, 20, 25]:
+            cfg: bauwerk.EnvConfig = cfg_dist.sample()
+            cfg.battery_size = battery_size
+            test_classes[f"bauwerk/House-{battery_size}kWh"] = create_env_class(
+                bauwerk.HouseEnv, cfg=cfg
+            )
+
         super().__init__(**kwargs, cfg_dist=cfg_dist)
 
 
