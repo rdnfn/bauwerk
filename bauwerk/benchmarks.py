@@ -222,6 +222,13 @@ class BuildDist(Benchmark):
 
     def _create_test_tasks(self, seed, num_tasks):
         tasks = []
+
+        # if there is more than one test class
+        # create just one task per class,
+        # as each class represents a different task
+        # itself. Made for compatibility with garage.
+        if len(self._test_classes) > 1:
+            num_tasks = 1
         for cls_name in self._test_classes:
             tasks += self._create_tasks(
                 seed=seed, num_tasks=num_tasks, env_name=cls_name
