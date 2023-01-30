@@ -315,7 +315,12 @@ class BuildDistB(BuildDist):
                 garage_compat_mode=garage_compat_mode, cfg=cfg
             )
 
-        super().__init__(**kwargs, cfg_dist=cfg_dist, test_classes=test_classes)
+        super().__init__(
+            **kwargs,
+            cfg_dist=cfg_dist,
+            test_classes=test_classes,
+            garage_compat_mode=garage_compat_mode,
+        )
 
 
 class BuildDistC(BuildDist):
