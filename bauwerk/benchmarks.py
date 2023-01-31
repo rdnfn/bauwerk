@@ -302,7 +302,7 @@ class BuildDistB(BuildDist):
     def __init__(
         self,
         garage_compat_mode: bool = False,
-        infeas_penalty_for_train: int = 0.0,
+        infeas_penalty_for_train: float = 0.0,
         **kwargs,
     ):
         """Bauwerk building distribution B:

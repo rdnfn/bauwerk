@@ -26,7 +26,7 @@ class EnvConfig:
     time_step_len: float = 1.0  # in hours
     episode_len: int = 24 * 365 - 1  # in no of timesteps (-1 bc of available obs)
     grid_charging: bool = True  # whether grid charging is allowed
-    infeasible_control_penalty: bool = False  # whether penalty added for inf. control
+    infeasible_control_penalty: float = 0.0  # whether penalty added for inf. control
     obs_keys: list = field(
         default_factory=lambda: ["load", "pv_gen", "battery_cont", "time_of_day"]
     )
@@ -360,8 +360,8 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         power_diff = np.abs(charging_power - float(attempted_action))
         # TODO: remove this legacy penalty term cfg param and implementation
         # (wrapper now)
-        if self.cfg.infeasible_control_penalty:
-            reward -= power_diff
+        if self.cfg.infeasible_control_penalty != 0.0:
+            reward -= power_diff * self.cfg.infeasible_control_penalty
             logger.debug("step - cost: %6.3f, power_diff: %6.3f", cost, power_diff)
 
         # Getting battery state after applying action to simulation
