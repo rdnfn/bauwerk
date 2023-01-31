@@ -299,7 +299,12 @@ class BuildDistA(BuildDist):
 class BuildDistB(BuildDist):
     """Bauwerk building distribution B:"""
 
-    def __init__(self, garage_compat_mode=False, **kwargs):
+    def __init__(
+        self,
+        garage_compat_mode: bool = False,
+        infeas_penalty_for_train: int = 0.0,
+        **kwargs,
+    ):
         """Bauwerk building distribution B:
 
         Houses with varying battery size (0.5kWh to 20kWh)."""
@@ -311,6 +316,7 @@ class BuildDistB(BuildDist):
             ),
             episode_len=24 * 30,
             grid_peak_threshold=2.0,
+            infeasible_control_penalty=infeas_penalty_for_train,
         )
 
         # create test classes
@@ -318,6 +324,7 @@ class BuildDistB(BuildDist):
         for battery_size in [1, 5, 10, 15, 20, 25]:
             cfg: bauwerk.EnvConfig = cfg_dist.sample()
             cfg.battery_size = battery_size
+            cfg.infeasible_control_penalty = 0.0
             test_classes[f"bauwerk/House-{battery_size}kWh"] = create_env_class(
                 garage_compat_mode=garage_compat_mode, cfg=cfg
             )
