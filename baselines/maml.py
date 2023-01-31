@@ -53,7 +53,9 @@ def maml_trpo_bauwerk_build_dist_b(
 
     """
     set_seed(seed)
-    ml10 = bauwerk.benchmarks.BuildDistB(garage_compat_mode=True)
+    ml10 = bauwerk.benchmarks.BuildDistB(
+        garage_compat_mode=True, infeas_penalty_for_train=0.1
+    )
     tasks = MetaWorldTaskSampler(ml10, "train")
     env = tasks.sample(10)[0]()
     test_sampler = SetTaskSampler(
