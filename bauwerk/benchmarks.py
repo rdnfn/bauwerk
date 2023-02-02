@@ -325,6 +325,7 @@ class BuildDistB(BuildDist):
             cfg: bauwerk.EnvConfig = cfg_dist.sample()
             cfg.battery_size = battery_size
             cfg.infeasible_control_penalty = 0.0
+            cfg.enable_task_setting = False
             test_classes[f"bauwerk/House-{battery_size}kWh"] = create_env_class(
                 garage_compat_mode=garage_compat_mode, cfg=cfg
             )
