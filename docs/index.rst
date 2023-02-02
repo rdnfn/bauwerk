@@ -15,7 +15,8 @@ Bauwerk is a Python package that provides super simple reinforcement learning en
    Home <self>
    installation
    usage
-   envs
+   envs/solar_battery_house.ipynb
+   distributions
    contributing
    authors
    history
