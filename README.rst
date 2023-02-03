@@ -44,7 +44,6 @@ Use cases
 
    * - .. image:: https://github.com/rdnfn/bauwerk/blob/29d3aea3cf93d5e11e2ae2b3d1b061661f4154ad/docs/assets/bauwerk_buildingcollection.png?raw=true
                 :align: center
-                :height: 70 px
                 :alt: Meta RL illustration
      - .. image:: https://raw.githubusercontent.com/rdnfn/bauwerk/270d82236da39ab6e2c7c12bb400ff6f1fadada3/docs/assets/bauwerk_single_building.png
                 :align: center
@@ -52,7 +51,6 @@ Use cases
                 :alt: Meta RL illustration
      - .. image:: https://github.com/rdnfn/bauwerk/blob/2ca459ae9c286f6c01fb97007f4974400af9b047/docs/assets/game.gif?raw=true
                 :align: center
-                :height: 120 px
                 :alt: Bauwerk game animation
    * - **1. Meta RL benchmark**
      - **2. Standard RL environment**
@@ -62,6 +60,31 @@ Use cases
      - Yes, Bauwerk also comes with a little (hacky) game for humans. Helps gain some intuition about otherwise abstract building control problems. `Try it out here. <https://mybinder.org/v2/gh/rdnfn/bauwerk/main?urlpath=voila/render/notebooks/Bauwerk%20game.ipynb>`_
 
 
+Installation
+============
+
+To install bauwerk, run this command in your terminal:
+
+.. code-block:: console
+
+    $ pip install bauwerk
+
+This is the preferred method to install bauwerk, as it will always install the most recent stable release.
+
+..
+
+
+    **Note**
+
+    All Bauwerk dependencies will be automatically installed via pip, no further installation steps are required. Bauwerk does not rely on external building simulation engines such as EnergyPlus.
+
+If you want to use some of the advanced features you can use the following pip install commands to get the relevant dependencies:
+
+- ``pip install bauwerk[opt]``: all optimisation code (e.g. if you want to use ``bauwerk.solve()``).
+- ``pip install bauwerk[widget]``: anything to do with the game widget.
+- ``pip install bauwerk[exp]``: for running experiments using the ``bauwerk-exp`` script.
+
+Have a look at the `docs installation guide <https://bauwerk.readthedocs.io/en/latest/installation.html>`_ for more options.
 
 Environments
 ============
