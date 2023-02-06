@@ -32,12 +32,14 @@ from garage.trainer import Trainer
 
 @click.command()
 @click.option("--seed", default=1)
-@click.option("--epochs", default=300)
-@click.option("--episodes_per_task", default=10)
+@click.option("--epochs", default=50)
+@click.option("--episode_len", default=24 * 7)
+@click.option("--steps_per_task", default=24 * 30)
+# @click.option("--episodes_per_task", default=10)
 @click.option("--meta_batch_size", default=20)
-@wrap_experiment(snapshot_mode="all")
+@wrap_experiment(snapshot_mode="all", name_parameters="all")
 def maml_trpo_bauwerk_build_dist_b(
-    ctxt, seed, epochs, episodes_per_task, meta_batch_size
+    ctxt, seed, epochs, episode_len, steps_per_task, meta_batch_size
 ):
     """Set up environment and algorithm and run the task.
 
@@ -52,9 +54,14 @@ def maml_trpo_bauwerk_build_dist_b(
         meta_batch_size (int): Number of tasks sampled per batch.
 
     """
+
+    # set maximum number of episodes to traing within step limit per task
+    episodes_per_task = steps_per_task // episode_len
     set_seed(seed)
     ml10 = bauwerk.benchmarks.BuildDistB(
-        garage_compat_mode=True, infeas_penalty_for_train=0.1
+        garage_compat_mode=True,
+        infeas_penalty_for_train=0.1,
+        episode_len=episode_len,
     )
     tasks = MetaWorldTaskSampler(ml10, "train")
     env = tasks.sample(10)[0]()
@@ -77,9 +84,11 @@ def maml_trpo_bauwerk_build_dist_b(
     )
 
     meta_evaluator = MetaEvaluator(
-        test_task_sampler=test_sampler,
-        n_test_tasks=5,
-        n_exploration_eps=episodes_per_task,
+        test_task_sampler=test_sampler,  # sets to the test tasks in build dist B
+        n_test_tasks=5,  # uses all the five tasks available
+        # -> one per building configuration
+        n_exploration_eps=5,  # we exlore for 5 episodes
+        n_test_episodes=1,  # we only test on one episode after adapting on 5
     )
 
     sampler = RaySampler(
@@ -106,7 +115,10 @@ def maml_trpo_bauwerk_build_dist_b(
 
     trainer.setup(algo, env)
     trainer.train(
-        n_epochs=epochs, batch_size=episodes_per_task * env.spec.max_episode_length
+        n_epochs=epochs,
+        batch_size=episodes_per_task * env.spec.max_episode_length
+        # This appears to be applied to each meta batch
+        # (e.g. for each of 20 tasks sampled for training)
     )
 
 
