@@ -128,7 +128,7 @@ class BuildDist(Benchmark):
         self,
         cfg_dist: CfgDist,
         seed: Optional[int] = None,
-        num_train_tasks: int = 20,
+        num_train_tasks: int = 30,
         num_test_tasks: int = 10,
         test_classes: Optional[OrderedDict] = None,
         episode_len: Optional[int] = None,
