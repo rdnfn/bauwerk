@@ -1,5 +1,7 @@
 """Plotting utility functions."""
 
+from __future__ import annotations
+
 from typing import Optional
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -122,7 +124,7 @@ class EnvPlotter:
         if self.plot_optimal_acts:
             self.optimal_acts = bauwerk.solve(env)[0]
 
-        self.reset(initial_obs)
+        self.reset()
         self._set_up_figure()
 
     def _add_obs(self, obs):
@@ -561,30 +563,37 @@ class EnvPlotter:
         self.reward += reward
         self.current_step += 1
 
-    def reset(self, obs: dict) -> None:
+    def reset(self) -> None:
         """Reset figure with observation returned by ``env.reset()``.
 
         Args:
             obs (dict): initial observations returned by ``env.reset()``.
         """
-        obs = {
-            **obs,
-            self.reward_label: np.array([0], dtype=float),
-            "action": np.array([0], dtype=float),
-            "optimal_action": np.array([0], dtype=float),
-            "net_load": np.array([0], dtype=float),
-            "charging_power": np.array([0], dtype=float),
-            "info_pv_gen": np.array([0], dtype=float),
-            "info_load": np.array([0], dtype=float),
-            "info_battery_cont": np.array([0], dtype=float),
-            "info_cost": np.array([0], dtype=float),
-        }
+        # TODO: add support
+        # for including reset observations
+
+        # get keys of observation space
+        obs_value_keys = list(
+            getattr(self.env, "old_obs_space", self.env.observation_space)
+            .sample()
+            .keys()
+        )
+        obs_value_keys += [
+            self.reward_label,
+            "action",
+            "optimal_action",
+            "net_load",
+            "charging_power",
+            "info_pv_gen",
+            "info_load",
+            "info_battery_cont",
+            "info_cost",
+        ]
         self.obs_values = {
             key: [0] * (self.visible_steps + 1)
-            for key in obs.keys()
+            for key in obs_value_keys
             if key not in ["time_step", "time_of_day"]
         }
-        self._add_obs(obs)
         self.reward = 0
         self.game_finished = False
         self.current_step = 0
