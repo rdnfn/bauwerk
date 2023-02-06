@@ -241,7 +241,7 @@ class EnvPoolSampler(TaskSampler):
 
 
 # adapted for Bauwerk to 20
-MW_TASKS_PER_ENV = 20
+MW_TASKS_PER_ENV = 30
 
 
 class MetaWorldTaskSampler(TaskSampler):
