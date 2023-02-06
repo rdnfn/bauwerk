@@ -45,3 +45,7 @@ class GarageCompatEnv(bauwerk.envs.solar_battery_house.SolarBatteryHouseEnv):
         observation, reward, done, info = super().step(action)
         observation = self.observation(observation)
         return observation, reward, done, info
+
+    def render(self, mode: str = None):
+        if not self.renderer_is_setup:
+            self.setup_renderer(mode=mode)
