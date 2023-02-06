@@ -8,9 +8,11 @@ from loguru import logger
 import gym
 import gym.utils.seeding
 import numpy as np
+import copy
 
 import bauwerk.utils.logging
 import bauwerk.utils.gym
+import bauwerk.utils.plotting
 import bauwerk.eval
 import bauwerk.envs.components.solar
 import bauwerk.envs.components.load
@@ -42,6 +44,8 @@ class EnvConfig:
     # Whether to enable that env.set_task() changes env cfg.
     # No effect if set inside task cfg via env.set_task().
     enable_task_setting: bool = True
+    # Render mode of the environment (can be None or 'rgb_array')
+    render_mode: str = None
 
     # component params
     battery_size: float = 7.5  # kWh
@@ -96,6 +100,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
                 Defaults to None.
             force_task_setting (bool, optional): whether to enforce setting a task
                 in environment before calling reset. Defaults to False.
+            render_mode (bool, optional): mode to render env with.
         """
 
         # setup env config
@@ -189,6 +194,10 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         # Set up logging
         bauwerk.utils.logging.setup_log_print_options()
         logger.debug("Environment initialised.")
+
+        # Setup renderer (if configured)
+        self.renderer_is_setup = False
+        self.setup_renderer()
 
     def _setup_components(self) -> None:
         """Setup components (devices) of house."""
@@ -321,7 +330,12 @@ class SolarBatteryHouseCoreEnv(gym.Env):
                 f" and dtype {self.action_space.dtype})."
             )
 
-        self.time_step += 1
+        try:
+            self.time_step += 1
+        except AttributeError as e:
+            raise AttributeError(
+                "No attribute time_step. Has the environment been reset?"
+            ) from e
 
         # Get old state from previous time step
         load = self.state["load"]
@@ -332,6 +346,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         ### Computation of taking action in simulation ###
 
         ## Action conversion
+        original_action = copy.copy(action)
         # TODO: think about this float conv, and consider whether it is necessary
         action = float(action)  # getting the float value
         action = self.get_power_from_action(action)
@@ -415,7 +430,14 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             self.state,
         )
         # TODO: ensure that float casting is necessary and add comment on gym API
-        return observation, float(reward), terminated, truncated, self.state
+
+        step_return = (observation, float(reward), terminated, truncated, self.state)
+
+        # update renderer
+        # (this does nothing when no renderer configured)
+        self.update_renderer(step_return=step_return, action=original_action)
+
+        return step_return
 
     def _get_obs_from_state(self, state: dict) -> dict:
         """Get observation from state dict.
@@ -539,41 +561,45 @@ class SolarBatteryHouseCoreEnv(gym.Env):
 
         return return_val
 
-    def render(self, mode: str = "human") -> None:
-        """Renders the environment.
+    def render(self) -> None:
+        """ """
+        if self.render_mode == "rgb_array":
+            fig = self.plotter.fig
+            canvas = fig.canvas
+            canvas.draw()
+            width, height = fig.get_size_inches() * fig.get_dpi()
+            image = np.frombuffer(canvas.tostring_rgb(), dtype="uint8").reshape(
+                int(height), int(width), 3
+            )
+            return image
 
-        The set of supported modes varies per environment. (And some
-        environments do not support rendering at all.) By convention,
-        if mode is:
-        - human: render to the current display or terminal and
-          return nothing. Usually for human consumption.
-        - rgb_array: Return an numpy.ndarray with shape (x, y, 3),
-          representing RGB values for an x-by-y pixel image, suitable
-          for turning into a video.
-        - ansi: Return a string (str) or StringIO.StringIO containing a
-          terminal-style text representation. The text can include newlines
-          and ANSI escape sequences (e.g. for colors).
+    def setup_renderer(self, mode=None) -> None:
+        if self.renderer_is_setup:
+            logger.warning("Setting up renderer more than once.")
+        if mode is None:
+            mode = self.cfg.render_mode
 
-        Note:
-            Make sure that your class's metadata 'render.modes' key includes
-              the list of supported modes. It's recommended to call super()
-              in implementations to use the functionality of this method.
+        if mode is None:  # if still None no rendering happens
+            self.renderer_is_setup = False
+            self.update_renderer = lambda step_return, action: None
+        elif mode == "rgb_array":
+            # get original obs space if running in garage compat mode
+            obs_space = getattr(self, "old_obs_space", self.observation_space)
 
-        Args:
-            mode (str): the mode to render with
+            self.plotter = bauwerk.utils.plotting.EnvPlotter(
+                env=self, initial_obs=obs_space.sample()
+            )
 
-        Example:
-        class MyEnv(Env):
-            metadata = {'render.modes': ['human', 'rgb_array']}
-            def render(self, mode='human'):
-                if mode == 'rgb_array':
-                    return np.array(...) # return RGB frame suitable for video
-                elif mode == 'human':
-                    ... # pop up a window and render
-                else:
-                    super(MyEnv, self).render(mode=mode) # just raise an exception
-        """
-        raise NotImplementedError
+            def update_renderer(step_return, action):
+                self.plotter.add_step_data(step_return=step_return, action=action)
+
+            self.update_renderer = update_renderer
+        else:
+            raise ValueError(
+                f"Renderer could not be setup. Unkown render mode '{mode}'."
+            )
+
+        self.render_mode = mode
 
     def close(self) -> None:
         """Override close in your subclass to perform any necessary cleanup.
