@@ -6,6 +6,7 @@ import bauwerk.utils.testing
 import gym
 import numpy as np
 import pytest
+import pickle
 
 
 def test_solar_battery_house():
@@ -221,3 +222,8 @@ def test_noise_magnitude_param():
     step_return = env.step(env.action_space.sample())
 
     assert env.observation_space.contains(step_return[0])
+
+
+def test_pickleability():
+    env = gym.make("bauwerk/House-v0")
+    pickle.dumps(env)
