@@ -6,6 +6,16 @@ import gym.spaces
 import bauwerk.envs.solar_battery_house
 
 
+META_EVALUATOR_KWARGS = dict(
+    n_test_tasks=5,  # uses all the five tasks available
+    # -> one per building configuration
+    n_exploration_eps=10,  # we exlore for 10 episodes
+    n_test_episodes=1,  # we only test on one episode after adapting on 5)
+)
+
+DEFAULT_EPISODE_LEN = 24 * 7
+
+
 class GarageCompatEnv(bauwerk.envs.solar_battery_house.SolarBatteryHouseEnv):
     """Compatiblity environment for rlworkgroup/garage."""
 
@@ -14,7 +24,7 @@ class GarageCompatEnv(bauwerk.envs.solar_battery_house.SolarBatteryHouseEnv):
 
         # In order to make this env compatible with rlworkgroup/garage
         # Add this parameter to determine max episode length.
-        self.max_path_length = 720  # self.cfg.episode_len
+        self.max_path_length = DEFAULT_EPISODE_LEN  # self.cfg.episode_len
 
         if gym.__version__ != "0.17.2":
             logger.warning(

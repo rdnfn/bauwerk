@@ -10,9 +10,10 @@ https://github.com/rlworkgroup/garage/issues/2251#issuecomment-798601067
 # pylint: disable=no-value-for-parameter
 # yapf: disable
 import click
-import bauwerk.benchmarks
 import torch
 
+import bauwerk.benchmarks
+from bauwerk.utils.garage import  META_EVALUATOR_KWARGS, DEFAULT_EPISODE_LEN
 # adapted scripts for Bauwerk benchmarks
 from task_sampler import MetaWorldTaskSampler
 
@@ -33,8 +34,8 @@ from garage.trainer import Trainer
 @click.command()
 @click.option("--seed", default=1)
 @click.option("--epochs", default=50)
-@click.option("--episode_len", default=24 * 7)
-@click.option("--steps_per_task", default=24 * 30)
+@click.option("--episode_len", default=DEFAULT_EPISODE_LEN)
+@click.option("--steps_per_task", default=DEFAULT_EPISODE_LEN * 4)
 # @click.option("--episodes_per_task", default=10)
 @click.option("--meta_batch_size", default=20)
 @wrap_experiment(snapshot_mode="all", name_parameters="all")
@@ -73,7 +74,7 @@ def maml_trpo_bauwerk_build_dist_b(
         env_spec=env.spec,
         hidden_sizes=(100, 100),
         hidden_nonlinearity=torch.tanh,
-        output_nonlinearity=None,
+        output_nonlinearity=torch.tanh,
     )
 
     value_function = GaussianMLPValueFunction(
@@ -85,10 +86,7 @@ def maml_trpo_bauwerk_build_dist_b(
 
     meta_evaluator = MetaEvaluator(
         test_task_sampler=test_sampler,  # sets to the test tasks in build dist B
-        n_test_tasks=5,  # uses all the five tasks available
-        # -> one per building configuration
-        n_exploration_eps=5,  # we exlore for 5 episodes
-        n_test_episodes=1,  # we only test on one episode after adapting on 5
+        **META_EVALUATOR_KWARGS,
     )
 
     sampler = RaySampler(
@@ -116,7 +114,7 @@ def maml_trpo_bauwerk_build_dist_b(
     trainer.setup(algo, env)
     trainer.train(
         n_epochs=epochs,
-        batch_size=episodes_per_task * env.spec.max_episode_length
+        batch_size=episodes_per_task * env.spec.max_episode_length,
         # This appears to be applied to each meta batch
         # (e.g. for each of 20 tasks sampled for training)
     )
