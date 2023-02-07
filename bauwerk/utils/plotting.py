@@ -517,6 +517,8 @@ class EnvPlotter:
         if self.interactive_mode:
             self.fig.canvas.draw_idle()
             self.fig.canvas.flush_events()
+        else:
+            self.fig.canvas.draw()
 
     def step(self, action, observation, reward):
         self._add_obs({**observation, self.reward_label: reward, "action": action})
