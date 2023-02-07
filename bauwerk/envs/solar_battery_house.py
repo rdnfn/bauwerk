@@ -595,9 +595,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             # get original obs space if running in garage compat mode
             obs_space = getattr(self, "old_obs_space", self.observation_space)
 
-            self.plotter = bauwerk.utils.plotting.EnvPlotter(
-                env=self, initial_obs=obs_space.sample()
-            )
+            self.plotter = bauwerk.utils.plotting.EnvPlotter(env=self)
             # add updating function, called by step() and reset()
             self.update_renderer = (
                 lambda step_return, action: self.plotter.add_step_data(
