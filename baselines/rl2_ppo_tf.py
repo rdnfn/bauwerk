@@ -2,7 +2,7 @@
 """Example script to run RL2.
 
 Code adapted from garage examples:
-https://raw.githubusercontent.com/rlworkgroup/garage/master/src/garage/examples/torch/
+https://raw.githubusercontent.com/rlworkgroup/garage/master/src/garage/examples/
 """
 # pylint: disable=no-value-for-parameter
 # yapf: disable
