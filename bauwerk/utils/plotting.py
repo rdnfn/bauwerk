@@ -12,10 +12,8 @@ import bauwerk.utils.gym
 
 def plot_optimal_actions(env: bauwerk.HouseEnv, max_num_acts=None):
 
-    initial_obs = bauwerk.utils.gym.force_old_reset(env.reset())
-    plotter = EnvPlotter(
-        initial_obs, env, visible_h=max_num_acts / env.cfg.time_step_len
-    )
+    env.setup_renderer(mode="rgb_array")
+    bauwerk.utils.gym.force_old_reset(env.reset())
     opt_acts, _ = bauwerk.solve(env)
 
     if max_num_acts is None:
@@ -24,11 +22,10 @@ def plot_optimal_actions(env: bauwerk.HouseEnv, max_num_acts=None):
     for i in range(min(env.cfg.episode_len, max_num_acts)):
         act = opt_acts[i]
         step_return = env.step(act)
-        plotter.add_step_data(action=act, step_return=step_return)
 
-    plotter.update_figure()
+    env.plotter.update_figure()
 
-    return plotter.fig
+    return env.plotter.fig
 
 
 class EnvPlotter:
@@ -36,7 +33,6 @@ class EnvPlotter:
 
     def __init__(
         self,
-        initial_obs: dict,
         env: bauwerk.HouseEnv,
         visible_h=24,
         fig_height: int = 600,
@@ -74,8 +70,6 @@ class EnvPlotter:
             penalty is not activated).
 
         Args:
-            initial_obs (dict): initial observations
-            env (bauwerk.HouseEnv): environment to plot trajectories from.
             visible_h (int, optional): hours of trajectory visible in plot.
                 Defaults to 24.
             fig_height (int, optional): height of figure in px. Defaults to 600.
@@ -306,14 +300,14 @@ class EnvPlotter:
                     self.obs_axs[2].set_ylabel("Prop. of size")
 
                 self.obs_lines[self.reward_label] = self.obs_axs[-1].plot(
-                    self.line_x,
-                    self.obs_values[self.reward_label][-self.visible_steps :],
+                    self.line_x[:-1],
+                    self.obs_values[self.reward_label][-self.visible_steps + 1 :],
                     color="lightgreen",
                     linestyle=(0, (1, 1)),
                 )
                 self.obs_lines["info_cost"] = self.obs_axs[-1].plot(
-                    self.line_x,
-                    self.obs_values["info_cost"][-self.visible_steps :],
+                    self.line_x[:-1],
+                    self.obs_values["info_cost"][-self.visible_steps + 1 :],
                     color="lightgreen",
                 )
                 self.obs_axs[-1].set_title(
