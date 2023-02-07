@@ -545,7 +545,11 @@ class EnvPlotter:
                 **observation,
                 self.reward_label: reward,
                 "action": action,
-                "optimal_action": self.optimal_acts[int(info["time_step"])],
+                # Note that for the optimisation actions are aligned to last observation
+                # whereas in env they are aligned with following observation.
+                # Thus aligning them here to the following observation as well.
+                # This will be adjusted for in the plot.
+                "optimal_action": self.optimal_acts[int(info["time_step"]) - 1],
                 "net_load": info["net_load"],
                 "charging_power": self.env.get_action_from_power(
                     info["charging_power"]
