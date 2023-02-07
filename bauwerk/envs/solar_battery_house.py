@@ -570,9 +570,8 @@ class SolarBatteryHouseCoreEnv(gym.Env):
     def render(self) -> None:
         """Render last frame of the environment."""
         if self.render_mode == "rgb_array":
+            canvas = self.plotter.fig.canvas
             self.plotter.update_figure()
-            fig = self.plotter.fig
-            canvas = fig.canvas
             width, height = canvas.get_width_height()
             image = np.frombuffer(canvas.tostring_rgb(), dtype="uint8").reshape(
                 height, width, 3
