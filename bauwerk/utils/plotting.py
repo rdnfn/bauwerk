@@ -549,7 +549,7 @@ class EnvPlotter:
                 **observation,
                 self.reward_label: reward,
                 "action": action,
-                "optimal_action": self.optimal_acts[info["time_step"] - 1],
+                "optimal_action": self.optimal_acts[int(info["time_step"])],
                 "net_load": info["net_load"],
                 "charging_power": self.env.get_action_from_power(
                     info["charging_power"]
