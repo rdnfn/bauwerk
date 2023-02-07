@@ -470,6 +470,8 @@ class EnvPlotter:
                     "optimal_action",
                     "net_load",
                     "charging_power",
+                    self.reward_label,
+                    "info_cost",
                 ]:
                     value[0].set_data(
                         self.line_x, self.obs_values[key][-self.visible_steps :]
