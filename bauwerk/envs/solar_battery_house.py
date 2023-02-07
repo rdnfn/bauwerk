@@ -589,24 +589,24 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         # if both modes are none, no rendering happens
         if mode is None:
             self.renderer_is_setup = False
-            self.update_renderer = lambda step_return, action: None
         elif mode == "rgb_array":
-            # get original obs space if running in garage compat mode
-            obs_space = getattr(self, "old_obs_space", self.observation_space)
-
             self.plotter = bauwerk.utils.plotting.EnvPlotter(env=self)
             # add updating function, called by step() and reset()
-            self.update_renderer = (
-                lambda step_return, action: self.plotter.add_step_data(
-                    step_return=step_return, action=action
-                )
-            )
         else:
             raise ValueError(
                 f"Renderer could not be setup. Unkown render mode '{mode}'."
             )
 
         self.render_mode = mode
+
+    def update_renderer(self, step_return, action):
+        """Update the renderer with the latest state of the env.
+
+        Called after step() and reset(). Only does something if renderer is
+        setup in env."""
+
+        if hasattr(self,"plotter"):
+            self.plotter.add_step_data(step_return=step_return, action=action)
 
     def close(self) -> None:
         """Override close in your subclass to perform any necessary cleanup.
