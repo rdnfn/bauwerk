@@ -531,6 +531,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             "battery_cont": np.array(
                 self.battery.get_energy_content(), dtype=self.cfg.dtype
             ),
+            "cost": None,
             "time_step": None,
             "time_step_cont": None,
             "cum_load": None,
@@ -557,29 +558,37 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         else:
             return_val = observation
 
+        # add value to renderer (if set)
+        self.update_renderer(
+            step_return=(observation, 0, False, self.state), action=np.array([0.0])
+        )
+
         logger.debug("Environment reset.")
 
         return return_val
 
     def render(self) -> None:
-        """ """
+        """Render last frame of the environment."""
         if self.render_mode == "rgb_array":
+            self.plotter.update_figure()
             fig = self.plotter.fig
             canvas = fig.canvas
-            canvas.draw()
-            width, height = fig.get_size_inches() * fig.get_dpi()
+            width, height = canvas.get_width_height()
             image = np.frombuffer(canvas.tostring_rgb(), dtype="uint8").reshape(
-                int(height), int(width), 3
+                height, width, 3
             )
             return image
 
     def setup_renderer(self, mode=None) -> None:
         if self.renderer_is_setup:
             logger.warning("Setting up renderer more than once.")
+
+        # if no mode passed to this method, use cfg mode
         if mode is None:
             mode = self.cfg.render_mode
 
-        if mode is None:  # if still None no rendering happens
+        # if both modes are none, no rendering happens
+        if mode is None:
             self.renderer_is_setup = False
             self.update_renderer = lambda step_return, action: None
         elif mode == "rgb_array":
@@ -589,11 +598,12 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             self.plotter = bauwerk.utils.plotting.EnvPlotter(
                 env=self, initial_obs=obs_space.sample()
             )
-
-            def update_renderer(step_return, action):
-                self.plotter.add_step_data(step_return=step_return, action=action)
-
-            self.update_renderer = update_renderer
+            # add updating function, called by step() and reset()
+            self.update_renderer = (
+                lambda step_return, action: self.plotter.add_step_data(
+                    step_return=step_return, action=action
+                )
+            )
         else:
             raise ValueError(
                 f"Renderer could not be setup. Unkown render mode '{mode}'."
