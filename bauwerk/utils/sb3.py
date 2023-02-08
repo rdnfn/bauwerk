@@ -7,7 +7,7 @@ from stable_baselines3.common.logger import Image
 import gym
 import bauwerk.eval
 import bauwerk
-import bauwerk.utils.plotting
+import bauwerk.utils.env_plotting
 import matplotlib.pyplot as plt
 import matplotlib.figure
 import numpy as np
@@ -367,8 +367,8 @@ class TrajectoryPlotCallback(BaseCallback):
 
     def _log_image(self) -> None:
         initial_obs = self.eval_env.reset()
-        plotter = bauwerk.utils.plotting.EnvPlotter(
-            initial_obs, self.eval_env, visible_h=self.visible_h
+        plotter = bauwerk.utils.env_plotting.EnvPlotter(
+            self.eval_env, visible_h=self.visible_h
         )
         obs = initial_obs
         for _ in range(int(self.visible_h / self.eval_env.cfg.time_step_len)):

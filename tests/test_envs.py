@@ -6,6 +6,7 @@ import bauwerk.utils.testing
 import gym
 import numpy as np
 import pytest
+import pickle
 
 
 def test_solar_battery_house():
@@ -15,13 +16,6 @@ def test_solar_battery_house():
     bauwerk.utils.testing.take_steps_in_env(env, num_steps=env.cfg.episode_len)
 
 
-def test_build_dist_a():
-    """Basic test of building distribution A."""
-
-    env = gym.make("bauwerk/BuildDistA-v0")
-    bauwerk.utils.testing.take_steps_in_env(env, num_steps=10)
-
-
 def test_solar_battery_house_dict_config():
     """Test the use of dict based config files."""
 
@@ -29,21 +23,6 @@ def test_solar_battery_house_dict_config():
     env = gym.make("bauwerk/SolarBatteryHouse-v0", cfg={"episode_len": ep_len})
     assert env.cfg.episode_len == ep_len
     bauwerk.utils.testing.take_steps_in_env(env, num_steps=10)
-
-
-def test_build_dist_b():
-    """Test of seed in distribution."""
-
-    env = gym.make("bauwerk/BuildDistB-v0")
-    env.reset(seed=0)
-    batt_size_1 = env.cfg.battery_size
-    env.reset(seed=1)
-    batt_size_2 = env.cfg.battery_size
-    env.reset(seed=1)
-    batt_size_3 = env.cfg.battery_size
-    assert batt_size_1 != batt_size_2
-    assert batt_size_2 == batt_size_3
-    assert env.battery.size == env.cfg.battery_size
 
 
 def test_time_of_day():
@@ -243,3 +222,8 @@ def test_noise_magnitude_param():
     step_return = env.step(env.action_space.sample())
 
     assert env.observation_space.contains(step_return[0])
+
+
+def test_pickleability():
+    env = gym.make("bauwerk/House-v0")
+    pickle.dumps(env)

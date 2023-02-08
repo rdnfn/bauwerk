@@ -112,3 +112,5 @@ notebooks/tests/
 outputs
 wandb
 multirun
+data
+nohup*

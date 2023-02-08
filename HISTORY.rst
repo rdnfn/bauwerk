@@ -2,6 +2,21 @@
 History
 =======
 
+0.3.3 (2023-01-00)
+------------------
+
+* Features
+
+  * Experimental support for garage baseline algorithms via garage-compatiblity-mode in Bauwerk benchmarks. This in covers some of the specific requirements to use Bauwerk benchmarks with garage algorithms, like the gym version, obs and action space.
+
+* Improvements
+
+  * Add more expressive check of whether action is inside actions space.
+  * Bauwerk environments can now be deep copied (i.e. using ``copy.deepcopy()``). This is necessary for garage compatibility. To achieve this the class specific logger was replaced with the generic loguru logger instance, so that the logger does not need to be copied.
+
+* Deprecations
+
+  * Remove access to distributions via gym.make API as these used outdated configurations and do not provide Meta-World API compatibility.
 
 0.3.2 (2023-01-19)
 ------------------

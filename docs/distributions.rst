@@ -2,7 +2,7 @@
 Building distributions
 ======================
 
-Besides the standard Gym environments, Bauwerk also provides distributions
+Besides the core RL gym environment, Bauwerk also provides meta RL problems in the defined by distributions
 over buildings.
 
 

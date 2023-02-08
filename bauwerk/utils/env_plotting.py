@@ -1,5 +1,7 @@
 """Plotting utility functions."""
 
+from __future__ import annotations
+
 from typing import Optional
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -10,10 +12,8 @@ import bauwerk.utils.gym
 
 def plot_optimal_actions(env: bauwerk.HouseEnv, max_num_acts=None):
 
-    initial_obs = bauwerk.utils.gym.force_old_reset(env.reset())
-    plotter = EnvPlotter(
-        initial_obs, env, visible_h=max_num_acts / env.cfg.time_step_len
-    )
+    env.setup_renderer(mode="rgb_array")
+    bauwerk.utils.gym.force_old_reset(env.reset())
     opt_acts, _ = bauwerk.solve(env)
 
     if max_num_acts is None:
@@ -22,11 +22,10 @@ def plot_optimal_actions(env: bauwerk.HouseEnv, max_num_acts=None):
     for i in range(min(env.cfg.episode_len, max_num_acts)):
         act = opt_acts[i]
         step_return = env.step(act)
-        plotter.add_step_data(action=act, step_return=step_return)
 
-    plotter.update_figure()
+    env.plotter.update_figure()
 
-    return plotter.fig
+    return env.plotter.fig
 
 
 class EnvPlotter:
@@ -34,7 +33,6 @@ class EnvPlotter:
 
     def __init__(
         self,
-        initial_obs: dict,
         env: bauwerk.HouseEnv,
         visible_h=24,
         fig_height: int = 600,
@@ -72,8 +70,6 @@ class EnvPlotter:
             penalty is not activated).
 
         Args:
-            initial_obs (dict): initial observations
-            env (bauwerk.HouseEnv): environment to plot trajectories from.
             visible_h (int, optional): hours of trajectory visible in plot.
                 Defaults to 24.
             fig_height (int, optional): height of figure in px. Defaults to 600.
@@ -122,7 +118,7 @@ class EnvPlotter:
         if self.plot_optimal_acts:
             self.optimal_acts = bauwerk.solve(env)[0]
 
-        self.reset(initial_obs)
+        self.reset()
         self._set_up_figure()
 
     def _add_obs(self, obs):
@@ -304,14 +300,14 @@ class EnvPlotter:
                     self.obs_axs[2].set_ylabel("Prop. of size")
 
                 self.obs_lines[self.reward_label] = self.obs_axs[-1].plot(
-                    self.line_x,
-                    self.obs_values[self.reward_label][-self.visible_steps :],
+                    self.line_x[:-1],
+                    self.obs_values[self.reward_label][-self.visible_steps + 1 :],
                     color="lightgreen",
                     linestyle=(0, (1, 1)),
                 )
                 self.obs_lines["info_cost"] = self.obs_axs[-1].plot(
-                    self.line_x,
-                    self.obs_values["info_cost"][-self.visible_steps :],
+                    self.line_x[:-1],
+                    self.obs_values["info_cost"][-self.visible_steps + 1 :],
                     color="lightgreen",
                 )
                 self.obs_axs[-1].set_title(
@@ -474,6 +470,8 @@ class EnvPlotter:
                     "optimal_action",
                     "net_load",
                     "charging_power",
+                    self.reward_label,
+                    "info_cost",
                 ]:
                     value[0].set_data(
                         self.line_x, self.obs_values[key][-self.visible_steps :]
@@ -521,6 +519,8 @@ class EnvPlotter:
         if self.interactive_mode:
             self.fig.canvas.draw_idle()
             self.fig.canvas.flush_events()
+        else:
+            self.fig.canvas.draw()
 
     def step(self, action, observation, reward):
         self._add_obs({**observation, self.reward_label: reward, "action": action})
@@ -547,7 +547,11 @@ class EnvPlotter:
                 **observation,
                 self.reward_label: reward,
                 "action": action,
-                "optimal_action": self.optimal_acts[info["time_step"] - 1],
+                # Note that for the optimisation actions are aligned to last observation
+                # whereas in env they are aligned with following observation.
+                # Thus aligning them here to the following observation as well.
+                # This will be adjusted for in the plot.
+                "optimal_action": self.optimal_acts[int(info["time_step"]) - 1],
                 "net_load": info["net_load"],
                 "charging_power": self.env.get_action_from_power(
                     info["charging_power"]
@@ -561,30 +565,37 @@ class EnvPlotter:
         self.reward += reward
         self.current_step += 1
 
-    def reset(self, obs: dict) -> None:
+    def reset(self) -> None:
         """Reset figure with observation returned by ``env.reset()``.
 
         Args:
             obs (dict): initial observations returned by ``env.reset()``.
         """
-        obs = {
-            **obs,
-            self.reward_label: np.array([0], dtype=float),
-            "action": np.array([0], dtype=float),
-            "optimal_action": np.array([0], dtype=float),
-            "net_load": np.array([0], dtype=float),
-            "charging_power": np.array([0], dtype=float),
-            "info_pv_gen": np.array([0], dtype=float),
-            "info_load": np.array([0], dtype=float),
-            "info_battery_cont": np.array([0], dtype=float),
-            "info_cost": np.array([0], dtype=float),
-        }
+        # TODO: add support
+        # for including reset observations
+
+        # get keys of observation space
+        obs_value_keys = list(
+            getattr(self.env, "old_obs_space", self.env.observation_space)
+            .sample()
+            .keys()
+        )
+        obs_value_keys += [
+            self.reward_label,
+            "action",
+            "optimal_action",
+            "net_load",
+            "charging_power",
+            "info_pv_gen",
+            "info_load",
+            "info_battery_cont",
+            "info_cost",
+        ]
         self.obs_values = {
             key: [0] * (self.visible_steps + 1)
-            for key in obs.keys()
+            for key in obs_value_keys
             if key not in ["time_step", "time_of_day"]
         }
-        self._add_obs(obs)
         self.reward = 0
         self.game_finished = False
         self.current_step = 0

@@ -8,9 +8,11 @@ from loguru import logger
 import gym
 import gym.utils.seeding
 import numpy as np
+import copy
 
 import bauwerk.utils.logging
 import bauwerk.utils.gym
+import bauwerk.utils.env_plotting
 import bauwerk.eval
 import bauwerk.envs.components.solar
 import bauwerk.envs.components.load
@@ -26,14 +28,24 @@ class EnvConfig:
     time_step_len: float = 1.0  # in hours
     episode_len: int = 24 * 365 - 1  # in no of timesteps (-1 bc of available obs)
     grid_charging: bool = True  # whether grid charging is allowed
-    infeasible_control_penalty: bool = False  # whether penalty added for inf. control
+    infeasible_control_penalty: float = 0.0  # whether penalty added for inf. control
     obs_keys: list = field(
         default_factory=lambda: ["load", "pv_gen", "battery_cont", "time_of_day"]
     )
     action_space_type: str = (
         "relative"  # either relative (to battery size) or absolute (kW)
     )
+
+    # implementation details
     dtype: str = "float32"  # note that SB3 requires np.float32 action space.
+    # Whether to check if action is in action space in each step.
+    # No effect if set inside task cfg via env.set_task().
+    check_action: bool = True
+    # Whether to enable that env.set_task() changes env cfg.
+    # No effect if set inside task cfg via env.set_task().
+    enable_task_setting: bool = True
+    # Render mode of the environment (can be None or 'rgb_array')
+    render_mode: str = None
 
     # component params
     battery_size: float = 7.5  # kWh
@@ -88,6 +100,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
                 Defaults to None.
             force_task_setting (bool, optional): whether to enforce setting a task
                 in environment before calling reset. Defaults to False.
+            render_mode (bool, optional): mode to render env with.
         """
 
         # setup env config
@@ -98,6 +111,8 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         self.cfg: EnvConfig = cfg
 
         self.force_task_setting = force_task_setting
+        self._check_action = self.cfg.check_action
+        self._enable_task_setting = self.cfg.enable_task_setting
         self._task_is_set = False
 
         # set up components (solar installation, load, battery, grid connection)
@@ -177,12 +192,12 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         self.observation_space = gym.spaces.Dict(obs_spaces)
 
         # Set up logging
-        self.logger = logger
         bauwerk.utils.logging.setup_log_print_options()
-        self.logger.debug("Environment initialised.")
+        logger.debug("Environment initialised.")
 
-        # Reset env
-        self.reset()
+        # Setup renderer (if configured)
+        self.renderer_is_setup = False
+        self.setup_renderer()
 
     def _setup_components(self) -> None:
         """Setup components (devices) of house."""
@@ -305,11 +320,22 @@ class SolarBatteryHouseCoreEnv(gym.Env):
                 (helpful for debugging, and sometimes learning)
         """
 
-        self.logger.debug("step - action: %1.3f", action)
-        # TODO: is this necessary?
-        assert self.action_space.contains(action), f"{action} ({type(action)}) invalid"
+        logger.debug("step - action: %1.3f", action)
+        if self._check_action:
+            assert self.action_space.contains(action), (
+                f"{action} ({type(action)} of dtype {action.dtype}) "
+                f"not valid inside action space ({self.action_space}"
+                f" with high {self.action_space.high}"
+                f", low {self.action_space.low}"
+                f" and dtype {self.action_space.dtype})."
+            )
 
-        self.time_step += 1
+        try:
+            self.time_step += 1
+        except AttributeError as e:
+            raise AttributeError(
+                "No attribute time_step. Has the environment been reset?"
+            ) from e
 
         # Get old state from previous time step
         load = self.state["load"]
@@ -320,6 +346,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         ### Computation of taking action in simulation ###
 
         ## Action conversion
+        original_action = copy.copy(action)
         # TODO: think about this float conv, and consider whether it is necessary
         action = float(action)  # getting the float value
         action = self.get_power_from_action(action)
@@ -348,9 +375,9 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         power_diff = np.abs(charging_power - float(attempted_action))
         # TODO: remove this legacy penalty term cfg param and implementation
         # (wrapper now)
-        if self.cfg.infeasible_control_penalty:
-            reward -= power_diff
-            self.logger.debug("step - cost: %6.3f, power_diff: %6.3f", cost, power_diff)
+        if self.cfg.infeasible_control_penalty != 0.0:
+            reward -= power_diff * self.cfg.infeasible_control_penalty
+            logger.debug("step - cost: %6.3f, power_diff: %6.3f", cost, power_diff)
 
         # Getting battery state after applying action to simulation
         battery_cont = self.battery.get_energy_content()
@@ -394,7 +421,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         truncated = False  # No support for episode truncation, added for new gym API
 
         # TODO: potentially add config to allow logging this every x steps
-        self.logger.debug(
+        logger.debug(
             "step return: obs: %s, rew: %6.3f, terminated: %s",
             observation,
             reward,
@@ -403,7 +430,14 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             self.state,
         )
         # TODO: ensure that float casting is necessary and add comment on gym API
-        return observation, float(reward), terminated, truncated, self.state
+
+        step_return = (observation, float(reward), terminated, truncated, self.state)
+
+        # update renderer
+        # (this does nothing when no renderer configured)
+        self.update_renderer(step_return=step_return, action=original_action)
+
+        return step_return
 
     def _get_obs_from_state(self, state: dict) -> dict:
         """Get observation from state dict.
@@ -497,6 +531,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
             "battery_cont": np.array(
                 self.battery.get_energy_content(), dtype=self.cfg.dtype
             ),
+            "cost": None,
             "time_step": None,
             "time_step_cont": None,
             "cum_load": None,
@@ -523,45 +558,55 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         else:
             return_val = observation
 
-        self.logger.debug("Environment reset.")
+        # add value to renderer (if set)
+        self.update_renderer(
+            step_return=(observation, 0, False, self.state), action=np.array([0.0])
+        )
+
+        logger.debug("Environment reset.")
 
         return return_val
 
-    def render(self, mode: str = "human") -> None:
-        """Renders the environment.
+    def render(self) -> None:
+        """Render last frame of the environment."""
+        if self.render_mode == "rgb_array":
+            canvas = self.plotter.fig.canvas
+            self.plotter.update_figure()
+            width, height = canvas.get_width_height()
+            image = np.frombuffer(canvas.tostring_rgb(), dtype="uint8").reshape(
+                height, width, 3
+            )
+            return image
 
-        The set of supported modes varies per environment. (And some
-        environments do not support rendering at all.) By convention,
-        if mode is:
-        - human: render to the current display or terminal and
-          return nothing. Usually for human consumption.
-        - rgb_array: Return an numpy.ndarray with shape (x, y, 3),
-          representing RGB values for an x-by-y pixel image, suitable
-          for turning into a video.
-        - ansi: Return a string (str) or StringIO.StringIO containing a
-          terminal-style text representation. The text can include newlines
-          and ANSI escape sequences (e.g. for colors).
+    def setup_renderer(self, mode=None) -> None:
+        if self.renderer_is_setup:
+            logger.warning("Setting up renderer more than once.")
 
-        Note:
-            Make sure that your class's metadata 'render.modes' key includes
-              the list of supported modes. It's recommended to call super()
-              in implementations to use the functionality of this method.
+        # if no mode passed to this method, use cfg mode
+        if mode is None:
+            mode = self.cfg.render_mode
 
-        Args:
-            mode (str): the mode to render with
+        # if both modes are none, no rendering happens
+        if mode is None:
+            self.renderer_is_setup = False
+        elif mode == "rgb_array":
+            self.plotter = bauwerk.utils.env_plotting.EnvPlotter(env=self)
+            # add updating function, called by step() and reset()
+        else:
+            raise ValueError(
+                f"Renderer could not be setup. Unkown render mode '{mode}'."
+            )
 
-        Example:
-        class MyEnv(Env):
-            metadata = {'render.modes': ['human', 'rgb_array']}
-            def render(self, mode='human'):
-                if mode == 'rgb_array':
-                    return np.array(...) # return RGB frame suitable for video
-                elif mode == 'human':
-                    ... # pop up a window and render
-                else:
-                    super(MyEnv, self).render(mode=mode) # just raise an exception
-        """
-        raise NotImplementedError
+        self.render_mode = mode
+
+    def update_renderer(self, step_return, action):
+        """Update the renderer with the latest state of the env.
+
+        Called after step() and reset(). Only does something if renderer is
+        setup in env."""
+
+        if hasattr(self, "plotter"):
+            self.plotter.add_step_data(step_return=step_return, action=action)
 
     def close(self) -> None:
         """Override close in your subclass to perform any necessary cleanup.
@@ -602,33 +647,39 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         Args:
             task (Any): Bauwerk control task, corresponds to one building.
         """
+        if self._enable_task_setting:
 
-        # check task cfg type
-        if task.cfg is None:
-            cfg = EnvConfig()
-        elif isinstance(task.cfg, dict):
-            cfg = EnvConfig(**task.cfg)
-        elif isinstance(task.cfg, EnvConfig):
-            cfg = task.cfg
-        else:
-            raise ValueError(
-                f"Task config type not recognised ({type(task.cfg)}"
-                "is not an instance of None, dict and EnvConfig.)"
-            )
-
-        if self.cfg.episode_len != cfg.episode_len:
-            self.logger.warning(
-                (
-                    f"Setting task with differing episode_len ({cfg.episode_len})"
-                    f" from prior episode_len set in env ({self.cfg.episode_len})."
-                    " This may lead to unexpected behaviour."
+            # check task cfg type
+            if task.cfg is None:
+                cfg = EnvConfig()
+            elif isinstance(task.cfg, dict):
+                cfg = EnvConfig(**task.cfg)
+            elif isinstance(task.cfg, EnvConfig):
+                cfg = task.cfg
+            else:
+                raise ValueError(
+                    f"Task config type not recognised ({type(task.cfg)}"
+                    "is not an instance of None, dict and EnvConfig.)"
                 )
-            )
 
-        self.cfg = cfg
-        self._setup_components()
-        self._task_is_set = True
-        self.reset()
+            if self.cfg.episode_len != cfg.episode_len:
+                logger.warning(
+                    (
+                        f"Setting task with differing episode_len ({cfg.episode_len})"
+                        f" from prior episode_len set in env ({self.cfg.episode_len})."
+                        " This may lead to unexpected behaviour."
+                    )
+                )
+
+            self.cfg = cfg
+            self._setup_components()
+            self._task_is_set = True
+            self.reset()
+        else:
+            logger.warning(
+                "Ignored attempt to set task in env with setting",
+                " enable_task_setting=False. Task was NOT changed.",
+            )
 
 
 # Add compatiblity wrapper if necessary

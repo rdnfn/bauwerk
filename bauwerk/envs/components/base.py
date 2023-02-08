@@ -13,8 +13,7 @@ class EnvComponent:
     def __init__(self) -> None:
         """Base class for environment component."""
 
-        # Setting logger
-        self.logger = logger
+        pass
 
 
 class DataComponent(EnvComponent):
