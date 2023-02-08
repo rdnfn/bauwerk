@@ -1,2 +1,3 @@
-garage # RL algorithm library
+garage # (meta) RL algorithms
 seaborn # visualisation
+tensorboard # experiment tracking
