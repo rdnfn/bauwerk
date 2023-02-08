@@ -1,7 +1,10 @@
 """Utilities for plotting experimental results."""
 
+from __future__ import annotations
 import copy
 import seaborn as sns
+import numpy as np
+import matplotlib.pyplot as plt
 
 sns.set_theme(style="white", context="paper", font="serif")
 palette = sns.color_palette("deep")
@@ -17,25 +20,51 @@ def get_loc(house, idx, height, num_values_per_house, space_between_graphs):
 
 
 def create_bar_chart(
-    env_data,
-    max_key=None,
-    min_key=None,
-    remove_keys=None,
-    include_legend=True,
-    file_name="test.png",
-    ax=None,
-    absolute=False,
-    title=None,
-    x_label=None,
-    space_between_graphs=0.1,
-):
+    env_data: dict,
+    max_key: str = None,
+    min_key: str = None,
+    remove_keys: list = None,
+    include_legend: bool = True,
+    ax: object = None,
+    absolute: bool = False,
+    title: str = None,
+    x_label: str = None,
+    space_between_graphs: float = 0.1,
+) -> object:
+    """Plot bar chart of experimental results.
+
+    Args:
+        env_data (dict): results as dictionary with structure
+            dict[house_key][alg_name].
+        max_key (str, optional): if not using absolute data,
+            key of performance normalised to 1. Defaults to None.
+        min_key (str, optional):if not using absolute data,
+            key of performance normalised to 0. Defaults to None.
+        remove_keys (list, optional): keys of algorithms to
+            be removed from env_data. Defaults to None.
+        include_legend (bool, optional): whether to include
+            legend in figure. Defaults to True.
+        ax (object, optional): ax to build figure in.
+            Defaults to None. If None new figure is created.
+        absolute (bool, optional): whether the figure should use
+            absolute as opposed to relative values. Defaults to False.
+        title (str, optional): title of figure. Defaults to None.
+        x_label (str, optional): label of x axis. Defaults to None.
+        space_between_graphs (float, optional): space between graphs.
+            Proportional of height of one algorithm in plot.
+            Defaults to 0.1.
+
+    Returns:
+        object: either returns new matplotlib figure
+            or axis (if ax given).
+    """
     if ax is None:
         # Figure Size
+        ax_given = False
         fig, ax = plt.subplots(figsize=(4.5, 5.5))
 
     ys = []
     y_labels = []
-    nocharge_lines = []
 
     # Create consistent color code for each method
     col_code = {}
@@ -145,7 +174,7 @@ def create_bar_chart(
     # extend figure slightly to left to show full vline at 0
     ax.set_xlim(left=ax.get_xlim()[0] - 0.005)
 
-    try:
+    if ax_given:
+        return ax
+    else:
         return fig
-    except:
-        return None
