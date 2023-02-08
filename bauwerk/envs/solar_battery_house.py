@@ -12,7 +12,7 @@ import copy
 
 import bauwerk.utils.logging
 import bauwerk.utils.gym
-import bauwerk.utils.plotting
+import bauwerk.utils.env_plotting
 import bauwerk.eval
 import bauwerk.envs.components.solar
 import bauwerk.envs.components.load
@@ -590,7 +590,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         if mode is None:
             self.renderer_is_setup = False
         elif mode == "rgb_array":
-            self.plotter = bauwerk.utils.plotting.EnvPlotter(env=self)
+            self.plotter = bauwerk.utils.env_plotting.EnvPlotter(env=self)
             # add updating function, called by step() and reset()
         else:
             raise ValueError(
@@ -605,7 +605,7 @@ class SolarBatteryHouseCoreEnv(gym.Env):
         Called after step() and reset(). Only does something if renderer is
         setup in env."""
 
-        if hasattr(self,"plotter"):
+        if hasattr(self, "plotter"):
             self.plotter.add_step_data(step_return=step_return, action=action)
 
     def close(self) -> None:
