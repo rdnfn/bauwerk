@@ -29,6 +29,7 @@ def create_bar_chart(
     absolute: bool = False,
     title: str = None,
     x_label: str = None,
+    space_between_houses: float = 1.0,
     space_between_graphs: float = 0.1,
 ) -> object:
     """Plot bar chart of experimental results.
@@ -50,6 +51,9 @@ def create_bar_chart(
             absolute as opposed to relative values. Defaults to False.
         title (str, optional): title of figure. Defaults to None.
         x_label (str, optional): label of x axis. Defaults to None.
+        space_between_houses (float, optional): space between bar chart
+            groups (each a house) in individual bar widths.
+            Defaults to 1.0.
         space_between_graphs (float, optional): space between graphs.
             Proportional of height of one algorithm in plot.
             Defaults to 0.1.
@@ -62,6 +66,8 @@ def create_bar_chart(
         # Figure Size
         ax_given = False
         fig, ax = plt.subplots(figsize=(4.5, 5.5))
+    else:
+        ax_given = True
 
     ys = []
     y_labels = []
@@ -89,7 +95,6 @@ def create_bar_chart(
                 perf_dict.pop(key)
 
         num_values_per_house = len(perf_dict.keys())
-        space_between_houses = 2
         height = 1 / ((num_values_per_house + space_between_houses))
 
         # Add bars for each algorithm and each house
