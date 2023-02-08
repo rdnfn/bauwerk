@@ -368,7 +368,7 @@ class TrajectoryPlotCallback(BaseCallback):
     def _log_image(self) -> None:
         initial_obs = self.eval_env.reset()
         plotter = bauwerk.utils.env_plotting.EnvPlotter(
-            initial_obs, self.eval_env, visible_h=self.visible_h
+            self.eval_env, visible_h=self.visible_h
         )
         obs = initial_obs
         for _ in range(int(self.visible_h / self.eval_env.cfg.time_step_len)):
