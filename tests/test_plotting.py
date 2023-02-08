@@ -38,10 +38,9 @@ def test_x_axis():
 def test_builtin_plotting():
     # add render_mode to config to enable plotting
     env = gym.make("bauwerk/House-v0", cfg={"render_mode": "rgb_array"})
-    initial_obs = env.reset()
+    env.reset()
     for _ in range(24):
         action = env.action_space.sample()
         env.step(action)
 
     env.render()
-    env.plotter.fig
